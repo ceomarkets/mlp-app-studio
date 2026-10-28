@@ -353,7 +353,7 @@ export const supabaseBackend: Backend = {
       await supabase.rpc("set_fulfillment", {
         p_item_id: itemId,
         p_status: status,
-        p_tracking: tracking ?? null,
+        p_tracking: tracking,
       }),
     );
   },
@@ -362,7 +362,7 @@ export const supabaseBackend: Backend = {
     const data = ok(
       await supabase.rpc("create_order", {
         p_items: lines.map((l) => ({ product_id: l.productId, qty: l.qty })),
-        p_ref: ref,
+        p_ref: ref ?? "",
         p_shipping: shipping,
       }),
     ) as Row[];
