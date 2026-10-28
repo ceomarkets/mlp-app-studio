@@ -353,7 +353,7 @@ export const supabaseBackend: Backend = {
       await supabase.rpc("set_fulfillment", {
         p_item_id: itemId,
         p_status: status,
-        p_tracking: tracking,
+        ...(tracking !== undefined ? { p_tracking: tracking } : {}),
       }),
     );
   },
