@@ -103,7 +103,7 @@ function humanize(msg: string) {
 const sanitize = (q: string) => q.replace(/[%,()*\\]/g, " ").trim();
 
 async function currentUser(): Promise<User | null> {
-  const { data } = await supabase().auth.getSession();
+  const { data } = await supabase.auth.getSession();
   return data.session?.user ?? null;
 }
 
@@ -114,7 +114,7 @@ async function requireUser(): Promise<User> {
 }
 
 async function loadProfile(u: User): Promise<Profile> {
-  const { data } = await supabase().from("profiles").select("*").eq("id", u.id).maybeSingle();
+  const { data } = await supabase.from("profiles").select("*").eq("id", u.id).maybeSingle();
   return {
     id: u.id,
     email: u.email ?? "",
@@ -133,7 +133,7 @@ export const supabaseBackend: Backend = {
   },
 
   onAuthChange(cb) {
-    const { data } = supabase().auth.onAuthStateChange((_e, session) => {
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => {
       // Diferido: no se deben llamar otras funciones de Supabase dentro del callback.
       setTimeout(async () => cb(session?.user ? await loadProfile(session.user) : null), 0);
     });
@@ -141,7 +141,7 @@ export const supabaseBackend: Backend = {
   },
 
   async signUp({ email, password, fullName }) {
-    const res = await supabase().auth.signUp({
+    const res = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -156,17 +156,17 @@ export const supabaseBackend: Backend = {
   },
 
   async signIn({ email, password }) {
-    const { error } = await supabase().auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw new Error(humanize(error.message));
   },
 
   async signOut() {
-    await supabase().auth.signOut();
+    await supabase.auth.signOut();
   },
 
   async resetPassword(email) {
     ok(
-      await supabase().auth.resetPasswordForEmail(
+      await supabase.auth.resetPasswordForEmail(
         email,
         typeof window !== "undefined" ? { redirectTo: `${window.location.origin}/cuenta` } : {},
       ),
@@ -179,16 +179,16 @@ export const supabaseBackend: Backend = {
     if (input.fullName !== undefined) patch.full_name = input.fullName;
     if (input.username !== undefined) patch.username = input.username.toLowerCase();
     if (input.phone !== undefined) patch.phone = input.phone || null;
-    ok(await supabase().from("profiles").update(patch).eq("id", u.id));
+    ok(await supabase.from("profiles").update(patch).eq("id", u.id));
     return loadProfile(u);
   },
 
   async usernameAvailable(username) {
-    return ok(await supabase().rpc("username_available", { p_username: username })) as boolean;
+    return ok(await supabase.rpc("username_available", { p_username: username })) as boolean;
   },
 
   async listProducts(f: ProductFilter = {}) {
-    let q = supabase()
+    let q = supabase
       .from("products")
       .select(PRODUCT_COLS)
       .eq("active", true)
@@ -209,26 +209,26 @@ export const supabaseBackend: Backend = {
   },
 
   async getProduct(id) {
-    const r = ok(await supabase().from("products").select(PRODUCT_COLS).eq("id", id).maybeSingle());
+    const r = ok(await supabase.from("products").select(PRODUCT_COLS).eq("id", id).maybeSingle());
     return r ? toProduct(r) : null;
   },
 
   async listStores() {
     return (
       ok(
-        await supabase().from("stores").select("*").eq("active", true).order("created_at"),
+        await supabase.from("stores").select("*").eq("active", true).order("created_at"),
       ) as Row[]
     ).map(toStore);
   },
 
   async getStore(slug) {
-    const r = ok(await supabase().from("stores").select("*").eq("slug", slug).maybeSingle());
+    const r = ok(await supabase.from("stores").select("*").eq("slug", slug).maybeSingle());
     return r ? toStore(r) : null;
   },
 
   async listReviews(productId) {
     const rows = ok(
-      await supabase()
+      await supabase
         .from("reviews")
         .select("*")
         .eq("product_id", productId)
@@ -247,7 +247,7 @@ export const supabaseBackend: Backend = {
   async addReview(productId, rating, comment) {
     const u = await requireUser();
     const p = await loadProfile(u);
-    const res = await supabase()
+    const res = await supabase
       .from("reviews")
       .upsert(
         {
@@ -267,7 +267,7 @@ export const supabaseBackend: Backend = {
   async myStore() {
     const u = await currentUser();
     if (!u) return null;
-    const r = ok(await supabase().from("stores").select("*").eq("owner_id", u.id).maybeSingle());
+    const r = ok(await supabase.from("stores").select("*").eq("owner_id", u.id).maybeSingle());
     return r ? toStore(r) : null;
   },
 
@@ -275,7 +275,7 @@ export const supabaseBackend: Backend = {
     const u = await requireUser();
     const row = { ...input, owner_id: u.id, whatsapp: input.whatsapp || null };
     const r = ok(
-      await supabase().from("stores").upsert(row, { onConflict: "owner_id" }).select().single(),
+      await supabase.from("stores").upsert(row, { onConflict: "owner_id" }).select().single(),
     );
     return toStore(r);
   },
@@ -284,7 +284,7 @@ export const supabaseBackend: Backend = {
     const store = await this.myStore();
     if (!store) return [];
     const rows = ok(
-      await supabase()
+      await supabase
         .from("products")
         .select(PRODUCT_COLS)
         .eq("store_id", store.id)
@@ -298,16 +298,16 @@ export const supabaseBackend: Backend = {
     if (!store) throw new Error("Primero crea tu tienda");
     const row = { ...p, store_id: store.id };
     const q = id
-      ? supabase().from("products").update(row).eq("id", id).select(PRODUCT_COLS).single()
-      : supabase().from("products").insert(row).select(PRODUCT_COLS).single();
+      ? supabase.from("products").update(row).eq("id", id).select(PRODUCT_COLS).single()
+      : supabase.from("products").insert(row).select(PRODUCT_COLS).single();
     return toProduct(ok(await q));
   },
 
   async deleteProduct(id) {
-    const res = await supabase().from("products").delete().eq("id", id);
+    const res = await supabase.from("products").delete().eq("id", id);
     if (res.error?.message.includes("foreign key")) {
       // Tiene ventas: se desactiva en lugar de borrarse.
-      ok(await supabase().from("products").update({ active: false }).eq("id", id));
+      ok(await supabase.from("products").update({ active: false }).eq("id", id));
       return;
     }
     ok(res);
@@ -319,18 +319,18 @@ export const supabaseBackend: Backend = {
     const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
     const path = `${u.id}/${crypto.randomUUID()}.${ext}`;
     ok(
-      await supabase()
+      await supabase
         .storage.from("product-images")
         .upload(path, file, { contentType: file.type, cacheControl: "31536000" }),
     );
-    return supabase().storage.from("product-images").getPublicUrl(path).data.publicUrl;
+    return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
   },
 
   async sellerOrders() {
     const store = await this.myStore();
     if (!store) return [];
     const rows = ok(
-      await supabase()
+      await supabase
         .from("order_items")
         .select("*, orders(reference, status, shipping)")
         .eq("store_id", store.id)
@@ -348,7 +348,7 @@ export const supabaseBackend: Backend = {
 
   async setFulfillment(itemId, status, tracking) {
     ok(
-      await supabase().rpc("set_fulfillment", {
+      await supabase.rpc("set_fulfillment", {
         p_item_id: itemId,
         p_status: status,
         p_tracking: tracking ?? null,
@@ -358,7 +358,7 @@ export const supabaseBackend: Backend = {
 
   async createOrder(lines, ref, shipping) {
     const data = ok(
-      await supabase().rpc("create_order", {
+      await supabase.rpc("create_order", {
         p_items: lines.map((l) => ({ product_id: l.productId, qty: l.qty })),
         p_ref: ref,
         p_shipping: shipping,
@@ -369,7 +369,7 @@ export const supabaseBackend: Backend = {
   },
 
   async startPayment(orderId, returnUrl) {
-    const { data, error } = await supabase().functions.invoke("wompi-checkout", {
+    const { data, error } = await supabase.functions.invoke("wompi-checkout", {
       body: { orderId, redirectUrl: returnUrl },
     });
     if (error || !data?.url) {
@@ -388,7 +388,7 @@ export const supabaseBackend: Backend = {
     const u = await currentUser();
     if (!u) return [];
     const rows = ok(
-      await supabase()
+      await supabase
         .from("orders")
         .select("*, order_items(*)")
         .eq("buyer_id", u.id)
@@ -399,13 +399,13 @@ export const supabaseBackend: Backend = {
 
   async getOrder(id) {
     const r = ok(
-      await supabase().from("orders").select("*, order_items(*)").eq("id", id).maybeSingle(),
+      await supabase.from("orders").select("*, order_items(*)").eq("id", id).maybeSingle(),
     );
     return r ? toOrder(r) : null;
   },
 
   async trackClick(username, productId) {
-    await supabase().rpc("track_click", { p_username: username, p_product_id: productId });
+    await supabase.rpc("track_click", { p_username: username, p_product_id: productId });
   },
 
   async myClicks() {
@@ -413,7 +413,7 @@ export const supabaseBackend: Backend = {
     if (!u) return [];
     const since = new Date(Date.now() - 90 * 86_400_000).toISOString();
     const rows = ok(
-      await supabase()
+      await supabase
         .from("referral_clicks")
         .select("id, product_id, created_at")
         .eq("affiliate_id", u.id)
@@ -432,7 +432,7 @@ export const supabaseBackend: Backend = {
     const u = await currentUser();
     if (!u) return [];
     const rows = ok(
-      await supabase()
+      await supabase
         .from("order_items")
         .select("*")
         .eq("affiliate_id", u.id)
@@ -443,14 +443,14 @@ export const supabaseBackend: Backend = {
   },
 
   async wallet() {
-    const rows = ok(await supabase().rpc("my_wallet")) as Row[];
+    const rows = ok(await supabase.rpc("my_wallet")) as Row[];
     const r = rows[0] ?? { pending: 0, available: 0, withdrawn: 0 };
     return { pending: r.pending, available: r.available, withdrawn: r.withdrawn };
   },
 
   async myWithdrawals() {
     const rows = ok(
-      await supabase().from("withdrawals").select("*").order("created_at", { ascending: false }),
+      await supabase.from("withdrawals").select("*").order("created_at", { ascending: false }),
     ) as Row[];
     return rows.map((r): Withdrawal => ({
       id: r.id,
@@ -464,7 +464,7 @@ export const supabaseBackend: Backend = {
 
   async requestWithdrawal(amount, method, account) {
     ok(
-      await supabase().rpc("request_withdrawal", {
+      await supabase.rpc("request_withdrawal", {
         p_amount: amount,
         p_method: method,
         p_account: account,
