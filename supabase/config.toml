@@ -1,0 +1,6 @@
+# El webhook lo llama Wompi (sin sesión): se valida por firma, no por JWT.
+[functions.wompi-webhook]
+verify_jwt = false
+
+[functions.wompi-checkout]
+verify_jwt = true
