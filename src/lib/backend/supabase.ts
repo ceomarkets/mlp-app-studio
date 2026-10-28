@@ -1,4 +1,4 @@
-import type { Session, User } from "@supabase/supabase-js";
+import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Category, PayoutMethod } from "@/lib/plaza";
 import type {
@@ -17,6 +17,14 @@ import type {
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- filas crudas de PostgREST */
 type Row = any;
+
+/**
+ * Cliente sin tipos para lo que agrega la migración 20261028170000
+ * (compare_at_price y recent_activity). Cuando Lovable regenere
+ * src/integrations/supabase/types.ts con esa migración aplicada, se puede
+ * volver a usar `supabase` directamente.
+ */
+const untyped = supabase as unknown as SupabaseClient;
 
 const PRODUCT_COLS = "*, stores!inner(slug, name, city, emoji, active)";
 
@@ -134,12 +142,10 @@ export const supabaseBackend: Backend = {
   },
 
   onAuthChange(cb) {
-    const { data } = supabase.auth.onAuthStateChange(
-      (_event: string, session: Session | null) => {
+    const { data } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
       // Diferido: no se deben llamar otras funciones de Supabase dentro del callback.
       setTimeout(async () => cb(session?.user ? await loadProfile(session.user) : null), 0);
-      },
-    );
+    });
     return () => data.subscription.unsubscribe();
   },
 
@@ -218,9 +224,7 @@ export const supabaseBackend: Backend = {
 
   async listStores() {
     return (
-      ok(
-        await supabase.from("stores").select("*").eq("active", true).order("created_at"),
-      ) as Row[]
+      ok(await supabase.from("stores").select("*").eq("active", true).order("created_at")) as Row[]
     ).map(toStore);
   },
 
@@ -230,7 +234,7 @@ export const supabaseBackend: Backend = {
   },
 
   async recentActivity() {
-    const rows = ok(await supabase().rpc("recent_activity", { p_limit: 20 })) as Row[];
+    const rows = ok(await untyped.rpc("recent_activity", { p_limit: 20 })) as Row[];
     return rows.map((r) => ({
       productId: r.product_id,
       productName: r.product_name,
@@ -262,18 +266,16 @@ export const supabaseBackend: Backend = {
   async addReview(productId, rating, comment) {
     const u = await requireUser();
     const p = await loadProfile(u);
-    const res = await supabase
-      .from("reviews")
-      .upsert(
-        {
-          product_id: productId,
-          user_id: u.id,
-          rating,
-          comment,
-          author: p.fullName.split(" ")[0] || "Comprador",
-        },
-        { onConflict: "product_id,user_id" },
-      );
+    const res = await supabase.from("reviews").upsert(
+      {
+        product_id: productId,
+        user_id: u.id,
+        rating,
+        comment,
+        author: p.fullName.split(" ")[0] || "Comprador",
+      },
+      { onConflict: "product_id,user_id" },
+    );
     if (res.error?.message.includes("row-level security"))
       throw new Error("Solo puedes reseñar productos que ya recibiste");
     ok(res);
@@ -314,8 +316,8 @@ export const supabaseBackend: Backend = {
     const { compareAtPrice, ...rest } = p;
     const row = { ...rest, compare_at_price: compareAtPrice, store_id: store.id };
     const q = id
-      ? supabase.from("products").update(row).eq("id", id).select(PRODUCT_COLS).single()
-      : supabase.from("products").insert(row).select(PRODUCT_COLS).single();
+      ? untyped.from("products").update(row).eq("id", id).select(PRODUCT_COLS).single()
+      : untyped.from("products").insert(row).select(PRODUCT_COLS).single();
     return toProduct(ok(await q));
   },
 
@@ -335,8 +337,8 @@ export const supabaseBackend: Backend = {
     const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
     const path = `${u.id}/${crypto.randomUUID()}.${ext}`;
     ok(
-      await supabase
-        .storage.from("product-images")
+      await supabase.storage
+        .from("product-images")
         .upload(path, file, { contentType: file.type, cacheControl: "31536000" }),
     );
     return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
