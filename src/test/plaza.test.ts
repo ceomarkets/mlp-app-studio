@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitSale } from "./plaza";
+import { splitSale } from "@/lib/plaza";
 
 describe("splitSale", () => {
   it("reparte $100.000 con 10% afiliado como 81k/10k/9k", () => {
