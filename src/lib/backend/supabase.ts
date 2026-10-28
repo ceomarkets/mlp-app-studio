@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Category, PayoutMethod } from "@/lib/plaza";
 import type {
@@ -133,10 +133,12 @@ export const supabaseBackend: Backend = {
   },
 
   onAuthChange(cb) {
-    const { data } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data } = supabase.auth.onAuthStateChange(
+      (_event: string, session: Session | null) => {
       // Diferido: no se deben llamar otras funciones de Supabase dentro del callback.
       setTimeout(async () => cb(session?.user ? await loadProfile(session.user) : null), 0);
-    });
+      },
+    );
     return () => data.subscription.unsubscribe();
   },
 
