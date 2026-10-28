@@ -185,3 +185,133 @@ export function buildSections(
     viewed: viewed.slice(0, 8),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Leaderboard de la portada
+// ---------------------------------------------------------------------------
+export type BoardFilter = "all" | "new" | "deals" | "top" | "rated" | "stores";
+
+type StoreInfo = Product["store"];
+export type BoardItem =
+  | {
+      kind: "product";
+      key: string;
+      filter: Exclude<BoardFilter, "all" | "stores">;
+      rank: number;
+      badge: string;
+      metric: string;
+      product: Product;
+    }
+  | {
+      kind: "store";
+      key: string;
+      filter: "stores";
+      rank: number;
+      badge: string;
+      metric: string;
+      store: StoreInfo;
+      weekUnits: number;
+      products: number;
+    };
+
+/**
+ * Arma el leaderboard: novedades, promociones, top ventas, mejor valorados y
+ * mejores tiendas de la semana (por unidades vendidas en 7 días, con el
+ * histórico como desempate). "all" intercala todo.
+ */
+export function buildLeaderboard(
+  products: Product[],
+  activity: Activity[],
+  filter: BoardFilter = "all",
+  now = Date.now(),
+  size = 8,
+): BoardItem[] {
+  const live = products.filter((p) => p.active && p.stock > 0);
+  const item = (
+    filter: Exclude<BoardFilter, "all" | "stores">,
+    p: Product,
+    i: number,
+    badge: string,
+    metric: string,
+  ): BoardItem => ({
+    kind: "product",
+    key: `${filter}-${p.id}`,
+    filter,
+    rank: i + 1,
+    badge,
+    metric,
+    product: p,
+  });
+
+  const fresh = [...live]
+    .filter((p) => isNew(p, now))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, size)
+    .map((p, i) => item("new", p, i, "Nuevo", relTime(p.createdAt, now)));
+
+  const deals = live
+    .filter((p) => discountPct(p) > 0)
+    .sort((a, b) => discountPct(b) - discountPct(a))
+    .slice(0, size)
+    .map((p, i) =>
+      item("deals", p, i, `−${discountPct(p)}%`, `Ahorras ${cop(p.compareAtPrice! - p.price)}`),
+    );
+
+  const top = [...live]
+    .filter((p) => p.soldCount > 0)
+    .sort((a, b) => b.soldCount - a.soldCount)
+    .slice(0, size)
+    .map((p, i) => item("top", p, i, `#${i + 1}`, `${p.soldCount} vendidos`));
+
+  const rated = [...live]
+    .filter((p) => p.ratingCount > 0)
+    .sort((a, b) => b.rating - a.rating || b.ratingCount - a.ratingCount)
+    .slice(0, size)
+    .map((p, i) => item("rated", p, i, `★ ${p.rating.toFixed(1)}`, `${p.ratingCount} reseñas`));
+
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const stores = new Map<
+    string,
+    { store: StoreInfo; week: number; total: number; products: number }
+  >();
+  for (const p of products) {
+    const s = stores.get(p.store.slug) ?? { store: p.store, week: 0, total: 0, products: 0 };
+    s.total += p.soldCount;
+    if (p.active) s.products++;
+    stores.set(p.store.slug, s);
+  }
+  for (const a of activity) {
+    const p = a.productId ? byId.get(a.productId) : undefined;
+    if (!p || now - Date.parse(a.paidAt) > 7 * DAY) continue;
+    stores.get(p.store.slug)!.week += a.qty;
+  }
+  const bestStores = [...stores.values()]
+    .filter((s) => s.products > 0)
+    .sort((a, b) => b.week - a.week || b.total - a.total)
+    .slice(0, size)
+    .map<BoardItem>((s, i) => ({
+      kind: "store",
+      key: `store-${s.store.slug}`,
+      filter: "stores",
+      rank: i + 1,
+      badge: `Top ${i + 1}`,
+      metric: s.week ? `${s.week} ventas esta semana` : `${s.total} ventas`,
+      store: s.store,
+      weekUnits: s.week,
+      products: s.products,
+    }));
+
+  const lists: Record<Exclude<BoardFilter, "all">, BoardItem[]> = {
+    new: fresh,
+    deals,
+    top,
+    rated,
+    stores: bestStores,
+  };
+  if (filter !== "all") return lists[filter];
+  const order = [deals, top, fresh, bestStores, rated];
+  const out: BoardItem[] = [];
+  for (let i = 0; order.some((l) => i < l.length); i++)
+    for (const l of order) if (l[i]) out.push(l[i]!);
+  return out;
+}

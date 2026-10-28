@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { Activity, Product } from "@/lib/backend";
-import { buildSections, buildTicker, discountPct, isNew, relTime, tickerSymbol } from "@/lib/feed";
+import {
+  buildLeaderboard,
+  buildSections,
+  buildTicker,
+  discountPct,
+  isNew,
+  relTime,
+  tickerSymbol,
+} from "@/lib/feed";
 
 const now = Date.parse("2026-10-28T12:00:00Z");
 const ago = (d: number) => new Date(now - d * 86_400_000).toISOString();
@@ -82,5 +90,41 @@ describe("feed", () => {
     expect(buildSections(products, { viewed: [], favorites: [], cart: [] }, now).forYou).toEqual(
       [],
     );
+  });
+});
+
+describe("leaderboard", () => {
+  const store2 = { slug: "s2", name: "S2", city: "Ipiales", emoji: "🥔" };
+  const products = [
+    prod("n", { createdAt: ago(1) }),
+    prod("d", { compareAtPrice: 20000 }),
+    prod("t", { soldCount: 40, rating: 4.2, ratingCount: 3 }),
+    prod("r", { rating: 5, ratingCount: 9, store: store2 }),
+    prod("x", { stock: 0, compareAtPrice: 50000 }),
+  ];
+  const activity: Activity[] = [
+    { productId: "r", productName: "r", productEmoji: "📦", city: "Pasto", qty: 3, paidAt: ago(1) },
+  ];
+
+  it("cada filtro devuelve su tabla y excluye agotados", () => {
+    expect(buildLeaderboard(products, activity, "new", now).map((i) => i.key)).toEqual(["new-n"]);
+    expect(buildLeaderboard(products, activity, "deals", now)[0]).toMatchObject({ badge: "−50%" });
+    expect(buildLeaderboard(products, activity, "top", now)[0]).toMatchObject({
+      metric: "40 vendidos",
+    });
+    expect(buildLeaderboard(products, activity, "rated", now).map((i) => i.key)).toEqual([
+      "rated-r",
+      "rated-t",
+    ]);
+  });
+
+  it("la mejor tienda de la semana sale de las ventas de 7 días", () => {
+    const [first] = buildLeaderboard(products, activity, "stores", now);
+    expect(first).toMatchObject({ kind: "store", rank: 1, metric: "3 ventas esta semana" });
+  });
+
+  it("'todo' intercala tipos", () => {
+    const kinds = buildLeaderboard(products, activity, "all", now).map((i) => i.filter);
+    expect(kinds.slice(0, 5)).toEqual(["deals", "top", "new", "stores", "rated"]);
   });
 });

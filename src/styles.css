@@ -115,3 +115,18 @@ html {
   100% { transform: scale(1); }
 }
 .animate-pop { animation: pop 280ms ease-out; }
+
+/* Leaderboard de la portada: mismo bucle que la banda, en tarjetas. */
+.board-track {
+  animation: ticker linear infinite;
+  will-change: transform;
+}
+.board:hover .board-track,
+.board:focus-within .board-track,
+.board[data-paused] .board-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-track { animation: none; }
+  .board { overflow-x: auto; }
+}

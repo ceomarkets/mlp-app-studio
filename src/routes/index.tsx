@@ -3,43 +3,53 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   BadgePercent,
+  Flame,
+  Gem,
+  Heart,
   History,
   Plus,
   Search,
   Share2,
+  ShieldCheck,
   Sparkles,
   Store,
-  TrendingUp,
+  Truck,
   Wand2,
   X,
-  Zap,
 } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { addToCart } from "@/components/CartSheet";
+import { Leaderboard } from "@/components/Leaderboard";
+import { QuickView } from "@/components/QuickView";
 import { CATEGORY_ICON, Rail } from "@/components/Rail";
-import { Empty, ProductCard, ProductGridSkeleton, Shell } from "@/components/Shell";
+import { ShareButton } from "@/components/ShareSheet";
+import {
+  Empty,
+  Price,
+  ProductCard,
+  ProductGridSkeleton,
+  ProductImage,
+  Shell,
+} from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { backend, type Product, type ProductFilter } from "@/lib/backend";
 import { useCart, useFavorites, useViewed } from "@/lib/client-state";
-import { buildSections } from "@/lib/feed";
-import { CATEGORIES } from "@/lib/plaza";
+import { buildSections, discountPct } from "@/lib/feed";
+import { CATEGORIES, cop } from "@/lib/plaza";
 import { keys } from "@/lib/session";
+import { plazaShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Plaza X — Marketplace multitienda con red de afiliados" },
+      { title: "Plaza X — Lo bonito de Nariño, a un toque" },
       {
         name: "description",
-        content:
-          "Compra a tiendas locales de Nariño, vende con tu marca o gana comisiones compartiendo productos.",
+        content: "Ofertas, novedades y tiendas locales de Nariño. Compra fácil, paga seguro.",
       },
-      { property: "og:title", content: "Plaza X — Tu tienda, tu red, tus ganancias" },
-      {
-        property: "og:description",
-        content: "Ofertas, novedades y tiendas locales. Compra, vende o gana compartiendo.",
-      },
+      { property: "og:title", content: "Plaza X — Lo bonito de Nariño, a un toque" },
+      { property: "og:description", content: "Compra fácil. Paga seguro. Apoya lo local." },
     ],
   }),
   component: Plaza,
@@ -65,7 +75,7 @@ function QuickAdd({ p }: { p: Product }) {
         "Agotado"
       ) : (
         <>
-          <Plus /> Agregar
+          <Plus /> Lo quiero
         </>
       )}
     </Button>
@@ -76,6 +86,7 @@ function Plaza() {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("Todo");
   const [sort, setSort] = useState<NonNullable<ProductFilter["sort"]>>("popular");
+  const [quick, setQuick] = useState<Product | null>(null);
   const dq = useDeferredValue(q.trim());
   const browsing = dq !== "" || category !== "Todo";
 
@@ -100,8 +111,9 @@ function Plaza() {
       }),
     [all.data, viewed, favs, cartLines],
   );
+  // "Joya del día": la mejor oferta real; si no hay, el más vendido.
+  const gem = sections.deals[0] ?? sections.best[0];
 
-  // Solo las categorías que tienen productos, con su conteo.
   const counts = useMemo(() => {
     const m = new Map<string, number>();
     all.data?.forEach((p) => m.set(p.category, (m.get(p.category) ?? 0) + 1));
@@ -111,28 +123,24 @@ function Plaza() {
 
   return (
     <Shell wide>
-      {/* Portada */}
+      {/* Portada: una idea, una búsqueda, una oferta */}
       <section className="relative overflow-hidden rounded-3xl bg-ink p-5 text-ink-foreground md:p-10">
         <div className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-primary/30 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-1/3 size-72 rounded-full bg-sun/20 blur-3xl" />
-        <div className="relative grid gap-8 md:grid-cols-[1.3fr_1fr] md:items-center">
+        <div className="relative grid gap-6 md:grid-cols-[1.25fr_1fr] md:items-center md:gap-10">
           <div>
-            <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-sun px-3 py-1 text-[11px] font-bold text-accent-foreground md:mb-4 md:text-xs">
-              <Zap className="size-3.5" /> Lanzamiento · 0% comisión para tiendas fundadoras
-            </p>
-            <h1 className="text-3xl font-extrabold leading-[1.02] md:text-6xl">
-              Tu tienda, tu red, <br className="hidden md:block" />
-              <span className="text-sun">tus ganancias.</span>
+            <h1 className="text-3xl font-extrabold leading-[1.05] md:text-6xl">
+              Lo bonito de Nariño, <span className="text-sun">a un toque.</span>
             </h1>
-            <p className="mt-3 hidden max-w-md text-sm opacity-80 md:block md:text-base">
-              Lo mejor de Nariño en un solo lugar. Compra, vende con tu marca o gana compartiendo.
+            <p className="mt-2 text-sm opacity-80 md:mt-3 md:text-lg">
+              Compra fácil. Paga seguro. Apoya lo local.
             </p>
             <label className="relative mt-4 block max-w-xl md:mt-6">
               <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="¿Qué buscas hoy? Café, ruanas, artesanías…"
+                placeholder="¿Qué se te antoja hoy?"
                 aria-label="Buscar productos"
                 className="h-13 w-full rounded-2xl border-0 bg-background pl-12 pr-12 text-base text-foreground shadow-card outline-none ring-sun/60 focus:ring-4"
               />
@@ -146,38 +154,20 @@ function Plaza() {
                 </button>
               )}
             </label>
-            <div className="mt-4 flex flex-wrap gap-2 md:mt-5">
-              <Button asChild size="sm" variant="secondary" className="rounded-full">
-                <Link to="/afiliados">
-                  <Share2 /> Ganar compartiendo
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="sm"
-                variant="outline"
-                className="rounded-full border-ink-foreground/30 bg-transparent text-ink-foreground hover:bg-ink-foreground/10 hover:text-ink-foreground"
-              >
-                <Link to="/vendedores">
-                  <Store /> Abrir mi tienda
-                </Link>
-              </Button>
-            </div>
+            <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs opacity-85 md:text-sm">
+              <li className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="size-4 text-sun" /> Pago seguro
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <Truck className="size-4 text-sun" /> Envíos a todo el país
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <Heart className="size-4 text-sun" /> {stores.data?.length ?? "…"} tiendas locales
+              </li>
+            </ul>
           </div>
-          <div className="hidden gap-3 md:grid">
-            {[
-              { v: stores.data?.length ?? "…", k: "tiendas locales" },
-              { v: all.data?.length ?? "…", k: "productos" },
-              { v: "20%", k: "comisión máxima para afiliados" },
-            ].map((s) => (
-              <div key={s.k} className="rounded-2xl bg-ink-foreground/10 p-3 backdrop-blur md:p-4">
-                <div className="font-display text-2xl font-extrabold text-sun md:text-3xl">
-                  {s.v}
-                </div>
-                <div className="text-[11px] leading-tight opacity-80 md:text-sm">{s.k}</div>
-              </div>
-            ))}
-          </div>
+
+          {gem && <GemCard p={gem} onOpen={() => setQuick(gem)} />}
         </div>
       </section>
 
@@ -203,11 +193,6 @@ function Plaza() {
             >
               <Icon className="size-4" />
               {c}
-              {c !== "Todo" && (
-                <span className={cn("text-xs", active ? "opacity-70" : "text-muted-foreground")}>
-                  {counts.get(c)}
-                </span>
-              )}
             </button>
           );
         })}
@@ -217,17 +202,11 @@ function Plaza() {
         <section className="mt-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              {results.data?.length ?? "…"} resultados
+              {results.data?.length ?? "…"} encontrados
               {dq && (
                 <>
                   {" "}
                   para <b className="text-foreground">“{dq}”</b>
-                </>
-              )}
-              {category !== "Todo" && (
-                <>
-                  {" "}
-                  en <b className="text-foreground">{category}</b>
                 </>
               )}
             </p>
@@ -237,12 +216,14 @@ function Plaza() {
         </section>
       ) : (
         <>
+          <Leaderboard products={all.data ?? []} />
+
           {sections.deals.length > 0 && (
             <Rail
               tone="hot"
               icon={<BadgePercent />}
-              title="Ofertas de la semana"
-              subtitle="Descuentos reales de las tiendas"
+              title="Precios que enamoran"
+              subtitle="Descuentos reales, hoy"
             >
               {sections.deals.map((p) => (
                 <ProductCard key={p.id} p={p} action={<QuickAdd p={p} />} />
@@ -251,38 +232,33 @@ function Plaza() {
           )}
 
           {sections.forYou.length > 0 && (
-            <Rail icon={<Wand2 />} title="Para ti" subtitle="Según lo que has visto y guardado">
+            <Rail icon={<Wand2 />} title="Elegido para ti" subtitle="Según lo que te gusta">
               {sections.forYou.map((p) => (
                 <ProductCard key={p.id} p={p} action={<QuickAdd p={p} />} />
               ))}
             </Rail>
           )}
 
-          <Rail icon={<TrendingUp />} title="Lo más vendido" subtitle="Lo que más compra la gente">
+          <Rail icon={<Flame />} title="Los favoritos de todos" subtitle="Lo que más se vende">
             {sections.best.map((p) => (
               <ProductCard key={p.id} p={p} action={<QuickAdd p={p} />} />
             ))}
           </Rail>
 
           {sections.fresh.length > 0 && (
-            <Rail
-              icon={<Sparkles />}
-              title="Recién llegados"
-              subtitle="Novedades de los últimos 14 días"
-            >
+            <Rail icon={<Sparkles />} title="Recién llegados" subtitle="Fresquitos de las tiendas">
               {sections.fresh.map((p) => (
                 <ProductCard key={p.id} p={p} action={<QuickAdd p={p} />} />
               ))}
             </Rail>
           )}
 
-          {/* Tiendas */}
           <section className="mt-10">
             <div className="mb-4 flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-2xl bg-card text-primary shadow-card">
                 <Store className="size-5" />
               </span>
-              <h2 className="text-xl font-extrabold md:text-2xl">Tiendas de la plaza</h2>
+              <h2 className="text-xl font-extrabold md:text-2xl">Tiendas que amamos</h2>
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {stores.data?.map((s) => (
@@ -305,26 +281,22 @@ function Plaza() {
             </div>
           </section>
 
-          {/* Llamado viral */}
-          <section className="mt-10 grid items-center gap-5 rounded-3xl bg-sun p-6 text-accent-foreground md:grid-cols-[1fr_auto] md:p-8">
+          {/* Compartir la plaza: crecer por recomendación */}
+          <section className="mt-10 flex flex-col items-center gap-3 rounded-3xl bg-secondary p-6 text-center md:flex-row md:justify-between md:text-left">
             <div>
-              <h2 className="text-2xl font-extrabold md:text-3xl">
-                Comparte un enlace, gana hasta 20%
-              </h2>
-              <p className="mt-1 max-w-xl text-sm opacity-80">
-                Elige un producto, compártelo por WhatsApp o con un QR y cobra en Nequi cada vez que
-                alguien compre. Sin inventario, sin envíos.
-              </p>
+              <h2 className="text-xl font-extrabold">¿Te gustó? Cuéntale a alguien 💛</h2>
+              <p className="text-sm text-muted-foreground">Un mensaje ayuda a una tienda local.</p>
             </div>
-            <Button asChild size="lg" className="rounded-full">
-              <Link to="/afiliados">
-                Activar mi enlace <ArrowRight />
-              </Link>
-            </Button>
+            <ShareButton
+              data={plazaShare}
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 font-semibold text-primary-foreground shadow-card transition hover:bg-primary/90"
+            >
+              <Share2 className="size-4" /> Compartir Plaza X
+            </ShareButton>
           </section>
 
           {sections.viewed.length > 0 && (
-            <Rail icon={<History />} title="Vistos recientemente">
+            <Rail icon={<History />} title="Lo que viste">
               {sections.viewed.map((p) => (
                 <ProductCard key={p.id} p={p} action={<QuickAdd p={p} />} />
               ))}
@@ -333,14 +305,50 @@ function Plaza() {
 
           <section className="mt-10">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-xl font-extrabold md:text-2xl">Todo el catálogo</h2>
+              <h2 className="text-xl font-extrabold md:text-2xl">Todo</h2>
               <SortSelect sort={sort} setSort={setSort} />
             </div>
             <Grid items={results.data} loading={results.isPending} />
           </section>
         </>
       )}
+
+      <QuickView product={quick} onClose={() => setQuick(null)} />
     </Shell>
+  );
+}
+
+/** La mejor oferta del momento, lista para comprar en un toque. */
+function GemCard({ p, onOpen }: { p: Product; onOpen: () => void }) {
+  const off = discountPct(p);
+  return (
+    <button
+      onClick={onOpen}
+      className="group flex items-center gap-4 rounded-3xl bg-background p-3 text-left text-foreground shadow-card transition hover:-translate-y-1 md:flex-col md:items-stretch md:p-4"
+    >
+      <div className="relative shrink-0">
+        <ProductImage
+          p={p}
+          className="size-24 rounded-2xl text-5xl md:aspect-[4/3] md:size-auto md:w-full md:text-7xl"
+        />
+        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-sun px-2 py-0.5 text-[11px] font-extrabold text-accent-foreground shadow-card">
+          <Gem className="size-3" /> Joya del día
+        </span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-xs text-muted-foreground">{p.store.name}</div>
+        <div className="truncate font-bold md:text-lg">{p.name}</div>
+        <Price p={p} />
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <span className="text-xs font-bold text-primary">
+            {off ? `Ahorras ${cop(p.compareAtPrice! - p.price)}` : `${p.soldCount} ya lo compraron`}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition group-hover:gap-2">
+            Comprar <ArrowRight className="size-3.5" />
+          </span>
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -371,8 +379,8 @@ function Grid({ items, loading }: { items: Product[] | undefined; loading: boole
   if (loading) return <ProductGridSkeleton />;
   if (!items?.length)
     return (
-      <Empty icon={<Search />} title="No encontramos productos">
-        Prueba con otra palabra o categoría.
+      <Empty icon={<Search />} title="No lo encontramos">
+        Prueba otra palabra 🙂
       </Empty>
     );
   return (

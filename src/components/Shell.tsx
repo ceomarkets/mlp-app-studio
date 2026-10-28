@@ -1,7 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  CircleUser,
   Flame,
   Heart,
   Home,
@@ -17,7 +16,8 @@ import {
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { CartSheet } from "@/components/CartSheet";
+import { CartSheet, openCart } from "@/components/CartSheet";
+import { ShareButton } from "@/components/ShareSheet";
 import { Ticker } from "@/components/Ticker";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,27 +31,19 @@ import {
 import { backend, IS_DEMO, type Product } from "@/lib/backend";
 import { resetDemo } from "@/lib/backend/demo";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
-import { favorites, useFavorites } from "@/lib/client-state";
+import { favorites, useCart, useFavorites } from "@/lib/client-state";
 import { discountPct, isNew } from "@/lib/feed";
 import { compact, cop } from "@/lib/plaza";
 import { useUser } from "@/lib/session";
+import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
-const nav = [
-  { to: "/", label: "Plaza", icon: Store },
-  { to: "/favoritos", label: "Favoritos", icon: Heart },
-  { to: "/afiliados", label: "Mi Red", icon: Users },
-  { to: "/vendedores", label: "Mi Tienda", icon: Store },
-] as const;
-
-const desktopNav = [nav[0], nav[2], nav[3]] as const;
-
+// Navegación centrada en comprar. Mi Tienda y Mi Red viven, discretas, en el
+// menú de cuenta y en el pie de página.
 const mobileNav = [
   { to: "/", label: "Inicio", icon: Home },
   { to: "/favoritos", label: "Favoritos", icon: Heart },
-  { to: "/afiliados", label: "Mi Red", icon: Users },
-  { to: "/vendedores", label: "Mi Tienda", icon: Store },
-  { to: "/cuenta", label: "Cuenta", icon: CircleUser },
+  { to: "/cuenta", label: "Pedidos", icon: Package },
 ] as const;
 
 export function Shell({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
@@ -69,19 +61,6 @@ export function Shell({ children, wide = false }: { children: ReactNode; wide?: 
               Plaza<span className="text-primary">X</span>
             </span>
           </Link>
-          <nav className="hidden gap-1 text-sm font-semibold md:flex">
-            {desktopNav.map((n) => (
-              <Link
-                key={n.to}
-                to={n.to}
-                activeOptions={{ exact: n.to === "/" }}
-                className="flex items-center gap-1.5 rounded-full px-4 py-2 text-muted-foreground transition hover:text-foreground data-[status=active]:bg-ink data-[status=active]:text-ink-foreground"
-              >
-                <n.icon className="size-4" />
-                {n.label}
-              </Link>
-            ))}
-          </nav>
           <div className="flex items-center gap-1">
             <Link
               to="/favoritos"
@@ -109,10 +88,19 @@ export function Shell({ children, wide = false }: { children: ReactNode; wide?: 
           <ShieldCheck className="size-4 text-primary" /> Pagos seguros con Wompi · Hecho en Pasto,
           Nariño
         </div>
+        <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+          <Link to="/vendedores" className="hover:text-primary">
+            Vende en Plaza X
+          </Link>
+          <span aria-hidden>·</span>
+          <Link to="/afiliados" className="hover:text-primary">
+            Gana recomendando
+          </Link>
+        </div>
       </footer>
       <nav
         aria-label="Navegación principal"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
       >
         {mobileNav.map((n) => (
           <Link
@@ -127,8 +115,28 @@ export function Shell({ children, wide = false }: { children: ReactNode; wide?: 
             {n.label}
           </Link>
         ))}
+        <button
+          onClick={openCart}
+          className="flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-muted-foreground"
+        >
+          <span className="relative grid h-7 w-12 place-items-center rounded-full">
+            <ShoppingBag className="size-5" />
+            <CartCount />
+          </span>
+          Carrito
+        </button>
       </nav>
     </div>
+  );
+}
+
+function CartCount() {
+  const n = useCart().reduce((t, l) => t + l.qty, 0);
+  if (!n) return null;
+  return (
+    <span className="absolute right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+      {n}
+    </span>
   );
 }
 
@@ -199,14 +207,21 @@ function UserMenu() {
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta" })}>
           <Package /> Mis pedidos
         </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate({ to: "/favoritos" })}>
+          <Heart /> Favoritos
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "perfil" })}>
+          <User /> Perfil
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Gana con Plaza X
+        </DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
           <StoreIcon /> Mi tienda
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
-          <Users /> Mi red de afiliado
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "perfil" })}>
-          <User /> Perfil
+          <Users /> Mi red
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -366,7 +381,13 @@ export function ProductCard({
             </span>
           )}
         </div>
-        <FavoriteButton id={p.id} className="absolute right-2 top-2" />
+        <div className="absolute right-2 top-2 flex flex-col gap-1.5">
+          <FavoriteButton id={p.id} />
+          <ShareButton
+            data={() => productShare(p)}
+            className="grid size-9 place-items-center rounded-full bg-background/90 opacity-100 shadow-card backdrop-blur transition hover:scale-105 md:opacity-0 md:group-hover:opacity-100"
+          />
+        </div>
       </Link>
       <Link
         to="/tienda/$slug"

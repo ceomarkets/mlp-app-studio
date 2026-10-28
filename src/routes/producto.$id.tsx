@@ -254,23 +254,21 @@ function ProductPage() {
                 Editarlo →
               </Link>
             </div>
+          ) : // Afiliados: herramientas completas. Resto: una línea discreta.
+          user?.username ? (
+            <details className="mt-6 rounded-2xl border bg-card p-4 text-sm">
+              <summary className="cursor-pointer font-semibold">
+                Tu enlace · ganas {cop(earn)} ({pct(p.commission)})
+              </summary>
+              <ShareLink username={user.username} product={p} className="mt-3" />
+            </details>
           ) : (
-            <div className="mt-6 rounded-2xl bg-accent p-4 text-accent-foreground">
-              <div className="text-sm">
-                Comparte este producto y gana <b>{cop(earn)}</b> por cada venta ({pct(p.commission)}
-                ).
-              </div>
-              {user?.username ? (
-                <ShareLink username={user.username} product={p} className="mt-3" />
-              ) : (
-                <Link
-                  to="/afiliados"
-                  className="mt-2 inline-block text-sm font-bold underline underline-offset-2"
-                >
-                  Activa tu enlace de afiliado →
-                </Link>
-              )}
-            </div>
+            <Link
+              to="/afiliados"
+              className="mt-6 inline-block text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+            >
+              ¿Lo recomiendas? Gana {cop(earn)} por venta
+            </Link>
           )}
         </div>
       </div>

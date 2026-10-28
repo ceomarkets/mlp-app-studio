@@ -54,7 +54,9 @@ export const openCart = () => openStore.set(true);
 export function addToCart(p: Product, qty = 1) {
   if (p.stock < 1) return void toast.error("Producto agotado");
   cart.add(p.id, qty, p.stock);
-  toast.success(`${p.name} agregado`, { action: { label: "Ver carrito", onClick: openCart } });
+  toast.success(`¡Listo! ${p.name} va en tu carrito 🛍️`, {
+    action: { label: "Pagar", onClick: openCart },
+  });
 }
 
 export function CartSheet() {
