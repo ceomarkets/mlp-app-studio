@@ -24,7 +24,7 @@ export type Product = {
 
 export const stores: Store[] = [
   { slug: "tejidos-galeras", name: "Tejidos Galeras", tagline: "Ruanas y lana de oveja hechas a mano", city: "Pasto", emoji: "🧶" },
-  { slug: "cafe-nariño", name: "Café de Altura Nariño", tagline: "Café especial del sur de Colombia", city: "La Unión", emoji: "☕" },
+  { slug: "cafe-narino", name: "Café de Altura Nariño", tagline: "Café especial del sur de Colombia", city: "La Unión", emoji: "☕" },
   { slug: "barniz-pasto", name: "Barniz de Pasto", tagline: "Mopa-mopa, patrimonio cultural", city: "Pasto", emoji: "🎨" },
   { slug: "campo-vivo", name: "Campo Vivo", tagline: "Del campo nariñense a tu mesa", city: "Ipiales", emoji: "🥔" },
 ];
@@ -32,8 +32,8 @@ export const stores: Store[] = [
 export const products: Product[] = [
   { id: "p1", name: "Ruana de lana virgen", price: 180000, store: "tejidos-galeras", category: "Ropa", commission: 0.12, emoji: "🧣", rating: 4.9, sold: 132 },
   { id: "p2", name: "Gorro tejido andino", price: 45000, store: "tejidos-galeras", category: "Ropa", commission: 0.1, emoji: "🧢", rating: 4.7, sold: 310 },
-  { id: "p3", name: "Café especial 500 g", price: 38000, store: "cafe-nariño", category: "Alimentos", commission: 0.15, emoji: "☕", rating: 4.9, sold: 845 },
-  { id: "p4", name: "Kit barista en casa", price: 120000, store: "cafe-nariño", category: "Alimentos", commission: 0.08, emoji: "🫖", rating: 4.6, sold: 64 },
+  { id: "p3", name: "Café especial 500 g", price: 38000, store: "cafe-narino", category: "Alimentos", commission: 0.15, emoji: "☕", rating: 4.9, sold: 845 },
+  { id: "p4", name: "Kit barista en casa", price: 120000, store: "cafe-narino", category: "Alimentos", commission: 0.08, emoji: "🫖", rating: 4.6, sold: 64 },
   { id: "p5", name: "Plato decorativo mopa-mopa", price: 100000, store: "barniz-pasto", category: "Artesanías", commission: 0.1, emoji: "🍽️", rating: 5, sold: 47 },
   { id: "p6", name: "Caja joyero barnizada", price: 75000, store: "barniz-pasto", category: "Artesanías", commission: 0.18, emoji: "🎁", rating: 4.8, sold: 89 },
   { id: "p7", name: "Canasta de papa nativa", price: 28000, store: "campo-vivo", category: "Campo", commission: 0.05, emoji: "🥔", rating: 4.5, sold: 520 },
