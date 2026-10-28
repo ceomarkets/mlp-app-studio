@@ -113,3 +113,34 @@ export function useReferral() {
   const r = useSyncExternalStore(refStore.subscribe, refStore.get, () => refStore.initial);
   return r && Date.now() - r.at < REF_WINDOW_DAYS * 86_400_000 ? r.username : null;
 }
+
+// ---------------------------------------------------------------------------
+// Favoritos y vistos recientemente (alimentan la sección "Para ti")
+// ---------------------------------------------------------------------------
+const favStore = persisted<string[]>("plazax-favs", []);
+const viewedStore = persisted<string[]>("plazax-viewed", []);
+
+export const favorites = {
+  toggle(productId: string) {
+    const list = favStore.get();
+    const has = list.includes(productId);
+    favStore.set(has ? list.filter((id) => id !== productId) : [productId, ...list].slice(0, 100));
+    return !has;
+  },
+};
+
+export function useFavorites() {
+  return useSyncExternalStore(favStore.subscribe, favStore.get, () => favStore.initial);
+}
+
+export const viewed = {
+  add(productId: string) {
+    viewedStore.set(
+      [productId, ...viewedStore.get().filter((id) => id !== productId)].slice(0, 20),
+    );
+  },
+};
+
+export function useViewed() {
+  return useSyncExternalStore(viewedStore.subscribe, viewedStore.get, () => viewedStore.initial);
+}

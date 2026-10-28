@@ -7,7 +7,7 @@ import type { Backend, OrderItem, Product, ProductFilter, Profile, Store } from 
  * Imita las reglas de la base de datos (repartos, stock, retención, retiros)
  * y guarda todo en localStorage. En el servidor usa los datos semilla.
  */
-const KEY = "plazax-demo-v1";
+const KEY = "plazax-demo-v2";
 const isBrowser = typeof window !== "undefined";
 let state: DemoState | null = null;
 const listeners = new Set<(u: Profile | null) => void>();
@@ -187,6 +187,28 @@ export const demoBackend: Backend = {
     return db().stores.find((s) => s.slug === slug) ?? null;
   },
 
+  async recentActivity() {
+    const s = db();
+    const since = Date.now() - 7 * 86_400_000;
+    return s.items
+      .filter(
+        (i) =>
+          i.paidAt &&
+          Date.parse(i.paidAt) > since &&
+          s.products.some((p) => p.id === i.productId && p.active),
+      )
+      .sort((a, b) => b.paidAt!.localeCompare(a.paidAt!))
+      .slice(0, 20)
+      .map((i) => ({
+        productId: i.productId,
+        productName: i.productName,
+        productEmoji: i.productEmoji,
+        city: s.orders.find((o) => o.id === i.orderId)?.shipping.city ?? "",
+        qty: i.qty,
+        paidAt: i.paidAt!,
+      }));
+  },
+
   async listReviews(productId) {
     return db()
       .reviews.filter((r) => r.productId === productId)
@@ -266,6 +288,9 @@ export const demoBackend: Backend = {
     if (!store) throw new Error("Primero crea tu tienda");
     if (!CATEGORIES.includes(input.category)) throw new Error("Categoría inválida");
     if (input.price < 1000) throw new Error("El precio mínimo es $1.000");
+    // Igual que en la base de datos: un "precio antes" menor o igual al precio no es descuento.
+    if (input.compareAtPrice !== null && input.compareAtPrice <= input.price)
+      input.compareAtPrice = null;
     const s = db();
     let p = id ? s.products.find((x) => x.id === id && x.storeId === store.id) : undefined;
     if (id && !p) throw new Error("Producto no encontrado");

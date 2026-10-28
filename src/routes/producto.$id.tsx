@@ -1,15 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { Minus, Plus, ShieldCheck, Truck } from "lucide-react";
-import { useState } from "react";
+import {
+  BadgePercent,
+  Flame,
+  Minus,
+  Plus,
+  Share2,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Truck,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { addToCart } from "@/components/CartSheet";
 import { ShareLink } from "@/components/ShareLink";
-import { ProductCard, ProductImage, Shell, Stars } from "@/components/Shell";
+import { FavoriteButton, Price, ProductCard, ProductImage, Shell, Stars } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { backend, IS_DEMO } from "@/lib/backend";
-import { cart } from "@/lib/client-state";
+import { cart, useReferral, viewed } from "@/lib/client-state";
+import { discountPct, isNew } from "@/lib/feed";
 import { cop, pct, splitSale } from "@/lib/plaza";
 import { keys, useUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
@@ -66,6 +77,31 @@ function ProductPage() {
     enabled: !!user,
   });
   const isMine = !!myStore.data && myStore.data.id === p.storeId;
+  const ref = useReferral();
+  const off = discountPct(p);
+  useEffect(() => viewed.add(initial.id), [initial.id]);
+
+  async function shareProduct() {
+    // Si quien comparte es afiliado, el enlace lleva su usuario y gana comisión.
+    const url = user?.username
+      ? `${window.location.origin}/r/${user.username}/${p.id}`
+      : `${window.location.origin}/producto/${p.id}`;
+    const text = `${p.name} a ${cop(p.price)}${off ? ` (−${off}%)` : ""} en ${p.store.name}`;
+    try {
+      if (navigator.share) await navigator.share({ title: p.name, text, url });
+      else {
+        await navigator.clipboard.writeText(`${text} 👉 ${url}`);
+        toast.success("Enlace copiado", { description: "Pégalo en WhatsApp o tus redes." });
+      }
+    } catch {
+      /* cancelado */
+    }
+  }
+
+  const buyNow = () => {
+    cart.add(p.id, qty, p.stock);
+    navigate({ to: "/carrito" });
+  };
 
   return (
     <Shell>
@@ -81,11 +117,35 @@ function ProductPage() {
       </nav>
 
       <div className="grid gap-8 md:grid-cols-2 md:gap-12">
-        <div>
-          <ProductImage
-            p={{ ...p, images: p.images.slice(img) }}
-            className="rounded-3xl text-[9rem] shadow-card"
-          />
+        <div className="md:sticky md:top-32 md:self-start">
+          <div className="relative">
+            <ProductImage
+              p={{ ...p, images: p.images.slice(img) }}
+              className="rounded-3xl text-[9rem] shadow-card"
+            />
+            <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+              {off > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-sm font-extrabold text-primary-foreground shadow-card">
+                  <BadgePercent className="size-4" /> −{off}%
+                </span>
+              )}
+              {isNew(p) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-sun px-3 py-1 text-sm font-bold text-accent-foreground shadow-card">
+                  <Sparkles className="size-4" /> Nuevo
+                </span>
+              )}
+            </div>
+            <div className="absolute right-3 top-3 flex flex-col gap-2">
+              <FavoriteButton id={p.id} className="size-11" />
+              <button
+                onClick={shareProduct}
+                aria-label="Compartir"
+                className="grid size-11 place-items-center rounded-full bg-background/90 shadow-card backdrop-blur transition hover:scale-105"
+              >
+                <Share2 className="size-4.5" />
+              </button>
+            </div>
+          </div>
           {p.images.length > 1 && (
             <div className="mt-3 flex gap-2">
               {p.images.map((src, i) => (
@@ -113,11 +173,22 @@ function ProductPage() {
             {p.store.emoji} {p.store.name} · {p.store.city}
           </Link>
           <h1 className="mt-2 text-3xl font-extrabold md:text-4xl">{p.name}</h1>
-          <div className="mt-2 flex items-center gap-3">
+          <div className="mt-2 flex flex-wrap items-center gap-3">
             <Stars value={p.rating} count={p.ratingCount} />
-            <span className="text-sm text-muted-foreground">· {p.soldCount} vendidos</span>
+            {p.soldCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                <Flame className="size-4 text-primary" /> {p.soldCount} vendidos
+              </span>
+            )}
           </div>
-          <div className="mt-5 font-display text-4xl font-bold">{cop(p.price)}</div>
+          <div className="mt-5">
+            <Price p={p} size="lg" />
+            {off > 0 && (
+              <p className="mt-1 text-sm font-semibold text-primary">
+                Ahorras {cop(p.compareAtPrice! - p.price)}
+              </p>
+            )}
+          </div>
           {p.description && (
             <p className="mt-5 whitespace-pre-line leading-relaxed text-muted-foreground">
               {p.description}
@@ -157,17 +228,13 @@ function ProductPage() {
             >
               Agregar al carrito
             </Button>
-            <Button
-              size="lg"
-              disabled={p.stock < 1}
-              onClick={() => {
-                cart.add(p.id, qty, p.stock);
-                navigate({ to: "/carrito" });
-              }}
-            >
+            <Button size="lg" disabled={p.stock < 1} onClick={buyNow}>
               Comprar ahora
             </Button>
           </div>
+          {ref && !isMine && (
+            <p className="mt-3 text-xs text-muted-foreground">Te lo recomendó @{ref}.</p>
+          )}
 
           <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
             <li className="flex items-center gap-2">
@@ -223,6 +290,24 @@ function ProductPage() {
           </div>
         </section>
       )}
+      {/* Barra de compra fija en móvil (sobre la navegación inferior) */}
+      {p.stock > 0 && (
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 border-t bg-background/95 px-4 py-2.5 backdrop-blur-md md:hidden">
+          <div className="min-w-0 flex-1">
+            <Price p={p} />
+          </div>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => addToCart(p, qty)}
+            aria-label="Agregar al carrito"
+          >
+            <ShoppingBag />
+          </Button>
+          <Button onClick={buyNow}>Comprar</Button>
+        </div>
+      )}
+      <div className="h-16 md:hidden" aria-hidden />
     </Shell>
   );
 }

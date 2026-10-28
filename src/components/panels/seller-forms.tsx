@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { discountPct } from "@/lib/feed";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -232,6 +233,7 @@ const empty: ProductInput = {
   images: [],
   emoji: "📦",
   active: true,
+  compareAtPrice: null,
 };
 
 export function ProductDialog({
@@ -246,6 +248,7 @@ export function ProductDialog({
   const qc = useQueryClient();
   const [f, setF] = useState<ProductInput>(empty);
   const [uploading, setUploading] = useState(false);
+  const discount = discountPct({ price: f.price, compareAtPrice: f.compareAtPrice });
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -257,6 +260,7 @@ export function ProductDialog({
             name: product.name,
             description: product.description,
             price: product.price,
+            compareAtPrice: product.compareAtPrice,
             category: product.category,
             commission: product.commission,
             stock: product.stock,
@@ -402,7 +406,7 @@ export function ProductDialog({
               placeholder="Materiales, tamaño, cómo se hace, qué lo hace especial…"
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="pp">Precio (COP)</Label>
               <Input
@@ -415,6 +419,30 @@ export function ProductDialog({
                 value={f.price}
                 onChange={(e) => setF({ ...f, price: Number(e.target.value) })}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pa" className="flex items-center justify-between">
+                <span>Precio antes (opcional)</span>
+                {discount > 0 && (
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground">
+                    −{discount}%
+                  </span>
+                )}
+              </Label>
+              <Input
+                id="pa"
+                type="number"
+                min={0}
+                step={500}
+                placeholder="Para mostrar una oferta"
+                value={f.compareAtPrice ?? ""}
+                onChange={(e) =>
+                  setF({ ...f, compareAtPrice: e.target.value ? Number(e.target.value) : null })
+                }
+              />
+              {f.compareAtPrice !== null && discount <= 0 && (
+                <p className="text-xs text-destructive">Debe ser mayor que el precio actual.</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ps">Unidades en stock</Label>

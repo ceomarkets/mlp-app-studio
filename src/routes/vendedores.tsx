@@ -1,6 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ExternalLink, Package, Pencil, Plus, Trash2, Truck } from "lucide-react";
+import {
+  AlertTriangle,
+  CreditCard,
+  ExternalLink,
+  LineChart,
+  Package,
+  Pencil,
+  Percent,
+  Plus,
+  Trash2,
+  Truck,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { FulfillmentSteps } from "@/components/OrderView";
@@ -82,10 +93,25 @@ function Pitch() {
             Publica tus productos y cientos de afiliados los comparten en WhatsApp e Instagram. Solo
             pagas cuando vendes.
           </p>
-          <ul className="mt-6 space-y-2 text-sm">
-            <li>✅ Pagos con tarjeta, PSE y Nequi vía Wompi</li>
-            <li>✅ Tú decides la comisión del afiliado (3% a 20%)</li>
-            <li>✅ Panel con ventas, pedidos, stock y retiros a tu cuenta</li>
+          <ul className="mt-6 space-y-3 text-sm">
+            <li className="flex items-center gap-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4">
+                <CreditCard />
+              </span>
+              Pagos con tarjeta, PSE y Nequi vía Wompi
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4">
+                <Percent />
+              </span>
+              Tú decides la comisión del afiliado (3% a 20%)
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4">
+                <LineChart />
+              </span>
+              Panel con ventas, pedidos, stock y retiros a tu cuenta
+            </li>
           </ul>
           <Button asChild size="lg" className="mt-6">
             <Link to="/entrar" search={{ to: "/vendedores" }}>

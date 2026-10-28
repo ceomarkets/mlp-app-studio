@@ -44,6 +44,7 @@ describe("backend demo: flujo completo", () => {
       images: [],
       emoji: "🎒",
       active: true,
+      compareAtPrice: null,
     });
     await expect(
       b.saveStore({

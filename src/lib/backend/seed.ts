@@ -129,7 +129,14 @@ export function buildSeed(now = Date.now()): DemoState {
     },
   ];
 
-  const base = { images: [] as string[], active: true, rating: 0, ratingCount: 0, soldCount: 0 };
+  const base = {
+    images: [] as string[],
+    active: true,
+    rating: 0,
+    ratingCount: 0,
+    soldCount: 0,
+    compareAtPrice: null as number | null,
+  };
   const products: DemoState["products"] = [
     {
       ...base,
@@ -143,6 +150,7 @@ export function buildSeed(now = Date.now()): DemoState {
       commission: 0.12,
       stock: 14,
       emoji: "🧣",
+      compareAtPrice: 220000,
       createdAt: daysAgo(60, now),
     },
     {
@@ -182,6 +190,7 @@ export function buildSeed(now = Date.now()): DemoState {
       commission: 0.08,
       stock: 9,
       emoji: "🫖",
+      compareAtPrice: 150000,
       createdAt: daysAgo(50, now),
     },
     {
@@ -208,7 +217,8 @@ export function buildSeed(now = Date.now()): DemoState {
       commission: 0.18,
       stock: 11,
       emoji: "🎁",
-      createdAt: daysAgo(40, now),
+      compareAtPrice: 95000,
+      createdAt: daysAgo(9, now),
     },
     {
       ...base,
@@ -221,7 +231,7 @@ export function buildSeed(now = Date.now()): DemoState {
       commission: 0.05,
       stock: 60,
       emoji: "🥔",
-      createdAt: daysAgo(35, now),
+      createdAt: daysAgo(6, now),
     },
     {
       ...base,
@@ -234,7 +244,7 @@ export function buildSeed(now = Date.now()): DemoState {
       commission: 0.07,
       stock: 25,
       emoji: "🍗",
-      createdAt: daysAgo(30, now),
+      createdAt: daysAgo(3, now),
     },
   ];
 

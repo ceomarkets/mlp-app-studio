@@ -38,6 +38,7 @@ const toProduct = (r: Row): Product => ({
   name: r.name,
   description: r.description,
   price: r.price,
+  compareAtPrice: r.compare_at_price ?? null,
   category: r.category as Category,
   commission: Number(r.commission),
   stock: r.stock,
@@ -228,6 +229,18 @@ export const supabaseBackend: Backend = {
     return r ? toStore(r) : null;
   },
 
+  async recentActivity() {
+    const rows = ok(await supabase().rpc("recent_activity", { p_limit: 20 })) as Row[];
+    return rows.map((r) => ({
+      productId: r.product_id,
+      productName: r.product_name,
+      productEmoji: r.product_emoji,
+      city: r.city,
+      qty: r.qty,
+      paidAt: r.paid_at,
+    }));
+  },
+
   async listReviews(productId) {
     const rows = ok(
       await supabase
@@ -298,7 +311,8 @@ export const supabaseBackend: Backend = {
   async saveProduct({ id, ...p }) {
     const store = await this.myStore();
     if (!store) throw new Error("Primero crea tu tienda");
-    const row = { ...p, store_id: store.id };
+    const { compareAtPrice, ...rest } = p;
+    const row = { ...rest, compare_at_price: compareAtPrice, store_id: store.id };
     const q = id
       ? supabase.from("products").update(row).eq("id", id).select(PRODUCT_COLS).single()
       : supabase.from("products").insert(row).select(PRODUCT_COLS).single();

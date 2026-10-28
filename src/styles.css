@@ -74,3 +74,44 @@
 }
 
 @utility shadow-card { box-shadow: var(--shadow-card); }
+
+/* Banda de cotizaciones: dos copias seguidas que se desplazan la mitad del ancho. */
+@keyframes ticker {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.ticker-track {
+  animation: ticker linear infinite;
+  will-change: transform;
+}
+/* Pausa al pasar el mouse o al navegar con teclado (sin depender de @media hover). */
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+/* Los anclas y el desplazamiento automático no quedan ocultos bajo la cabecera fija. */
+html {
+  scroll-padding-top: 7.5rem;
+}
+.ticker-mask {
+  mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 48px), transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+}
+
+/* Rieles horizontales sin barra visible (secciones de la vitrina). */
+.rail {
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+}
+.rail::-webkit-scrollbar { display: none; }
+.rail > * { scroll-snap-align: start; }
+
+/* Pequeño "pop" al marcar favorito o agregar al carrito. */
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 280ms ease-out; }

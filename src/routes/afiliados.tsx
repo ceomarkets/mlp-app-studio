@@ -1,6 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Loader2, MousePointerClick, Search } from "lucide-react";
+import {
+  AtSign,
+  Check,
+  Link2,
+  Loader2,
+  MousePointerClick,
+  Search,
+  Send,
+  Wallet,
+} from "lucide-react";
+import type React from "react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { TrendChart } from "@/components/panels/TrendChart";
@@ -55,11 +65,15 @@ function Affiliates() {
 }
 
 function Pitch() {
-  const steps = [
-    ["🔗", "Elige productos", "Escoge de la vitrina los que más te gusten y genera tu enlace."],
-    ["📲", "Comparte", "Por WhatsApp, Instagram, TikTok o con un código QR impreso."],
+  const steps: [React.ReactNode, string, string][] = [
     [
-      "💸",
+      <Link2 key="i" />,
+      "Elige productos",
+      "Escoge de la vitrina los que más te gusten y genera tu enlace.",
+    ],
+    [<Send key="i" />, "Comparte", "Por WhatsApp, Instagram, TikTok o con un código QR impreso."],
+    [
+      <Wallet key="i" />,
       "Cobra",
       `Ganas hasta 20% de cada venta durante ${REF_WINDOW_DAYS} días y retiras a Nequi.`,
     ],
@@ -82,7 +96,9 @@ function Pitch() {
       <div className="mt-12 grid gap-4 md:grid-cols-3">
         {steps.map(([icon, title, text]) => (
           <div key={title} className="rounded-3xl border bg-card p-6 shadow-card">
-            <div className="text-4xl">{icon}</div>
+            <span className="grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-card [&_svg]:size-6">
+              {icon}
+            </span>
             <h3 className="mt-3 text-xl font-bold">{title}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{text}</p>
           </div>
@@ -120,7 +136,9 @@ function ClaimUsername() {
   return (
     <Shell>
       <div className="mx-auto max-w-lg rounded-3xl border bg-card p-6 text-center shadow-card md:p-8">
-        <div className="text-5xl">🔗</div>
+        <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-card">
+          <AtSign className="size-7" />
+        </span>
         <h1 className="mt-3 text-3xl font-extrabold">Elige tu usuario de afiliado</h1>
         <p className="mt-1 text-muted-foreground">Aparecerá en todos tus enlaces.</p>
         <form

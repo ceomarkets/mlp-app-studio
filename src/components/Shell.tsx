@@ -1,8 +1,24 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Package, ShoppingBag, Store as StoreIcon, User, Users } from "lucide-react";
+import {
+  CircleUser,
+  Flame,
+  Heart,
+  Home,
+  LogOut,
+  Package,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Star,
+  Store,
+  Store as StoreIcon,
+  User,
+  Users,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { CartSheet } from "@/components/CartSheet";
+import { Ticker } from "@/components/Ticker";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,74 +31,121 @@ import {
 import { backend, IS_DEMO, type Product } from "@/lib/backend";
 import { resetDemo } from "@/lib/backend/demo";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
-import { cop } from "@/lib/plaza";
+import { favorites, useFavorites } from "@/lib/client-state";
+import { discountPct, isNew } from "@/lib/feed";
+import { compact, cop } from "@/lib/plaza";
 import { useUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/", label: "Plaza" },
-  { to: "/afiliados", label: "Mi Red" },
-  { to: "/vendedores", label: "Mi Tienda" },
+  { to: "/", label: "Plaza", icon: Store },
+  { to: "/favoritos", label: "Favoritos", icon: Heart },
+  { to: "/afiliados", label: "Mi Red", icon: Users },
+  { to: "/vendedores", label: "Mi Tienda", icon: Store },
+] as const;
+
+const desktopNav = [nav[0], nav[2], nav[3]] as const;
+
+const mobileNav = [
+  { to: "/", label: "Inicio", icon: Home },
+  { to: "/favoritos", label: "Favoritos", icon: Heart },
+  { to: "/afiliados", label: "Mi Red", icon: Users },
+  { to: "/vendedores", label: "Mi Tienda", icon: Store },
+  { to: "/cuenta", label: "Cuenta", icon: CircleUser },
 ] as const;
 
 export function Shell({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col pb-16 md:pb-0">
       {IS_DEMO && <DemoBanner />}
-      <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-5">
-          <Link to="/" className="font-display text-2xl font-extrabold">
-            Plaza<span className="text-primary">X</span>
+      <header className="sticky top-0 z-30 bg-background/90 shadow-[0_1px_0_var(--color-border)] backdrop-blur-md">
+        <Ticker />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 md:px-5">
+          <Link to="/" className="flex items-center gap-2 font-display text-2xl font-extrabold">
+            <span className="grid size-8 place-items-center rounded-xl bg-primary text-primary-foreground shadow-card">
+              <Store className="size-4.5" strokeWidth={2.5} />
+            </span>
+            <span>
+              Plaza<span className="text-primary">X</span>
+            </span>
           </Link>
           <nav className="hidden gap-1 text-sm font-semibold md:flex">
-            {nav.map((n) => (
+            {desktopNav.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
                 activeOptions={{ exact: n.to === "/" }}
-                className="rounded-full px-4 py-2 text-muted-foreground transition hover:text-foreground data-[status=active]:bg-ink data-[status=active]:text-ink-foreground"
+                className="flex items-center gap-1.5 rounded-full px-4 py-2 text-muted-foreground transition hover:text-foreground data-[status=active]:bg-ink data-[status=active]:text-ink-foreground"
               >
+                <n.icon className="size-4" />
                 {n.label}
               </Link>
             ))}
           </nav>
           <div className="flex items-center gap-1">
+            <Link
+              to="/favoritos"
+              aria-label="Favoritos"
+              className="relative hidden size-9 place-items-center rounded-full hover:bg-muted md:grid"
+            >
+              <Heart className="size-5" />
+              <FavCount />
+            </Link>
             <CartSheet />
             <UserMenu />
           </div>
         </div>
-        <nav className="flex justify-around border-t text-xs font-semibold md:hidden">
-          {nav.map((n) => (
-            <Link
-              key={n.to}
-              to={n.to}
-              activeOptions={{ exact: n.to === "/" }}
-              className="flex-1 py-2.5 text-center text-muted-foreground data-[status=active]:text-primary"
-            >
-              {n.label}
-            </Link>
-          ))}
-        </nav>
       </header>
       <main
         className={cn(
-          "mx-auto w-full flex-1 px-4 py-8 md:px-5 md:py-10",
+          "mx-auto w-full flex-1 px-4 py-6 md:px-5 md:py-10",
           wide ? "max-w-7xl" : "max-w-6xl",
         )}
       >
         {children}
       </main>
       <footer className="border-t py-8 text-center text-sm text-muted-foreground">
-        Plaza X · Hecho en Pasto, Nariño · Pagos seguros con Wompi
+        <div className="flex items-center justify-center gap-2">
+          <ShieldCheck className="size-4 text-primary" /> Pagos seguros con Wompi · Hecho en Pasto,
+          Nariño
+        </div>
       </footer>
+      <nav
+        aria-label="Navegación principal"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+      >
+        {mobileNav.map((n) => (
+          <Link
+            key={n.to}
+            to={n.to}
+            activeOptions={{ exact: n.to === "/" }}
+            className="group flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-muted-foreground data-[status=active]:text-primary"
+          >
+            <span className="grid h-7 w-12 place-items-center rounded-full transition group-data-[status=active]:bg-primary/12">
+              <n.icon className="size-5" />
+            </span>
+            {n.label}
+          </Link>
+        ))}
+      </nav>
     </div>
+  );
+}
+
+function FavCount() {
+  const n = useFavorites().length;
+  if (!n) return null;
+  return (
+    <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
+      {n}
+    </span>
   );
 }
 
 function DemoBanner() {
   const qc = useQueryClient();
   return (
-    <div className="bg-sun px-4 py-2 text-center text-xs font-semibold text-accent-foreground">
+    <div className="bg-sun px-4 py-1.5 text-center text-[11px] font-semibold text-accent-foreground">
       Modo demo: los datos viven en este navegador. Entra con <b>{DEMO_EMAIL}</b> /{" "}
       <b>{DEMO_PASSWORD}</b> ·{" "}
       <button
@@ -184,49 +247,151 @@ export function ProductImage({
 }
 
 export function Stars({ value, count }: { value: number; count?: number }) {
-  if (!value) return <span className="text-xs text-muted-foreground">Nuevo</span>;
+  if (!value) return <span className="text-xs text-muted-foreground">Sin reseñas</span>;
   return (
-    <span className="text-sm text-muted-foreground">
-      <span className="text-sun">★</span> {value.toFixed(1)}
-      {count !== undefined && <span className="text-xs"> ({count})</span>}
+    <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+      <Star className="size-3.5 fill-sun text-sun" aria-hidden />
+      <span className="font-semibold text-foreground">{value.toFixed(1)}</span>
+      {count !== undefined && <span className="text-xs">({count})</span>}
     </span>
   );
 }
 
-export function ProductCard({ p, action }: { p: Product; action?: ReactNode }) {
-  const low = p.stock > 0 && p.stock <= 5;
+export function FavoriteButton({ id, className }: { id: string; className?: string }) {
+  const favs = useFavorites();
+  const on = favs.includes(id);
   return (
-    <div className="group flex flex-col rounded-2xl border bg-card p-3 shadow-card transition hover:-translate-y-1 md:p-4">
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={on ? "Quitar de favoritos" : "Guardar en favoritos"}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const added = favorites.toggle(id);
+        const el = e.currentTarget;
+        el.classList.remove("animate-pop");
+        void el.offsetWidth;
+        el.classList.add("animate-pop");
+        if (added) navigator.vibrate?.(10);
+      }}
+      className={cn(
+        "grid size-9 place-items-center rounded-full bg-background/90 shadow-card backdrop-blur transition hover:scale-105",
+        className,
+      )}
+    >
+      <Heart
+        className={cn("size-4.5 transition", on ? "fill-primary text-primary" : "text-foreground")}
+      />
+    </button>
+  );
+}
+
+export function Price({
+  p,
+  size = "md",
+}: {
+  p: Pick<Product, "price" | "compareAtPrice">;
+  size?: "md" | "lg";
+}) {
+  const off = discountPct(p);
+  return (
+    <span className="flex flex-wrap items-baseline gap-x-2">
+      <span
+        className={cn(
+          "font-display font-bold",
+          size === "lg" ? "text-4xl" : "text-lg",
+          off && "text-primary",
+        )}
+      >
+        {cop(p.price)}
+      </span>
+      {off > 0 && (
+        <span
+          className={cn(
+            "text-muted-foreground line-through",
+            size === "lg" ? "text-lg" : "text-xs",
+          )}
+        >
+          {cop(p.compareAtPrice!)}
+        </span>
+      )}
+    </span>
+  );
+}
+
+export function ProductCard({
+  p,
+  action,
+  className,
+}: {
+  p: Product;
+  action?: ReactNode;
+  className?: string;
+}) {
+  const low = p.stock > 0 && p.stock <= 5;
+  const off = discountPct(p);
+  const fresh = isNew(p);
+  return (
+    <div
+      className={cn(
+        "group flex flex-col rounded-2xl border bg-card p-2.5 shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-lg md:p-3",
+        className,
+      )}
+    >
       <Link to="/producto/$id" params={{ id: p.id }} className="relative mb-3 block">
-        <ProductImage p={p} className="transition group-hover:bg-secondary" />
-        {p.stock === 0 && (
-          <span className="absolute left-2 top-2 rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-ink-foreground">
-            Agotado
-          </span>
-        )}
-        {low && (
-          <span className="absolute left-2 top-2 rounded-full bg-sun px-2 py-0.5 text-xs font-bold text-accent-foreground">
-            ¡Quedan {p.stock}!
-          </span>
-        )}
+        <ProductImage
+          p={p}
+          className="transition duration-300 group-hover:bg-secondary [&_img]:transition [&_img]:duration-500 group-hover:[&_img]:scale-105"
+        />
+        <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
+          {off > 0 && (
+            <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-extrabold text-primary-foreground shadow-card">
+              −{off}%
+            </span>
+          )}
+          {fresh && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sun px-2 py-0.5 text-xs font-bold text-accent-foreground shadow-card">
+              <Sparkles className="size-3" /> Nuevo
+            </span>
+          )}
+          {p.stock === 0 && (
+            <span className="rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-ink-foreground">
+              Agotado
+            </span>
+          )}
+          {low && (
+            <span className="rounded-full bg-background/90 px-2 py-0.5 text-xs font-bold text-destructive shadow-card">
+              ¡Quedan {p.stock}!
+            </span>
+          )}
+        </div>
+        <FavoriteButton id={p.id} className="absolute right-2 top-2" />
       </Link>
       <Link
         to="/tienda/$slug"
         params={{ slug: p.store.slug }}
-        className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-primary"
+        className="truncate px-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-primary"
       >
         {p.store.name}
       </Link>
       <Link
         to="/producto/$id"
         params={{ id: p.id }}
-        className="mt-1 line-clamp-2 font-semibold leading-tight hover:text-primary"
+        className="mt-0.5 line-clamp-2 px-0.5 text-sm font-semibold leading-tight hover:text-primary md:text-base"
       >
         {p.name}
       </Link>
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <span className="font-display text-lg font-bold">{cop(p.price)}</span>
+      <div className="mt-1.5 px-0.5">
+        <Price p={p} />
+      </div>
+      <div className="mt-1 flex items-center justify-between gap-2 px-0.5 text-xs text-muted-foreground">
         <Stars value={p.rating} />
+        {p.soldCount > 0 && (
+          <span className="inline-flex items-center gap-0.5">
+            <Flame className="size-3 text-primary" /> {compact(p.soldCount)} vendidos
+          </span>
+        )}
       </div>
       {action && <div className="mt-auto pt-3">{action}</div>}
     </div>

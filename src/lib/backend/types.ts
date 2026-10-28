@@ -28,6 +28,8 @@ export type Product = {
   name: string;
   description: string;
   price: number;
+  /** Precio antes del descuento (mayor que price) o null si no hay promoción. */
+  compareAtPrice: number | null;
   category: Category;
   commission: number;
   stock: number;
@@ -46,6 +48,7 @@ export type ProductInput = Pick<
   | "name"
   | "description"
   | "price"
+  | "compareAtPrice"
   | "category"
   | "commission"
   | "stock"
@@ -118,6 +121,16 @@ export type Withdrawal = {
 
 export type Wallet = { pending: number; available: number; withdrawn: number };
 
+/** Venta reciente anonimizada (sin datos del comprador). */
+export type Activity = {
+  productId: string | null;
+  productName: string;
+  productEmoji: string;
+  city: string;
+  qty: number;
+  paidAt: string;
+};
+
 export type Review = {
   id: string;
   productId: string;
@@ -163,6 +176,7 @@ export interface Backend {
   listStores(): Promise<Store[]>;
   getStore(slug: string): Promise<Store | null>;
   listReviews(productId: string): Promise<Review[]>;
+  recentActivity(): Promise<Activity[]>;
   addReview(productId: string, rating: number, comment: string): Promise<void>;
 
   // Vendedor
