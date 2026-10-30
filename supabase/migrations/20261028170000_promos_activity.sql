@@ -1,15 +1,24 @@
 -- =====================================================================
--- Plaza X · promociones y actividad en vivo
+-- Plaza X · promociones y actividad en vivo (idempotente)
 --   * compare_at_price: "precio antes" para mostrar descuentos reales.
 --   * recent_activity(): últimas ventas pagadas, anonimizadas
---     (producto + ciudad + hora), para la banda de la cabecera.
+--     (producto + ciudad + hora), para la banda y el leaderboard.
+--   * Bucket de fotos de productos (si el entorno lo permite).
 -- =====================================================================
 
 alter table public.products
-  add column compare_at_price integer
-  check (compare_at_price is null or compare_at_price > price);
+  add column if not exists compare_at_price integer;
 
--- Si el vendedor baja el precio por encima del "precio antes", el descuento deja de ser válido.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'products_compare_at_price_check') then
+    alter table public.products
+      add constraint products_compare_at_price_check
+      check (compare_at_price is null or compare_at_price > price);
+  end if;
+end $$;
+
+-- Si el vendedor sube el precio por encima del "precio antes", el descuento deja de ser válido.
 create or replace function public.clear_invalid_compare_price() returns trigger
   language plpgsql as $$
 begin
@@ -18,6 +27,8 @@ begin
   end if;
   return new;
 end $$;
+
+drop trigger if exists products_clear_compare on public.products;
 create trigger products_clear_compare before insert or update on public.products
   for each row execute function public.clear_invalid_compare_price();
 
@@ -35,3 +46,14 @@ create or replace function public.recent_activity(p_limit integer default 20)
    limit least(greatest(p_limit, 1), 50)
 $$;
 grant execute on function public.recent_activity(integer) to anon, authenticated;
+
+-- Bucket público para fotos de productos. En entornos donde la migración no
+-- puede escribir en storage, se omite sin detener el resto.
+do $$
+begin
+  insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  values ('product-images', 'product-images', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+  on conflict (id) do nothing;
+exception when others then
+  raise notice 'Bucket product-images no creado desde la migración: %', sqlerrm;
+end $$;

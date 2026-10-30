@@ -8,6 +8,20 @@
       "when": 1793205129152,
       "tag": "0000_plaza_x_core",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793392147767,
+      "tag": "0001_promos_activity",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793392148767,
+      "tag": "0002_announcements",
+      "breakpoints": true
     }
   ]
 }

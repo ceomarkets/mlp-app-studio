@@ -130,3 +130,9 @@ html {
   .board-track { animation: none; }
   .board { overflow-x: auto; }
 }
+
+/* Difuminado suave en los extremos de la cinta del leaderboard. */
+.board-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}

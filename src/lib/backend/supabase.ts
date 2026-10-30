@@ -1,7 +1,9 @@
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Category, PayoutMethod } from "@/lib/plaza";
+import { normalizeAnnouncement, validateAnnouncement } from "@/lib/announcements";
 import type {
+  Announcement,
   Backend,
   Click,
   Order,
@@ -58,6 +60,22 @@ const toProduct = (r: Row): Product => ({
   ratingCount: r.rating_count,
   createdAt: r.created_at,
   store: { slug: r.stores.slug, name: r.stores.name, city: r.stores.city, emoji: r.stores.emoji },
+});
+
+const toAnnouncement = (r: Row): Announcement => ({
+  id: r.id,
+  title: r.title,
+  body: r.body,
+  emoji: r.emoji,
+  image: r.image,
+  link: r.link,
+  cta: r.cta,
+  tone: r.tone,
+  priority: r.priority,
+  active: r.active,
+  startsAt: r.starts_at,
+  endsAt: r.ends_at,
+  createdAt: r.created_at,
 });
 
 const toItem = (r: Row): OrderItem => ({
@@ -231,6 +249,68 @@ export const supabaseBackend: Backend = {
   async getStore(slug) {
     const r = ok(await supabase.from("stores").select("*").eq("slug", slug).maybeSingle());
     return r ? toStore(r) : null;
+  },
+
+  async listAnnouncements() {
+    const nowIso = new Date().toISOString();
+    const rows = ok(
+      await untyped
+        .from("announcements")
+        .select("*")
+        .eq("active", true)
+        .lte("starts_at", nowIso)
+        .or(`ends_at.is.null,ends_at.gt.${nowIso}`)
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ) as Row[];
+    return rows.map(toAnnouncement);
+  },
+
+  async isAdmin() {
+    if (!(await currentUser())) return false;
+    const { data, error } = await untyped.rpc("is_admin");
+    return !error && data === true;
+  },
+
+  async allAnnouncements() {
+    const rows = ok(
+      await untyped
+        .from("announcements")
+        .select("*")
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: false }),
+    ) as Row[];
+    return rows.map(toAnnouncement);
+  },
+
+  async saveAnnouncement(input) {
+    const clean = normalizeAnnouncement(input);
+    const problem = validateAnnouncement(clean);
+    if (problem) throw new Error(problem);
+    const { id, ...a } = clean;
+    const row = {
+      title: a.title,
+      body: a.body,
+      emoji: a.emoji,
+      image: a.image,
+      link: a.link,
+      cta: a.cta,
+      tone: a.tone,
+      priority: a.priority,
+      active: a.active,
+      starts_at: a.startsAt,
+      ends_at: a.endsAt,
+    };
+    const res = id
+      ? await untyped.from("announcements").update(row).eq("id", id).select().single()
+      : await untyped.from("announcements").insert(row).select().single();
+    if (res.error?.message.includes("row-level security")) throw new Error("Solo administradores");
+    return toAnnouncement(ok(res));
+  },
+
+  async deleteAnnouncement(id) {
+    ok(await untyped.from("announcements").delete().eq("id", id));
   },
 
   async recentActivity() {

@@ -1,5 +1,11 @@
 import { CATEGORIES, computeWallet, MIN_WITHDRAWAL, splitSale } from "@/lib/plaza";
-import { buildSeed, type DemoState } from "./seed";
+import {
+  byPriority,
+  isLive,
+  normalizeAnnouncement,
+  validateAnnouncement,
+} from "@/lib/announcements";
+import { buildSeed, DEMO_ADMINS, seedAnnouncements, type DemoState } from "./seed";
 import type { Backend, OrderItem, Product, ProductFilter, Profile, Store } from "./types";
 
 /**
@@ -50,6 +56,23 @@ function me() {
   const s = db();
   return s.users.find((u) => u.id === s.session) ?? null;
 }
+/** Datos guardados antes de existir los anuncios: se completan sin borrar nada. */
+function announcements() {
+  const s = db();
+  if (!s.announcements) {
+    s.announcements = seedAnnouncements();
+    s.admins ??= DEMO_ADMINS;
+    save();
+  }
+  return s.announcements;
+}
+
+function requireAdmin() {
+  const u = requireMe();
+  if (!(db().admins ?? DEMO_ADMINS).includes(u.id)) throw new Error("Solo administradores");
+  return u;
+}
+
 function requireMe() {
   const u = me();
   if (!u) throw new Error("Inicia sesión para continuar");
@@ -185,6 +208,49 @@ export const demoBackend: Backend = {
 
   async getStore(slug) {
     return db().stores.find((s) => s.slug === slug) ?? null;
+  },
+
+  async listAnnouncements() {
+    const now = Date.now();
+    return announcements()
+      .filter((a) => isLive(a, now))
+      .sort(byPriority);
+  },
+
+  async isAdmin() {
+    const u = me();
+    return !!u && (db().admins ?? []).includes(u.id);
+  },
+
+  async allAnnouncements() {
+    requireAdmin();
+    return [...announcements()].sort(byPriority);
+  },
+
+  async saveAnnouncement(input) {
+    await wait();
+    requireAdmin();
+    const clean = normalizeAnnouncement(input);
+    const problem = validateAnnouncement(clean);
+    if (problem) throw new Error(problem);
+    const list = announcements();
+    const { id, ...fields } = clean;
+    let a = id ? list.find((x) => x.id === id) : undefined;
+    if (id && !a) throw new Error("Anuncio no encontrado");
+    if (a) Object.assign(a, fields);
+    else {
+      a = { ...fields, id: uid(), createdAt: now() };
+      list.push(a);
+    }
+    save();
+    return { ...a };
+  },
+
+  async deleteAnnouncement(id) {
+    requireAdmin();
+    const s = db();
+    s.announcements = announcements().filter((a) => a.id !== id);
+    save();
   },
 
   async recentActivity() {

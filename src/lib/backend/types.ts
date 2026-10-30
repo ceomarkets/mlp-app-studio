@@ -121,6 +121,29 @@ export type Withdrawal = {
 
 export type Wallet = { pending: number; available: number; withdrawn: number };
 
+export type AnnouncementTone = "promo" | "news" | "event" | "info";
+
+/** Anuncio de la plataforma que aparece en el leaderboard y en la banda. */
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  emoji: string;
+  image: string | null;
+  /** Ruta interna ("/tienda/...") o https://. */
+  link: string | null;
+  cta: string;
+  tone: AnnouncementTone;
+  /** 0 a 100: más alto, antes aparece. */
+  priority: number;
+  active: boolean;
+  startsAt: string;
+  endsAt: string | null;
+  createdAt: string;
+};
+
+export type AnnouncementInput = Omit<Announcement, "id" | "createdAt"> & { id?: string };
+
 /** Venta reciente anonimizada (sin datos del comprador). */
 export type Activity = {
   productId: string | null;
@@ -177,6 +200,16 @@ export interface Backend {
   getStore(slug: string): Promise<Store | null>;
   listReviews(productId: string): Promise<Review[]>;
   recentActivity(): Promise<Activity[]>;
+
+  // Anuncios
+  /** Anuncios vigentes (activos y dentro de sus fechas), para todo el público. */
+  listAnnouncements(): Promise<Announcement[]>;
+  /** true si la persona puede publicar anuncios. */
+  isAdmin(): Promise<boolean>;
+  /** Todos los anuncios, incluidos pausados, programados y vencidos (solo admin). */
+  allAnnouncements(): Promise<Announcement[]>;
+  saveAnnouncement(input: AnnouncementInput): Promise<Announcement>;
+  deleteAnnouncement(id: string): Promise<void>;
   addReview(productId: string, rating: number, comment: string): Promise<void>;
 
   // Vendedor

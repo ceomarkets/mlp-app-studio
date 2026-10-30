@@ -57,6 +57,19 @@ Flujo de pago: `create_order()` crea el pedido pendiente con precios reales → 
 - **Retiros**: se registran como `requested`. Págalos y márcalos `paid` en la tabla `withdrawals` (o `rejected`, que devuelve el saldo).
 - **Cancelaciones**: si una tienda cancela un ítem, el reembolso al comprador se hace desde el panel de Wompi.
 
+## Anuncios de la plataforma
+
+Los anuncios aparecen primero en el **leaderboard en vivo** de la portada (filtro «Anuncios») y en la banda de la cabecera. Se publican en **/admin/anuncios** (menú de cuenta → Administrar → Anuncios), con título, texto, ícono, enlace, botón, fechas de inicio y fin, prioridad y pausa.
+
+Solo los administradores pueden publicar. El primer administrador se agrega una vez desde el editor SQL de Lovable Cloud (o Supabase):
+
+```sql
+insert into public.admins (user_id)
+select id from auth.users where email = 'tu-correo@ejemplo.com';
+```
+
+En modo demo, la cuenta `demo@plazax.co` ya es administradora.
+
 ## Estructura
 
 ```

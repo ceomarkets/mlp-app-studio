@@ -1,10 +1,11 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Flame,
   Heart,
   Home,
   LogOut,
+  Megaphone,
   Package,
   ShieldCheck,
   ShoppingBag,
@@ -34,7 +35,7 @@ import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
 import { favorites, useCart, useFavorites } from "@/lib/client-state";
 import { discountPct, isNew } from "@/lib/feed";
 import { compact, cop } from "@/lib/plaza";
-import { useUser } from "@/lib/session";
+import { keys, useUser } from "@/lib/session";
 import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
@@ -173,6 +174,11 @@ function DemoBanner() {
 function UserMenu() {
   const { user, loading } = useUser();
   const navigate = useNavigate();
+  const admin = useQuery({
+    queryKey: keys.isAdmin,
+    queryFn: () => backend.isAdmin(),
+    enabled: !!user,
+  });
   if (loading) return <div className="size-9" />;
   if (!user)
     return (
@@ -223,6 +229,17 @@ function UserMenu() {
         <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
           <Users /> Mi red
         </DropdownMenuItem>
+        {admin.data && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Administrar
+            </DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/anuncios" })}>
+              <Megaphone /> Anuncios
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={async () => {

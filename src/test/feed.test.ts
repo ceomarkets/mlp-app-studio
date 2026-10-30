@@ -4,6 +4,7 @@ import {
   buildLeaderboard,
   buildSections,
   buildTicker,
+  temperatures,
   discountPct,
   isNew,
   relTime,
@@ -118,6 +119,18 @@ describe("leaderboard", () => {
     ]);
   });
 
+  it("comisiones: mayor % para el afiliado primero, con lo que gana en pesos", () => {
+    const list = [
+      prod("a", { price: 100000, commission: 0.1 }),
+      prod("b", { price: 50000, commission: 0.2 }),
+      prod("c", { price: 200000, commission: 0.1 }),
+    ];
+    const earn = buildLeaderboard(list, [], "earn", now);
+    expect(earn.map((i) => i.key)).toEqual(["earn-b", "earn-c", "earn-a"]);
+    expect(earn[0]).toMatchObject({ badge: "Gana 20%" });
+    expect(earn[0]!.metric).toContain("10.000");
+  });
+
   it("la mejor tienda de la semana sale de las ventas de 7 días", () => {
     const [first] = buildLeaderboard(products, activity, "stores", now);
     expect(first).toMatchObject({ kind: "store", rank: 1, metric: "3 ventas esta semana" });
@@ -125,6 +138,34 @@ describe("leaderboard", () => {
 
   it("'todo' intercala tipos", () => {
     const kinds = buildLeaderboard(products, activity, "all", now).map((i) => i.filter);
-    expect(kinds.slice(0, 5)).toEqual(["deals", "top", "new", "stores", "rated"]);
+    expect(kinds.slice(0, 6)).toEqual(["deals", "earn", "top", "new", "stores", "rated"]);
+  });
+});
+
+describe("temperatura", () => {
+  it("el más popular marca 200° y las ventas de la semana pesan más", () => {
+    const list = [prod("old", { soldCount: 20 }), prod("hot", { soldCount: 5 }), prod("cold")];
+    const week: Activity[] = [
+      {
+        productId: "hot",
+        productName: "h",
+        productEmoji: "📦",
+        city: "Pasto",
+        qty: 4,
+        paidAt: ago(2),
+      },
+      {
+        productId: "old",
+        productName: "o",
+        productEmoji: "📦",
+        city: "Pasto",
+        qty: 9,
+        paidAt: ago(30),
+      },
+    ];
+    const t = temperatures(list, week, now);
+    expect(t.get("hot")).toBe(200);
+    expect(t.get("old")).toBe(160);
+    expect(t.get("cold")).toBe(0);
   });
 });

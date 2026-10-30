@@ -19,6 +19,9 @@ export const keys = {
   affItems: ["user", "aff-items"] as const,
   wallet: ["user", "wallet"] as const,
   withdrawals: ["user", "withdrawals"] as const,
+  announcements: ["catalog", "announcements"] as const,
+  allAnnouncements: ["user", "announcements"] as const,
+  isAdmin: ["user", "admin"] as const,
 };
 
 export function useUser(): { user: Profile | null; loading: boolean } {

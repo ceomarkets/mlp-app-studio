@@ -1,5 +1,14 @@
 import { daysAgo, splitSale } from "@/lib/plaza";
-import type { Click, Order, OrderItem, Product, Review, Store, Withdrawal } from "./types";
+import type {
+  Announcement,
+  Click,
+  Order,
+  OrderItem,
+  Product,
+  Review,
+  Store,
+  Withdrawal,
+} from "./types";
 
 export type DemoUser = {
   id: string;
@@ -21,7 +30,74 @@ export type DemoState = {
   clicks: (Click & { affiliateId: string })[];
   withdrawals: (Withdrawal & { userId: string })[];
   reviews: (Review & { userId: string })[];
+  /** Anuncios de la plataforma (agregado después: puede faltar en datos viejos). */
+  announcements?: Announcement[];
+  /** Usuarios que pueden publicar anuncios. */
+  admins?: string[];
 };
+
+/** La cuenta demo administra los anuncios para poder probar la pantalla. */
+export const DEMO_ADMINS = ["u-demo"];
+
+export function seedAnnouncements(now = Date.now()): Announcement[] {
+  const base = { image: null, active: true, endsAt: null as string | null };
+  return [
+    {
+      ...base,
+      id: "a-fundadoras",
+      title: "Tiendas fundadoras: 0% de comisión",
+      body: "Abre tu tienda este mes y no pagas comisión de la plataforma.",
+      emoji: "🎉",
+      link: "/vendedores",
+      cta: "Abrir mi tienda",
+      tone: "promo",
+      priority: 90,
+      startsAt: daysAgo(3, now),
+      endsAt: daysAgo(-27, now),
+      createdAt: daysAgo(3, now),
+    },
+    {
+      ...base,
+      id: "a-feria",
+      title: "Feria artesanal de Pasto este sábado",
+      body: "Barniz, tejidos y café de la región. ¡Te esperamos!",
+      emoji: "🎪",
+      link: "/tienda/barniz-pasto",
+      cta: "Ver artesanías",
+      tone: "event",
+      priority: 70,
+      startsAt: daysAgo(1, now),
+      createdAt: daysAgo(1, now),
+    },
+    {
+      ...base,
+      id: "a-afiliados",
+      title: "Comparte y gana hasta 20%",
+      body: "Elige un producto, comparte tu enlace y cobra en Nequi.",
+      emoji: "💸",
+      link: "/afiliados",
+      cta: "Activar mi enlace",
+      tone: "news",
+      priority: 50,
+      startsAt: daysAgo(5, now),
+      createdAt: daysAgo(5, now),
+    },
+    {
+      ...base,
+      id: "a-pausado",
+      title: "Mantenimiento programado",
+      body: "Este anuncio está pausado: no se muestra al público.",
+      emoji: "🛠️",
+      link: null,
+      cta: "Ver más",
+      tone: "info",
+      priority: 10,
+      active: false,
+      startsAt: daysAgo(2, now),
+      createdAt: daysAgo(2, now),
+    },
+  ];
+}
 
 export const DEMO_EMAIL = "demo@plazax.co";
 export const DEMO_PASSWORD = "demo1234";
@@ -377,6 +453,8 @@ export function buildSeed(now = Date.now()): DemoState {
   return {
     version: 1,
     session: null,
+    announcements: seedAnnouncements(now),
+    admins: DEMO_ADMINS,
     users,
     stores,
     products,

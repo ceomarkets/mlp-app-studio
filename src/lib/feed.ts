@@ -2,8 +2,9 @@
  * Organización inteligente de la vitrina y de la banda de la cabecera.
  * Todo es puro (sin efectos) para poder probarlo y reutilizarlo.
  */
-import type { Activity, Product } from "@/lib/backend";
-import { cop } from "@/lib/plaza";
+import { byPriority, isLive, toneBadge } from "@/lib/announcements";
+import type { Activity, Announcement, Product } from "@/lib/backend";
+import { clampCommission, cop, splitSale } from "@/lib/plaza";
 
 const DAY = 86_400_000;
 export const NEW_DAYS = 14;
@@ -26,11 +27,13 @@ export function relTime(iso: string, now = Date.now()) {
   return d === 1 ? "ayer" : `hace ${d} días`;
 }
 
-export type TickerKind = "deal" | "new" | "hot" | "low" | "sale";
+export type TickerKind = "news" | "deal" | "new" | "hot" | "low" | "sale";
 export type TickerItem = {
   key: string;
   kind: TickerKind;
-  productId: string;
+  /** Producto al que lleva; null en los anuncios (usan `link`). */
+  productId: string | null;
+  link?: string | null;
   symbol: string;
   name: string;
   value: string;
@@ -59,6 +62,7 @@ export function buildTicker(
   products: Product[],
   activity: Activity[],
   now = Date.now(),
+  announcements: Announcement[] = [],
 ): TickerItem[] {
   const byId = new Map(products.map((p) => [p.id, p]));
   const base = (p: Product) => ({ productId: p.id, symbol: tickerSymbol(p.name), name: p.name });
@@ -127,7 +131,23 @@ export function buildTicker(
     });
 
   // Intercala las listas en ronda.
-  const lists = [deals, sales, fresh, hot, low];
+  // Anuncios de la plataforma: van primero en la ronda.
+  const news = announcements
+    .filter((a) => isLive(a, now))
+    .sort(byPriority)
+    .map<TickerItem>((a) => ({
+      key: `news-${a.id}`,
+      kind: "news",
+      productId: null,
+      link: a.link,
+      symbol: toneBadge(a.tone),
+      name: a.title,
+      value: a.body,
+      change: a.link ? `${a.cta} →` : "",
+      trend: "flat",
+    }));
+
+  const lists = [news, deals, sales, fresh, hot, low];
   const out: TickerItem[] = [];
   for (let i = 0; lists.some((l) => i < l.length); i++)
     for (const l of lists) if (l[i]) out.push(l[i]!);
@@ -189,14 +209,15 @@ export function buildSections(
 // ---------------------------------------------------------------------------
 // Leaderboard de la portada
 // ---------------------------------------------------------------------------
-export type BoardFilter = "all" | "new" | "deals" | "top" | "rated" | "stores";
+export type BoardFilter = "all" | "news" | "new" | "deals" | "earn" | "top" | "rated" | "stores";
+type ProductBoard = Exclude<BoardFilter, "all" | "stores" | "news">;
 
 type StoreInfo = Product["store"];
 export type BoardItem =
   | {
       kind: "product";
       key: string;
-      filter: Exclude<BoardFilter, "all" | "stores">;
+      filter: ProductBoard;
       rank: number;
       badge: string;
       metric: string;
@@ -212,10 +233,20 @@ export type BoardItem =
       store: StoreInfo;
       weekUnits: number;
       products: number;
+    }
+  | {
+      kind: "announcement";
+      key: string;
+      filter: "news";
+      rank: number;
+      badge: string;
+      metric: string;
+      announcement: Announcement;
     };
 
 /**
- * Arma el leaderboard: novedades, promociones, top ventas, mejor valorados y
+ * Arma el leaderboard: anuncios de la plataforma, novedades, promociones, comisiones para afiliados
+ * (lo que gana quien trae al comprador), top ventas, mejor valorados y
  * mejores tiendas de la semana (por unidades vendidas en 7 días, con el
  * histórico como desempate). "all" intercala todo.
  */
@@ -225,10 +256,11 @@ export function buildLeaderboard(
   filter: BoardFilter = "all",
   now = Date.now(),
   size = 8,
+  announcements: Announcement[] = [],
 ): BoardItem[] {
   const live = products.filter((p) => p.active && p.stock > 0);
   const item = (
-    filter: Exclude<BoardFilter, "all" | "stores">,
+    filter: ProductBoard,
     p: Product,
     i: number,
     badge: string,
@@ -255,6 +287,21 @@ export function buildLeaderboard(
     .slice(0, size)
     .map((p, i) =>
       item("deals", p, i, `−${discountPct(p)}%`, `Ahorras ${cop(p.compareAtPrice! - p.price)}`),
+    );
+
+  // Comisiones: mayor % para el afiliado primero; a igual %, más pesos por venta.
+  const earn = [...live]
+    .map((p) => ({ p, amount: splitSale(p.price, p.commission).affiliate }))
+    .sort((a, b) => b.p.commission - a.p.commission || b.amount - a.amount)
+    .slice(0, size)
+    .map(({ p, amount }, i) =>
+      item(
+        "earn",
+        p,
+        i,
+        `Gana ${Math.round(clampCommission(p.commission) * 100)}%`,
+        `Ganas ${cop(amount)} por venta`,
+      ),
     );
 
   const top = [...live]
@@ -301,17 +348,55 @@ export function buildLeaderboard(
       products: s.products,
     }));
 
+  // Anuncios vigentes de la plataforma, por prioridad.
+  const news = announcements
+    .filter((a) => isLive(a, now))
+    .sort(byPriority)
+    .slice(0, size)
+    .map<BoardItem>((a, i) => ({
+      kind: "announcement",
+      key: `news-${a.id}`,
+      filter: "news",
+      rank: i + 1,
+      badge: toneBadge(a.tone),
+      metric: a.cta,
+      announcement: a,
+    }));
+
   const lists: Record<Exclude<BoardFilter, "all">, BoardItem[]> = {
+    news,
     new: fresh,
     deals,
+    earn,
     top,
     rated,
     stores: bestStores,
   };
   if (filter !== "all") return lists[filter];
-  const order = [deals, top, fresh, bestStores, rated];
+  const order = [news, deals, earn, top, fresh, bestStores, rated];
   const out: BoardItem[] = [];
   for (let i = 0; order.some((l) => i < l.length); i++)
     for (const l of order) if (l[i]) out.push(l[i]!);
   return out;
+}
+
+/**
+ * Temperatura (estilo Hotmart): popularidad relativa calculada con datos reales
+ * — ventas totales, ventas de los últimos 7 días (pesan más) y reseñas.
+ * El producto más caliente de la plaza marca 200°; sin actividad, 0°.
+ */
+export const MAX_TEMP = 200;
+export function temperatures(products: Product[], activity: Activity[], now = Date.now()) {
+  const week = new Map<string, number>();
+  for (const a of activity) {
+    if (!a.productId || now - Date.parse(a.paidAt) > 7 * DAY) continue;
+    week.set(a.productId, (week.get(a.productId) ?? 0) + a.qty);
+  }
+  const heat = new Map(
+    products.map((p) => [p.id, p.soldCount + 5 * (week.get(p.id) ?? 0) + p.ratingCount]),
+  );
+  const max = Math.max(0, ...heat.values());
+  return new Map(
+    products.map((p) => [p.id, max ? Math.round((heat.get(p.id)! / max) * MAX_TEMP) : 0]),
+  );
 }

@@ -1,6 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { BadgePercent, Flame, ShoppingBag, Sparkles, Timer, type LucideIcon } from "lucide-react";
+import {
+  BadgePercent,
+  Flame,
+  Megaphone,
+  ShoppingBag,
+  Sparkles,
+  Timer,
+  type LucideIcon,
+} from "lucide-react";
+import { useOpenAnnouncement } from "@/components/AnnouncementCard";
 import { useMemo } from "react";
 import { backend } from "@/lib/backend";
 import { buildTicker, type TickerItem, type TickerKind } from "@/lib/feed";
@@ -8,6 +17,7 @@ import { keys } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const KIND: Record<TickerKind, { icon: LucideIcon; tone: string; label: string }> = {
+  news: { icon: Megaphone, tone: "text-sun", label: "Anuncio" },
   deal: { icon: BadgePercent, tone: "text-[oklch(0.86_0.17_150)]", label: "Oferta" },
   sale: { icon: ShoppingBag, tone: "text-[oklch(0.86_0.17_150)]", label: "Venta" },
   new: { icon: Sparkles, tone: "text-sun", label: "Nuevo" },
@@ -27,9 +37,15 @@ export function Ticker() {
     queryFn: () => backend.recentActivity(),
     refetchInterval: 60_000,
   });
+  const announcements = useQuery({
+    queryKey: keys.announcements,
+    queryFn: () => backend.listAnnouncements(),
+    refetchInterval: 60_000,
+  });
   const items = useMemo(
-    () => buildTicker(products.data ?? [], activity.data ?? []),
-    [products.data, activity.data],
+    () =>
+      buildTicker(products.data ?? [], activity.data ?? [], Date.now(), announcements.data ?? []),
+    [products.data, activity.data, announcements.data],
   );
 
   if (!items.length) return <div className="h-9 bg-ink" aria-hidden />;
@@ -63,21 +79,58 @@ export function Ticker() {
 function TickerEntry({ it, tabbable }: { it: TickerItem; tabbable: boolean }) {
   const k = KIND[it.kind];
   const Icon = k.icon;
+  const openAnnouncement = useOpenAnnouncement();
+  const cls =
+    "flex items-center gap-2 whitespace-nowrap px-4 text-xs transition hover:bg-ink-foreground/10 focus-visible:bg-ink-foreground/10 focus-visible:outline-none";
+  const content = (
+    <>
+      <Icon className={cn("size-3.5", k.tone)} aria-hidden />
+      <span className={cn("font-mono font-bold tracking-wide", it.kind === "news" && "text-sun")}>
+        {it.symbol}
+      </span>
+      <span
+        className={cn(
+          "truncate",
+          it.kind === "news" ? "max-w-[28ch] font-semibold" : "max-w-[16ch] opacity-75",
+        )}
+      >
+        {it.name}
+      </span>
+      <span
+        className={cn(it.kind === "news" ? "max-w-[32ch] truncate opacity-75" : "font-semibold")}
+      >
+        {it.value}
+      </span>
+      {it.change && <span className={cn("font-mono font-bold", k.tone)}>{it.change}</span>}
+    </>
+  );
   return (
     <li className="flex items-center border-r border-ink-foreground/10">
-      <Link
-        to="/producto/$id"
-        params={{ id: it.productId }}
-        tabIndex={tabbable ? 0 : -1}
-        title={`${k.label}: ${it.name}`}
-        className="flex items-center gap-2 whitespace-nowrap px-4 text-xs transition hover:bg-ink-foreground/10 focus-visible:bg-ink-foreground/10 focus-visible:outline-none"
-      >
-        <Icon className={cn("size-3.5", k.tone)} aria-hidden />
-        <span className="font-mono font-bold tracking-wide">{it.symbol}</span>
-        <span className="max-w-[16ch] truncate opacity-75">{it.name}</span>
-        <span className="font-semibold">{it.value}</span>
-        <span className={cn("font-mono font-bold", k.tone)}>{it.change}</span>
-      </Link>
+      {it.productId ? (
+        <Link
+          to="/producto/$id"
+          params={{ id: it.productId }}
+          tabIndex={tabbable ? 0 : -1}
+          title={`${k.label}: ${it.name}`}
+          className={cls}
+        >
+          {content}
+        </Link>
+      ) : it.link ? (
+        <button
+          type="button"
+          tabIndex={tabbable ? 0 : -1}
+          title={`${k.label}: ${it.name}`}
+          onClick={() => openAnnouncement({ link: it.link ?? null })}
+          className={cls}
+        >
+          {content}
+        </button>
+      ) : (
+        <span title={`${k.label}: ${it.name}`} className={cls}>
+          {content}
+        </span>
+      )}
     </li>
   );
 }
