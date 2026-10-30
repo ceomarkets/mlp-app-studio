@@ -47,7 +47,16 @@ const mobileNav = [
   { to: "/cuenta", label: "Pedidos", icon: Package },
 ] as const;
 
-export function Shell({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+export function Shell({
+  children,
+  wide = false,
+  top,
+}: {
+  children: ReactNode;
+  wide?: boolean;
+  /** Contenido a todo el ancho justo debajo de la cabecera (p. ej. el leaderboard). */
+  top?: ReactNode;
+}) {
   return (
     <div className="flex min-h-screen flex-col pb-16 md:pb-0">
       {IS_DEMO && <DemoBanner />}
@@ -76,6 +85,7 @@ export function Shell({ children, wide = false }: { children: ReactNode; wide?: 
           </div>
         </div>
       </header>
+      {top}
       <main
         className={cn(
           "mx-auto w-full flex-1 px-4 py-6 md:px-5 md:py-10",

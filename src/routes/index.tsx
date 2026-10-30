@@ -122,7 +122,7 @@ function Plaza() {
   const cats = ["Todo", ...CATEGORIES.filter((c) => counts.has(c))];
 
   return (
-    <Shell wide>
+    <Shell wide top={<Leaderboard products={all.data ?? []} />}>
       {/* Portada: una idea, una búsqueda, una oferta */}
       <section className="relative overflow-hidden rounded-3xl bg-ink p-5 text-ink-foreground md:p-10">
         <div className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-primary/30 blur-3xl" />
@@ -216,8 +216,6 @@ function Plaza() {
         </section>
       ) : (
         <>
-          <Leaderboard products={all.data ?? []} />
-
           {sections.deals.length > 0 && (
             <Rail
               tone="hot"

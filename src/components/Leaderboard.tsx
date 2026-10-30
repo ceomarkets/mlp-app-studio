@@ -134,10 +134,10 @@ export function Leaderboard({ products }: { products: Product[] }) {
   return (
     <section
       aria-labelledby="board-title"
-      className="-mx-4 mt-8 border-y border-slate-800 bg-slate-900 py-4 font-sans text-slate-100 md:mx-0 md:rounded-3xl md:border"
+      className="w-full border-y border-slate-800 bg-slate-900 py-4 font-sans text-slate-100"
     >
       {/* Encabezado con filtros */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-4">
+      <div className="mx-auto mb-3 flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4">
         <div className="flex items-center gap-2">
           <span className="relative flex size-3">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75 motion-reduce:hidden" />
