@@ -133,7 +133,7 @@ function Manager() {
           <div>
             <h1 className="text-3xl font-extrabold">Anuncios</h1>
             <p className="text-sm text-muted-foreground">
-              Aparecen en el leaderboard de la portada y en la banda de arriba.
+              Aparecen integrados en el leaderboard en vivo de la portada.
             </p>
           </div>
         </div>
@@ -286,8 +286,8 @@ function Editor({
         </DialogHeader>
 
         {/* Vista previa en la cinta oscura */}
-        <div className="rounded-2xl bg-ink p-4">
-          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-ink-foreground/70">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-300">
             <Eye className="size-3.5" /> Así se verá
           </p>
           <AnnouncementCard as="div" a={f} />

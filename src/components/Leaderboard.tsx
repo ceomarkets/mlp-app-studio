@@ -45,15 +45,15 @@ const FILTERS: { id: BoardFilter; label: string; icon: LucideIcon }[] = [
   { id: "stores", label: "Tiendas top", icon: Store },
 ];
 
-/** Insignias translúcidas con borde, como en el diseño de la cinta. */
+/** Insignias translúcidas con borde: mismos colores que el código de referencia. */
 const BADGE: Record<Exclude<BoardFilter, "all">, string> = {
-  news: "border-indigo-400/30 bg-indigo-500/20 text-indigo-300",
-  deals: "border-red-400/30 bg-red-500/20 text-red-300",
-  earn: "border-teal-400/30 bg-teal-500/20 text-teal-300",
-  new: "border-emerald-400/30 bg-emerald-500/20 text-emerald-300",
-  top: "border-amber-400/30 bg-amber-500/20 text-amber-300",
-  rated: "border-purple-400/30 bg-purple-500/20 text-purple-300",
-  stores: "border-sky-400/30 bg-sky-500/20 text-sky-300",
+  news: "border-indigo-500/30 bg-indigo-500/20 text-indigo-400",
+  deals: "border-red-500/30 bg-red-500/20 text-red-400",
+  earn: "border-emerald-500/30 bg-emerald-500/20 text-emerald-400",
+  new: "border-indigo-500/30 bg-indigo-500/20 text-indigo-400",
+  top: "border-amber-500/30 bg-amber-500/20 text-amber-400",
+  rated: "border-purple-500/30 bg-purple-500/20 text-purple-400",
+  stores: "border-sky-500/30 bg-sky-500/20 text-sky-400",
 };
 
 function badgeText(it: BoardItem) {
@@ -61,13 +61,13 @@ function badgeText(it: BoardItem) {
     case "news":
       return it.badge;
     case "deals":
-      return it.kind === "product" ? `PROMO ${discountPct(it.product)}% OFF` : "PROMO";
+      return it.kind === "product" ? `OFERTA −${discountPct(it.product)}%` : "OFERTA";
     case "earn":
       return it.kind === "product"
-        ? `GANA ${Math.round(clampCommission(it.product.commission) * 100)}% POR REFERIDO`
+        ? `${Math.round(clampCommission(it.product.commission) * 100)}% COMISIÓN`
         : "COMISIÓN";
     case "new":
-      return "RECIÉN SUBIDO";
+      return "RECIÉN LANZADO";
     case "top":
       return `TOP #${it.rank} VENTAS`;
     case "rated":
@@ -134,7 +134,7 @@ export function Leaderboard({ products }: { products: Product[] }) {
   return (
     <section
       aria-labelledby="board-title"
-      className="-mx-4 mt-8 border-y border-ink-foreground/10 bg-ink py-4 text-ink-foreground md:mx-0 md:rounded-3xl md:border"
+      className="-mx-4 mt-8 border-y border-slate-800 bg-slate-900 py-4 font-sans text-slate-100 md:mx-0 md:rounded-3xl md:border"
     >
       {/* Encabezado con filtros */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-4">
@@ -145,7 +145,7 @@ export function Leaderboard({ products }: { products: Product[] }) {
           </span>
           <h2
             id="board-title"
-            className="text-xs font-bold uppercase tracking-widest text-ink-foreground/80 sm:text-sm"
+            className="text-xs font-bold uppercase tracking-widest text-slate-300 sm:text-sm"
           >
             Leaderboard en vivo
           </h2>
@@ -166,8 +166,8 @@ export function Leaderboard({ products }: { products: Product[] }) {
                 className={cn(
                   "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 font-medium transition",
                   filter === f.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-ink-foreground/10 text-ink-foreground/80 hover:bg-ink-foreground/20",
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-800 text-slate-300 hover:bg-slate-700",
                 )}
               >
                 <f.icon className="size-3.5" /> {f.label}
@@ -178,7 +178,7 @@ export function Leaderboard({ products }: { products: Product[] }) {
             onClick={() => setPaused(!paused)}
             aria-pressed={paused}
             aria-label={paused ? "Reanudar" : "Pausar"}
-            className="grid size-7 shrink-0 place-items-center rounded-full bg-ink-foreground/10 transition hover:bg-ink-foreground/20"
+            className="grid size-7 shrink-0 place-items-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700"
           >
             {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
           </button>
@@ -221,15 +221,15 @@ export function Leaderboard({ products }: { products: Product[] }) {
           </div>
         </div>
       ) : (
-        <p className="px-4 py-2 text-sm text-ink-foreground/60">No hay elementos</p>
+        <p className="px-4 py-2 text-sm text-slate-400">No hay elementos en esta categoría</p>
       )}
 
       {filter === "earn" && (
-        <p className="mt-3 px-4 text-right text-xs text-ink-foreground/70">
+        <p className="mt-3 px-4 text-right text-xs text-slate-400">
           Comparte un producto y cobra cuando alguien compre.{" "}
           <Link
             to="/afiliados"
-            className="inline-flex items-center gap-0.5 font-semibold text-sun hover:underline"
+            className="inline-flex items-center gap-0.5 font-semibold text-indigo-400 hover:underline"
           >
             Activar mi enlace <ArrowRight className="size-3" />
           </Link>
@@ -261,15 +261,15 @@ function BoardCard({
       type="button"
       onClick={onSelect}
       tabIndex={tabbable ? 0 : -1}
-      className="group w-80 shrink-0 cursor-pointer rounded-xl border border-ink-foreground/10 bg-ink-foreground/5 p-3 text-left transition-all duration-300 hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 focus-visible:border-primary focus-visible:outline-none"
+      className="group w-80 shrink-0 cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-3 text-left transition-all duration-300 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 focus-visible:border-indigo-500 focus-visible:outline-none"
     >
       <span className="flex items-center gap-3">
         {/* Imagen con temperatura y descuento */}
-        <span className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-black/20">
+        <span className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-slate-950">
           {p ? (
             <ProductImage
               p={p}
-              className="size-full rounded-none text-4xl transition-transform duration-300 group-hover:scale-105"
+              className="size-full rounded-none bg-slate-950 text-4xl transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <span className="grid size-full place-items-center text-4xl">
@@ -303,17 +303,17 @@ function BoardCard({
               {badgeText(it)}
             </span>
             {p && p.ratingCount > 0 && (
-              <span className="flex shrink-0 items-center gap-1 text-[10px] text-ink-foreground/60">
+              <span className="flex shrink-0 items-center gap-1 text-[10px] text-slate-400">
                 <Star className="size-3 fill-amber-400 text-amber-400" /> {p.rating.toFixed(1)}
               </span>
             )}
           </span>
 
-          <span className="block truncate text-xs font-bold text-ink-foreground transition-colors group-hover:text-sun">
+          <span className="block truncate text-xs font-bold text-white transition-colors group-hover:text-indigo-400">
             {p ? p.name : it.kind === "store" && it.store.name}
           </span>
-          <span className="mb-1 flex items-center gap-1 truncate text-[10px] text-ink-foreground/60">
-            <Store className="size-3 shrink-0 opacity-70" />
+          <span className="mb-1 flex items-center gap-1 truncate text-[10px] text-slate-400">
+            <Store className="size-3 shrink-0 text-slate-500" />
             {p
               ? p.store.name
               : it.kind === "store" && `${it.store.city} · ${it.products} productos`}
@@ -321,25 +321,23 @@ function BoardCard({
 
           {p ? (
             /* Datos financieros: precio y lo que gana quien recomienda */
-            <span className="mt-1 flex items-center justify-between rounded-lg border border-ink-foreground/10 bg-black/25 p-1.5">
+            <span className="mt-1 flex items-center justify-between rounded-lg border border-slate-800/80 bg-slate-950/80 p-1.5">
               <span className="flex flex-col">
-                <span className="text-[9px] font-medium uppercase text-ink-foreground/50">
-                  Precio
-                </span>
-                <span className="text-xs font-bold text-ink-foreground">{cop(p.price)}</span>
+                <span className="text-[9px] font-medium uppercase text-slate-500">Precio</span>
+                <span className="text-xs font-bold text-slate-300">{cop(p.price)}</span>
               </span>
-              <span className="h-6 w-px bg-ink-foreground/15" aria-hidden />
+              <span className="h-6 w-px bg-slate-800" aria-hidden />
               <span className="flex flex-col text-right">
-                <span className="flex items-center justify-end gap-0.5 text-[9px] font-bold uppercase text-emerald-300">
+                <span className="flex items-center justify-end gap-0.5 text-[9px] font-bold uppercase text-emerald-400">
                   <HandCoins className="size-3" /> Ganas ({rate}%)
                 </span>
-                <span className="text-xs font-extrabold text-emerald-300">
+                <span className="text-xs font-extrabold text-emerald-400">
                   {cop(splitSale(p.price, p.commission).affiliate)}
                 </span>
               </span>
             </span>
           ) : (
-            <span className="text-[10px] font-semibold text-sun">{it.metric}</span>
+            <span className="text-[10px] font-semibold text-indigo-400">{it.metric}</span>
           )}
         </span>
       </span>

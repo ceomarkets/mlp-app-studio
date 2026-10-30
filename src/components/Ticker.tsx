@@ -37,15 +37,10 @@ export function Ticker() {
     queryFn: () => backend.recentActivity(),
     refetchInterval: 60_000,
   });
-  const announcements = useQuery({
-    queryKey: keys.announcements,
-    queryFn: () => backend.listAnnouncements(),
-    refetchInterval: 60_000,
-  });
+  // Los anuncios viven en el leaderboard de la portada, no en esta banda.
   const items = useMemo(
-    () =>
-      buildTicker(products.data ?? [], activity.data ?? [], Date.now(), announcements.data ?? []),
-    [products.data, activity.data, announcements.data],
+    () => buildTicker(products.data ?? [], activity.data ?? []),
+    [products.data, activity.data],
   );
 
   if (!items.length) return <div className="h-9 bg-ink" aria-hidden />;

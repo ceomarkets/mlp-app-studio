@@ -59,7 +59,7 @@ Flujo de pago: `create_order()` crea el pedido pendiente con precios reales → 
 
 ## Anuncios de la plataforma
 
-Los anuncios aparecen primero en el **leaderboard en vivo** de la portada (filtro «Anuncios») y en la banda de la cabecera. Se publican en **/admin/anuncios** (menú de cuenta → Administrar → Anuncios), con título, texto, ícono, enlace, botón, fechas de inicio y fin, prioridad y pausa.
+Los anuncios aparecen primero en el **leaderboard en vivo** de la portada, intercalados con los productos y también en su filtro «Anuncios». Se publican en **/admin/anuncios** (menú de cuenta → Administrar → Anuncios), con título, texto, ícono, enlace, botón, fechas de inicio y fin, prioridad y pausa.
 
 Solo los administradores pueden publicar. El primer administrador se agrega una vez desde el editor SQL de Lovable Cloud (o Supabase):
 
