@@ -41,6 +41,32 @@ export type FlashSale = {
 };
 export type FlashSaleInput = Omit<FlashSale, "id"> & { id?: string };
 
+export type Raffle = {
+  id: string;
+  title: string;
+  prize: string;
+  prizeImage: string | null;
+  prizeValue: number | null;
+  /** Número de autorización de Coljuegos (obligatorio para publicar). */
+  coljuegosAuth: string | null;
+  /** Bases del sorteo (https:// o ruta interna). */
+  termsUrl: string | null;
+  minUnits: number;
+  startsAt: string;
+  endsAt: string;
+  active: boolean;
+  entriesCount: number | null;
+  drawnAt: string | null;
+};
+export type RaffleInput = Omit<Raffle, "id" | "entriesCount" | "drawnAt"> & { id?: string };
+export type RaffleWinner = {
+  orderReference: string;
+  winnerEmail: string;
+  winnerName?: string;
+  winnerPhone?: string | null;
+  entries?: number;
+};
+
 export type AccountType = "comprador" | "afiliado" | "empresa";
 
 export type AffiliateStatus = "pending" | "approved" | "rejected";
@@ -350,6 +376,10 @@ export interface Backend {
   saveAnnouncement(input: AnnouncementInput): Promise<Announcement>;
   deleteAnnouncement(id: string): Promise<void>;
   adminStores(): Promise<AdminStore[]>;
+  listRaffles(): Promise<Raffle[]>;
+  saveRaffle(input: RaffleInput): Promise<void>;
+  drawRaffle(id: string): Promise<RaffleWinner>;
+  raffleWinner(id: string): Promise<RaffleWinner | null>;
   listCoupons(): Promise<Coupon[]>;
   saveCoupon(input: CouponInput): Promise<void>;
   listFlashSales(): Promise<FlashSale[]>;
@@ -394,6 +424,10 @@ export interface Backend {
   ): Promise<{ orderId: string; reference: string; total: number }>;
   /** Valida un cupón para quien compra (error con el motivo si no aplica). */
   checkCoupon(code: string): Promise<CouponRule>;
+  /** Sorteo publicado (abierto, o realizado hace menos de 30 días). */
+  currentRaffle(): Promise<Raffle | null>;
+  myRaffleEntries(raffleId: string): Promise<number>;
+  iWonRaffle(raffleId: string): Promise<boolean>;
   /** Venta flash vigente (o null). */
   activeFlashSale(): Promise<FlashSale | null>;
   myOrders(): Promise<Order[]>;

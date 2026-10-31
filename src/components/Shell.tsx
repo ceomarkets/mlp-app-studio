@@ -20,7 +20,7 @@ import type { ReactNode } from "react";
 import { AuthDialog, openAuth } from "@/components/AuthDialog";
 import { BridgeLogo } from "@/components/BridgeLogo";
 import { CartSheet, openCart } from "@/components/CartSheet";
-import { RewardsBar, RewardsModal, useRewards } from "@/components/Rewards";
+import { RewardsBar, RewardsModal, useRaffle, useRewards } from "@/components/Rewards";
 import { ShareButton } from "@/components/ShareSheet";
 import { FlashSaleBanner } from "@/components/FlashSaleBanner";
 import { LiveActivityToast, SiteFooter } from "@/components/SiteFooter";
@@ -163,6 +163,8 @@ export function Shell({
 
 function RewardsButton() {
   const r = useRewards();
+  const { raffle, open } = useRaffle();
+  const goal = open && raffle ? raffle.minUnits : BUNDLE_MIN;
   return (
     <button
       onClick={rewardsUI.open}
@@ -171,7 +173,7 @@ function RewardsButton() {
       <i className="fa-solid fa-gift text-amber-500" />
       <span className="hidden sm:inline">Premio</span>
       <span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] text-amber-800">
-        {Math.min(r.count, BUNDLE_MIN)}/{BUNDLE_MIN}
+        {Math.min(r.count, goal)}/{goal}
       </span>
     </button>
   );
@@ -300,6 +302,9 @@ function UserMenu() {
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/promos" })}>
               <Flame /> Ventas flash y cupones
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/sorteo" })}>
+              <Sparkles /> Sorteo
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/tiendas" })}>
               <StoreIcon /> Tiendas

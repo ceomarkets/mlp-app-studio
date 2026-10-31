@@ -6,6 +6,7 @@ import type {
   Click,
   Coupon,
   Dispute,
+  Raffle,
   FlashSale,
   Order,
   OrderItem,
@@ -53,6 +54,8 @@ export type DemoState = {
   disputes?: (Dispute & { ip: string | null })[];
   affiliations?: DemoAffiliation[];
   coupons?: Coupon[];
+  raffles?: Raffle[];
+  raffleDraws?: { raffleId: string; orderId: string; userId: string; drawnAt: string }[];
   flashSales?: FlashSale[];
   /** Usuarios suspendidos. */
   banned?: string[];

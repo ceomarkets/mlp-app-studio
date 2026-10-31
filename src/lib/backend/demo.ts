@@ -15,7 +15,16 @@ import {
 } from "@/lib/announcements";
 import { canDispute, validateDispute } from "@/lib/disputes";
 import { buildSeed, DEMO_ADMINS, seedAnnouncements, type DemoState } from "./seed";
-import type { Backend, Dispute, OrderItem, Product, ProductFilter, Profile, Store } from "./types";
+import type {
+  Backend,
+  Dispute,
+  OrderItem,
+  Product,
+  ProductFilter,
+  Profile,
+  Raffle,
+  Store,
+} from "./types";
 
 /**
  * Backend local para desarrollar sin credenciales.
@@ -53,6 +62,8 @@ function upgrade(s: DemoState) {
   for (const p of s.products) p.promoVideo ??= null;
   s.affiliations ??= [];
   s.coupons ??= [];
+  s.raffles ??= [];
+  s.raffleDraws ??= [];
   s.flashSales ??= [];
   for (const o of s.orders) {
     o.couponDiscount ??= 0;
@@ -68,6 +79,23 @@ function upgrade(s: DemoState) {
   s.disputes ??= [];
   s.banned ??= [];
   s.evidenceFiles ??= {};
+}
+
+/** Pedidos que participan: igual que raffle_candidates() en la base de datos. */
+function raffleCandidates(r: Raffle) {
+  const s = db();
+  return s.orders
+    .filter(
+      (o) =>
+        o.status === "paid" &&
+        o.paidAt &&
+        o.paidAt >= r.startsAt &&
+        o.paidAt < r.endsAt &&
+        s.items
+          .filter((i) => i.orderId === o.id && i.fulfillment !== "cancelled")
+          .reduce((t, i) => t + i.qty, 0) >= r.minUnits,
+    )
+    .map((o) => ({ orderId: o.id, buyerId: o.buyerId, reference: o.reference }));
 }
 
 function couponUses(id: string, user?: string) {
@@ -998,6 +1026,99 @@ export const demoBackend: Backend = {
       ...rule
     } = usableCoupon(code, u.id);
     return rule;
+  },
+
+  async currentRaffle() {
+    const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+    const t = new Date().toISOString();
+    return (
+      (db().raffles ?? [])
+        .filter((r) => r.active && r.startsAt <= t && r.endsAt > since)
+        .sort((a, b) => b.endsAt.localeCompare(a.endsAt))[0] ?? null
+    );
+  },
+
+  async myRaffleEntries(id) {
+    const u = me();
+    const r = db().raffles?.find((x) => x.id === id);
+    return u && r ? raffleCandidates(r).filter((c) => c.buyerId === u.id).length : 0;
+  },
+
+  async iWonRaffle(id) {
+    const u = me();
+    return !!u && !!db().raffleDraws?.some((d) => d.raffleId === id && d.userId === u.id);
+  },
+
+  async listRaffles() {
+    requireAdmin();
+    return [...(db().raffles ?? [])].sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  },
+
+  async saveRaffle({ id, ...input }) {
+    await wait();
+    requireAdmin();
+    const s = db();
+    if (input.title.trim().length < 3 || input.prize.trim().length < 3)
+      throw new Error("Escribe el título y el premio");
+    if (Date.parse(input.endsAt) <= Date.parse(input.startsAt))
+      throw new Error("La fecha de cierre debe ser posterior al inicio");
+    if (input.active && (!input.coljuegosAuth?.trim() || !input.termsUrl?.trim()))
+      throw new Error(
+        "Para publicar el sorteo necesitas el número de autorización de Coljuegos y las bases",
+      );
+    const row = {
+      ...input,
+      coljuegosAuth: input.coljuegosAuth?.trim() || null,
+      termsUrl: input.termsUrl?.trim() || null,
+    };
+    const prev = id ? s.raffles!.find((r) => r.id === id) : undefined;
+    if (prev) Object.assign(prev, row);
+    else s.raffles!.unshift({ ...row, id: uid(), entriesCount: null, drawnAt: null });
+    save();
+  },
+
+  async drawRaffle(id) {
+    await wait();
+    requireAdmin();
+    const s = db();
+    const r = s.raffles?.find((x) => x.id === id);
+    if (!r) throw new Error("Sorteo no encontrado");
+    if (!r.active) throw new Error("El sorteo no está publicado");
+    if (r.drawnAt) throw new Error("Este sorteo ya se realizó");
+    if (Date.parse(r.endsAt) > Date.now()) throw new Error("El sorteo aún no cierra");
+    const list = raffleCandidates(r);
+    if (!list.length) throw new Error("No hay compras participantes");
+    const buf = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(buf);
+    const pick = list[buf[0]! % list.length]!;
+    r.drawnAt = now();
+    r.entriesCount = list.length;
+    s.raffleDraws!.push({
+      raffleId: id,
+      orderId: pick.orderId,
+      userId: pick.buyerId,
+      drawnAt: r.drawnAt,
+    });
+    save();
+    return {
+      orderReference: pick.reference,
+      winnerEmail: s.users.find((u) => u.id === pick.buyerId)?.email ?? "",
+      entries: list.length,
+    };
+  },
+
+  async raffleWinner(id) {
+    requireAdmin();
+    const s = db();
+    const d = s.raffleDraws?.find((x) => x.raffleId === id);
+    if (!d) return null;
+    const u = s.users.find((x) => x.id === d.userId);
+    return {
+      orderReference: s.orders.find((o) => o.id === d.orderId)?.reference ?? "",
+      winnerEmail: u?.email ?? "",
+      winnerName: u?.fullName ?? "",
+      winnerPhone: u?.phone ?? null,
+    };
   },
 
   async activeFlashSale() {

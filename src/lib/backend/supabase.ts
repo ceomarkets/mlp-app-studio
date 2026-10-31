@@ -10,6 +10,7 @@ import type {
   AffiliateRequest,
   Click,
   Coupon,
+  Raffle,
   Dispute,
   FlashSale,
   DisputeAudit,
@@ -127,6 +128,22 @@ const toItem = (r: Row): OrderItem => ({
   createdAt: r.created_at,
 });
 
+const toRaffle = (r: Row): Raffle => ({
+  id: r.id,
+  title: r.title,
+  prize: r.prize,
+  prizeImage: r.prize_image,
+  prizeValue: r.prize_value,
+  coljuegosAuth: r.coljuegos_auth,
+  termsUrl: r.terms_url,
+  minUnits: r.min_units,
+  startsAt: r.starts_at,
+  endsAt: r.ends_at,
+  active: r.active,
+  entriesCount: r.entries_count,
+  drawnAt: r.drawn_at,
+});
+
 const toFlash = (r: Row): FlashSale => ({
   id: r.id,
   title: r.title,
@@ -185,6 +202,9 @@ function humanize(msg: string) {
   if (msg.includes("User already registered")) return "Ya existe una cuenta con ese correo";
   if (msg.includes("Email not confirmed")) return "Confirma tu correo antes de entrar";
   if (msg.includes("Password should be")) return "La contraseña debe tener al menos 6 caracteres";
+  if (msg.includes("raffle_authorized"))
+    return "Para publicar el sorteo necesitas el número de autorización de Coljuegos y las bases";
+  if (msg.includes("raffle_dates")) return "La fecha de cierre debe ser posterior al inicio";
   if (msg.includes("coupons_code_key")) return "Ya existe un cupón con ese código";
   if (msg.includes("coupons_code_check")) return "Código: 3 a 20 letras, números o guiones";
   if (msg.includes("flash_dates") || msg.includes("coupon_dates"))
@@ -847,6 +867,78 @@ export const supabaseBackend: Backend = {
       minSubtotal: r.min_subtotal,
       endsAt: r.ends_at,
     };
+  },
+
+  async currentRaffle() {
+    const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+    const { data, error } = await untyped
+      .from("raffles")
+      .select("*")
+      .eq("active", true)
+      .lte("starts_at", new Date().toISOString())
+      .gt("ends_at", since)
+      .order("ends_at", { ascending: false })
+      .limit(1);
+    if (error || !data?.[0]) return null;
+    return toRaffle(data[0]);
+  },
+
+  async myRaffleEntries(id) {
+    if (!(await currentUser())) return 0;
+    const { data, error } = await untyped.rpc("my_raffle_entries", { p_raffle: id });
+    return error ? 0 : (data as number);
+  },
+
+  async iWonRaffle(id) {
+    if (!(await currentUser())) return false;
+    const { data, error } = await untyped.rpc("i_won_raffle", { p_raffle: id });
+    return !error && data === true;
+  },
+
+  async listRaffles() {
+    const rows = ok(
+      await untyped.from("raffles").select("*").order("starts_at", { ascending: false }),
+    ) as Row[];
+    return rows.map(toRaffle);
+  },
+
+  async saveRaffle({ id, ...r }) {
+    const row = {
+      title: r.title.trim(),
+      prize: r.prize.trim(),
+      prize_image: r.prizeImage?.trim() || null,
+      prize_value: r.prizeValue,
+      coljuegos_auth: r.coljuegosAuth?.trim() || null,
+      terms_url: r.termsUrl?.trim() || null,
+      min_units: r.minUnits,
+      starts_at: r.startsAt,
+      ends_at: r.endsAt,
+      active: r.active,
+    };
+    ok(
+      id
+        ? await untyped.from("raffles").update(row).eq("id", id)
+        : await untyped.from("raffles").insert(row),
+    );
+  },
+
+  async drawRaffle(id) {
+    const rows = ok(await untyped.rpc("draw_raffle", { p_raffle: id })) as Row[];
+    const r = rows[0];
+    return { orderReference: r.order_reference, winnerEmail: r.winner_email, entries: r.entries };
+  },
+
+  async raffleWinner(id) {
+    const rows = ok(await untyped.rpc("raffle_winner", { p_raffle: id })) as Row[];
+    const r = rows[0];
+    return r
+      ? {
+          orderReference: r.order_reference,
+          winnerEmail: r.winner_email,
+          winnerName: r.winner_name,
+          winnerPhone: r.winner_phone,
+        }
+      : null;
   },
 
   async activeFlashSale() {

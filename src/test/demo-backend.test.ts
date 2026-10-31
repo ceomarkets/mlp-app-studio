@@ -230,6 +230,49 @@ describe("backend demo: flujo completo", () => {
     await expect(b.checkCoupon("BIENVENIDA")).rejects.toThrow(/Ya usaste/);
   });
 
+  it("sorteo: solo se publica con autorización y sortea compras de 5+", async () => {
+    await b.signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
+    const base = {
+      title: "Desafío 5",
+      prize: "Bicicleta",
+      prizeImage: null,
+      prizeValue: 900000,
+      minUnits: 5,
+      startsAt: new Date(Date.now() - 3_600_000).toISOString(),
+      endsAt: new Date(Date.now() + 3_600_000).toISOString(),
+    };
+    await expect(
+      b.saveRaffle({ ...base, coljuegosAuth: null, termsUrl: null, active: true }),
+    ).rejects.toThrow(/Coljuegos/);
+    await b.saveRaffle({ ...base, coljuegosAuth: "AUT-1", termsUrl: "/legal", active: true });
+    const raffle = (await b.currentRaffle())!;
+    expect(raffle.prize).toBe("Bicicleta");
+    await b.signOut();
+
+    await b.signUp({ email: "s@x.co", password: "secreto1", fullName: "Sorteo" });
+    const o = await b.createOrder([{ productId: "p6", qty: 5 }], null, ship);
+    await b.simulatePayment!(o.orderId, true);
+    expect(await b.myRaffleEntries(raffle.id)).toBe(1);
+    await b.signOut();
+
+    await b.signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
+    await expect(b.drawRaffle(raffle.id)).rejects.toThrow(/aún no cierra/);
+    await b.saveRaffle({
+      ...base,
+      id: raffle.id,
+      endsAt: new Date().toISOString(),
+      coljuegosAuth: "AUT-1",
+      termsUrl: "/legal",
+      active: true,
+    });
+    const w = await b.drawRaffle(raffle.id);
+    expect(w).toMatchObject({ winnerEmail: "s@x.co", entries: 1 });
+    await expect(b.drawRaffle(raffle.id)).rejects.toThrow(/ya se realizó/);
+    await b.signOut();
+    await b.signIn({ email: "s@x.co", password: "secreto1" });
+    expect(await b.iWonRaffle(raffle.id)).toBe(true);
+  });
+
   it("no hay autorreferidos ni clics propios", async () => {
     await b.signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
     const before = (await b.myClicks()).length;
