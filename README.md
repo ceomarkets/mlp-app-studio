@@ -70,6 +70,17 @@ select id from auth.users where email = 'tu-correo@ejemplo.com';
 
 En modo demo, la cuenta `demo@plazax.co` ya es administradora.
 
+## Administración
+
+Con tu cuenta en la tabla `admins`, el menú de usuario muestra:
+
+- **/admin/disputas**: disputas del carrito (pago congelado) y denuncias de tratos externos. Reembolsar cancela el artículo y devuelve stock; la devolución del dinero se hace en el panel de la pasarela. Incluye el registro (IP, correo) para entregar solo ante solicitud formal de la autoridad.
+- **/admin/tiendas**: verificar tiendas (insignia azul), pausar o suspender cuentas.
+- **/admin/promos**: ventas flash (cuenta regresiva hasta su fecha real de fin) y cupones (los asume Plaza X sin pasar su comisión).
+- **/admin/sorteo**: sorteo "Desafío = Premio". Solo se publica con el número de autorización de Coljuegos y las bases.
+
+Migraciones nuevas (Lovable las aplica desde `drizzle/migrations`): `0004_store_profile`, `0005_disputes`, `0006_affiliations`, `0007_flash_coupons`, `0008_raffle`.
+
 ## Estructura
 
 ```
