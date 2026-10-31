@@ -218,6 +218,18 @@ describe("backend demo: flujo completo", () => {
     expect((await b.getOrder(o2.orderId))!.items[0]!.affiliateAmount).toBe(10000);
   });
 
+  it("cupón real: valida, aplica una vez y respeta el mínimo", async () => {
+    await b.signUp({ email: "cup@x.co", password: "secreto1", fullName: "Cupón" });
+    expect(await b.activeFlashSale()).toMatchObject({ couponCode: "BIENVENIDA" });
+    await expect(b.checkCoupon("NOEXISTE")).rejects.toThrow(/no válido/);
+    expect((await b.checkCoupon("bienvenida")).value).toBe(5);
+    // p4 = Kit barista 120.000 → 5% = 6.000
+    const o = await b.createOrder([{ productId: "p4", qty: 1 }], null, ship, "BIENVENIDA");
+    const order = await b.getOrder(o.orderId);
+    expect(order).toMatchObject({ total: 114000, couponDiscount: 6000 });
+    await expect(b.checkCoupon("BIENVENIDA")).rejects.toThrow(/Ya usaste/);
+  });
+
   it("no hay autorreferidos ni clics propios", async () => {
     await b.signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
     const before = (await b.myClicks()).length;

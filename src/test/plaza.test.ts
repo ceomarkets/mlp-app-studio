@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeWallet, dailySeries, HOLD_DAYS, slugify, splitSale } from "@/lib/plaza";
+import { computeWallet, dailySeries, HOLD_DAYS, priceOrder, slugify, splitSale } from "@/lib/plaza";
 
 const DAY = 86_400_000;
 
@@ -74,5 +74,46 @@ describe("affiliateLevel", () => {
     expect(affiliateLevel(23)).toMatchObject({ name: "Activo", missing: 27 });
     expect(affiliateLevel(78)).toMatchObject({ name: "Líder", missing: 22 });
     expect(affiliateLevel(150)).toMatchObject({ name: "Leyenda", next: null, progress: 1 });
+  });
+});
+
+describe("priceOrder (igual que create_order)", () => {
+  const line = (productId: string, subtotal: number) => ({ productId, subtotal });
+  const coupon = (kind: "percent" | "fixed", value: number, minSubtotal = 0) => ({
+    code: "X",
+    description: "",
+    kind,
+    value,
+    minSubtotal,
+    endsAt: null,
+  });
+
+  it("cupón % sale de la parte de Plaza X", () => {
+    expect(priceOrder([line("a", 50000)], 1, coupon("percent", 5))).toMatchObject({
+      coupon: 2500,
+      total: 47500,
+      capped: false,
+    });
+  });
+
+  it("cupón grande se topa en la comisión de Plaza X", () => {
+    expect(priceOrder([line("a", 50000)], 1, coupon("percent", 50))).toMatchObject({
+      coupon: 4500,
+      total: 45500,
+      capped: true,
+    });
+  });
+
+  it("fijo + volumen, mismo resultado que la base de datos", () => {
+    const r = priceOrder([line("b", 30000), line("a", 100000)], 3, coupon("fixed", 8000));
+    expect(r).toMatchObject({ bundle: 6500, coupon: 5200, total: 118300 });
+  });
+
+  it("mínimo de compra", () => {
+    expect(priceOrder([line("a", 30000)], 1, coupon("percent", 5, 40000))).toMatchObject({
+      coupon: 0,
+      missing: 10000,
+      total: 30000,
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2, Lock, ShoppingBag } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { backend, IS_DEMO, type Shipping } from "@/lib/backend";
 import { cart, useReferral } from "@/lib/client-state";
-import { cop } from "@/lib/plaza";
+import { rememberCoupon, savedCoupon } from "@/lib/coupon";
+import { BUNDLE_RATE, cop, priceOrder, type CouponRule } from "@/lib/plaza";
 import { keys, useUser } from "@/lib/session";
 
 export const Route = createFileRoute("/carrito")({
@@ -23,7 +24,15 @@ export const Route = createFileRoute("/carrito")({
 const SHIP_KEY = "plazax-shipping";
 
 function Checkout() {
-  const { rows, total, loading, lines } = useCartDetails();
+  const { rows, loading, lines, count } = useCartDetails();
+  const [code, setCode] = useState("");
+  const [coupon, setCoupon] = useState<CouponRule | null>(null);
+  const priced = priceOrder(
+    rows.map((r) => ({ productId: r.product.id, subtotal: r.product.price * r.qty })),
+    count,
+    coupon,
+  );
+  const total = priced.total;
   const { user } = useUser();
   const ref = useReferral();
   const qc = useQueryClient();
@@ -47,6 +56,33 @@ function Checkout() {
       setShip((s) => ({ ...s, name: s.name || user.fullName, phone: s.phone || user.phone || "" }));
   }, [user]);
 
+  const apply = useMutation({
+    mutationFn: (c: string) => backend.checkCoupon(c),
+    onSuccess: (c) => {
+      setCoupon(c);
+      setCode(c.code);
+      rememberCoupon(c.code);
+    },
+    onError: (e) => {
+      setCoupon(null);
+      rememberCoupon(null);
+      toast.error(e.message);
+    },
+  });
+  // Cupón traído desde la venta flash (se valida al tener sesión).
+  const pending = useQuery({
+    queryKey: ["user", "saved-coupon", savedCoupon()],
+    queryFn: () => backend.checkCoupon(savedCoupon()),
+    enabled: !!user && !!savedCoupon() && !coupon,
+    retry: false,
+  });
+  useEffect(() => {
+    if (pending.data && !coupon) {
+      setCoupon(pending.data);
+      setCode(pending.data.code);
+    }
+  }, [pending.data, coupon]);
+
   const stores = [...new Set(rows.map((r) => r.product.store.name))];
   const problems = rows.filter((r) => r.qty > r.product.stock);
   const missing = lines.length - rows.length;
@@ -57,7 +93,9 @@ function Checkout() {
         rows.map((r) => ({ productId: r.product.id, qty: r.qty })),
         ref,
         ship,
+        coupon && !priced.missing ? coupon.code : null,
       );
+      rememberCoupon(null);
       try {
         localStorage.setItem(SHIP_KEY, JSON.stringify(ship));
       } catch {
@@ -175,10 +213,66 @@ function Checkout() {
                 <span>{cop(r.product.price * r.qty)}</span>
               </div>
             ))}
+            {priced.bundle > 0 && (
+              <div className="flex justify-between font-semibold text-emerald-300">
+                <span>Premio {Math.round(BUNDLE_RATE * 100)}% OFF por volumen</span>
+                <span>−{cop(priced.bundle)}</span>
+              </div>
+            )}
+            {coupon && priced.coupon > 0 && (
+              <div className="flex justify-between font-semibold text-emerald-300">
+                <span>Cupón {coupon.code}</span>
+                <span>−{cop(priced.coupon)}</span>
+              </div>
+            )}
             <div className="flex justify-between opacity-80">
               <span>Envío</span>
               <span>Lo coordina cada tienda</span>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex gap-2">
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="¿Tienes un cupón?"
+                aria-label="Código de cupón"
+                maxLength={20}
+                className="h-9 min-w-0 flex-1 rounded-lg border border-ink-foreground/20 bg-ink-foreground/10 px-3 font-mono text-sm uppercase placeholder:normal-case placeholder:opacity-60 focus:outline-none"
+              />
+              {coupon ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCoupon(null);
+                    setCode("");
+                    rememberCoupon(null);
+                  }}
+                  className="rounded-lg px-3 text-xs font-semibold underline"
+                >
+                  Quitar
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!code.trim() || apply.isPending || !user}
+                  onClick={() => apply.mutate(code.trim())}
+                  className="rounded-lg bg-ink-foreground px-3 text-xs font-bold text-ink disabled:opacity-50"
+                >
+                  {apply.isPending ? <Loader2 className="size-3 animate-spin" /> : "Aplicar"}
+                </button>
+              )}
+            </div>
+            {coupon && (
+              <p className="text-[11px] opacity-80">
+                {priced.missing > 0
+                  ? `Te faltan ${cop(priced.missing)} en productos para usar ${coupon.code}.`
+                  : priced.capped
+                    ? "Aplicamos el máximo que permite este pedido (lo asume Plaza X)."
+                    : coupon.description || "Cupón aplicado."}
+              </p>
+            )}
+            {!user && <p className="text-[11px] opacity-70">Entra para usar un cupón.</p>}
           </div>
           <div className="flex items-center justify-between border-t border-ink-foreground/20 pt-4 text-lg">
             <span>Total</span>

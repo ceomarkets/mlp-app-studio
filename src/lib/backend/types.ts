@@ -5,7 +5,7 @@ import type {
   DisputeReason,
   DisputeStatus,
 } from "@/lib/disputes";
-import type { Category, PayoutMethod } from "@/lib/plaza";
+import type { Category, CouponRule, PayoutMethod } from "@/lib/plaza";
 
 export type Profile = {
   id: string;
@@ -18,6 +18,28 @@ export type Profile = {
   /** Suspendida por la administración. */
   banned: boolean;
 };
+
+export type Coupon = CouponRule & {
+  id: string;
+  maxUses: number | null;
+  uses: number;
+  startsAt: string;
+  active: boolean;
+  createdAt: string;
+};
+export type CouponInput = Omit<Coupon, "id" | "uses" | "createdAt"> & { id?: string };
+
+export type FlashSale = {
+  id: string;
+  title: string;
+  subtitle: string;
+  couponCode: string | null;
+  link: string | null;
+  startsAt: string;
+  endsAt: string;
+  active: boolean;
+};
+export type FlashSaleInput = Omit<FlashSale, "id"> & { id?: string };
 
 export type AccountType = "comprador" | "afiliado" | "empresa";
 
@@ -176,8 +198,10 @@ export type Order = {
   buyerId: string;
   status: OrderStatus;
   total: number;
-  /** Descuento por volumen del pedido (ya restado del total). */
+  /** Descuentos del pedido (volumen + cupón), ya restados del total. */
   discount: number;
+  /** Parte del descuento que vino del cupón. */
+  couponDiscount: number;
   shipping: Shipping;
   createdAt: string;
   paidAt: string | null;
@@ -326,6 +350,11 @@ export interface Backend {
   saveAnnouncement(input: AnnouncementInput): Promise<Announcement>;
   deleteAnnouncement(id: string): Promise<void>;
   adminStores(): Promise<AdminStore[]>;
+  listCoupons(): Promise<Coupon[]>;
+  saveCoupon(input: CouponInput): Promise<void>;
+  listFlashSales(): Promise<FlashSale[]>;
+  saveFlashSale(input: FlashSaleInput): Promise<void>;
+  deleteFlashSale(id: string): Promise<void>;
   setStoreVerified(storeId: string, verified: boolean): Promise<void>;
   setStoreActive(storeId: string, active: boolean): Promise<void>;
   setUserBanned(userId: string, banned: boolean, reason?: string): Promise<void>;
@@ -361,7 +390,12 @@ export interface Backend {
     lines: CartLine[],
     ref: string | null,
     shipping: Shipping,
+    coupon?: string | null,
   ): Promise<{ orderId: string; reference: string; total: number }>;
+  /** Valida un cupón para quien compra (error con el motivo si no aplica). */
+  checkCoupon(code: string): Promise<CouponRule>;
+  /** Venta flash vigente (o null). */
+  activeFlashSale(): Promise<FlashSale | null>;
   myOrders(): Promise<Order[]>;
   getOrder(id: string): Promise<Order | null>;
   /** Devuelve la URL a la que se envía al comprador para pagar. */

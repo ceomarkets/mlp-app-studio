@@ -17,6 +17,60 @@ export function bundleDiscount(subtotal: number, totalUnits: number) {
   if (BUNDLE_RATE <= 0 || totalUnits < BUNDLE_MIN) return 0;
   return Math.min(Math.round(subtotal * PLATFORM_RATE), Math.round(subtotal * BUNDLE_RATE));
 }
+/** Regla pública de un cupón (lo que devuelve check_coupon). */
+export type CouponRule = {
+  code: string;
+  description: string;
+  kind: "percent" | "fixed";
+  value: number;
+  minSubtotal: number;
+  endsAt: string | null;
+};
+
+/**
+ * Precio final del pedido, igual que create_order(): descuento por volumen y cupón salen de la
+ * parte de Plaza X y nunca la superan. Las líneas se procesan en orden de id de producto.
+ */
+export function priceOrder(
+  lines: { productId: string; subtotal: number }[],
+  units: number,
+  coupon?: CouponRule | null,
+) {
+  const sorted = [...lines].sort((a, b) => (a.productId < b.productId ? -1 : 1));
+  const subtotal = lines.reduce((t, l) => t + l.subtotal, 0);
+  const applies = !!coupon && subtotal >= coupon.minSubtotal;
+  let leftFixed = applies && coupon!.kind === "fixed" ? coupon!.value : 0;
+  let bundle = 0;
+  let couponOff = 0;
+  let requested = 0;
+  for (const l of sorted) {
+    const plat = Math.round(l.subtotal * PLATFORM_RATE);
+    const b = bundleDiscount(l.subtotal, units);
+    let c = 0;
+    if (applies && coupon!.kind === "percent") {
+      const want = Math.round((l.subtotal * coupon!.value) / 100);
+      requested += want;
+      c = Math.min(plat - b, want);
+    } else if (applies) {
+      c = Math.min(plat - b, leftFixed);
+      leftFixed -= c;
+    }
+    bundle += b;
+    couponOff += c;
+  }
+  if (applies && coupon!.kind === "fixed") requested = coupon!.value;
+  return {
+    subtotal,
+    bundle,
+    coupon: couponOff,
+    /** El cupón pedía más de lo que Plaza X puede asumir en este pedido. */
+    capped: applies && couponOff < requested,
+    /** Falta para el mínimo del cupón (0 si ya aplica). */
+    missing: coupon && !applies ? coupon.minSubtotal - subtotal : 0,
+    total: subtotal - bundle - couponOff,
+  };
+}
+
 /** Días que se retienen las ganancias después de la entrega. */
 export const HOLD_DAYS = 7;
 /** Ventana de atribución de un enlace de afiliado. */

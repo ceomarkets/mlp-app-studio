@@ -50,6 +50,13 @@
       "when": 1793392152767,
       "tag": "0006_affiliations",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793392153767,
+      "tag": "0007_flash_coupons",
+      "breakpoints": true
     }
   ]
 }

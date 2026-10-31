@@ -22,6 +22,7 @@ import { BridgeLogo } from "@/components/BridgeLogo";
 import { CartSheet, openCart } from "@/components/CartSheet";
 import { RewardsBar, RewardsModal, useRewards } from "@/components/Rewards";
 import { ShareButton } from "@/components/ShareSheet";
+import { FlashSaleBanner } from "@/components/FlashSaleBanner";
 import { LiveActivityToast, SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,6 +94,7 @@ export function Shell({
       </header>
 
       <RewardsBar />
+      <FlashSaleBanner />
 
       <main
         className={cn(
@@ -292,6 +294,9 @@ function UserMenu() {
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/disputas" })}>
               <ShieldCheck /> Disputas
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/promos" })}>
+              <Flame /> Ventas flash y cupones
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/tiendas" })}>
               <StoreIcon /> Tiendas

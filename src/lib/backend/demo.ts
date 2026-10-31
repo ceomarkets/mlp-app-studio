@@ -1,4 +1,12 @@
-import { bundleDiscount, CATEGORIES, computeWallet, MIN_WITHDRAWAL, splitSale } from "@/lib/plaza";
+import {
+  bundleDiscount,
+  CATEGORIES,
+  computeWallet,
+  cop,
+  MIN_WITHDRAWAL,
+  PLATFORM_RATE,
+  splitSale,
+} from "@/lib/plaza";
 import {
   byPriority,
   isLive,
@@ -44,6 +52,12 @@ function upgrade(s: DemoState) {
   }
   for (const p of s.products) p.promoVideo ??= null;
   s.affiliations ??= [];
+  s.coupons ??= [];
+  s.flashSales ??= [];
+  for (const o of s.orders) {
+    o.couponDiscount ??= 0;
+    o.couponId ??= null;
+  }
   for (const it of s.items) {
     it.carrier ??= it.tracking?.startsWith("Servientrega") ? "Servientrega" : null;
     if (it.tracking?.startsWith("Servientrega ")) it.tracking = it.tracking.slice(13);
@@ -54,6 +68,26 @@ function upgrade(s: DemoState) {
   s.disputes ??= [];
   s.banned ??= [];
   s.evidenceFiles ??= {};
+}
+
+function couponUses(id: string, user?: string) {
+  const hour = Date.now() - 3_600_000;
+  return db().orders.filter(
+    (o) =>
+      o.couponId === id &&
+      (!user || o.buyerId === user) &&
+      (o.status === "paid" || (o.status === "pending" && Date.parse(o.createdAt) > hour)),
+  ).length;
+}
+
+function usableCoupon(code: string, user: string) {
+  const c = (db().coupons ?? []).find((x) => x.code === code.trim().toUpperCase());
+  if (!c || !c.active) throw new Error("Cupón no válido");
+  if (Date.parse(c.startsAt) > Date.now()) throw new Error("Este cupón aún no está activo");
+  if (c.endsAt && Date.parse(c.endsAt) <= Date.now()) throw new Error("Este cupón ya venció");
+  if (c.maxUses !== null && couponUses(c.id) >= c.maxUses) throw new Error("Este cupón se agotó");
+  if (couponUses(c.id, user) > 0) throw new Error("Ya usaste este cupón");
+  return c;
 }
 
 const hasOpenDispute = (itemId: string) =>
@@ -792,7 +826,7 @@ export const demoBackend: Backend = {
     return db().evidenceFiles?.[ref] ?? null;
   },
 
-  async createOrder(lines, ref, shipping) {
+  async createOrder(lines, ref, shipping, couponCode) {
     await wait(300);
     const u = me();
     if (!u) throw new Error("Debes iniciar sesión para comprar");
@@ -816,6 +850,32 @@ export const demoBackend: Backend = {
       merged.set(l.productId, Math.min(99, (merged.get(l.productId) ?? 0) + Math.max(1, l.qty))),
     );
     const units = [...merged.values()].reduce((t, q) => t + q, 0);
+    const coupon = couponCode?.trim() ? usableCoupon(couponCode, u.id) : null;
+    // Mismo reparto que create_order(): volumen y cupón salen de la parte de Plaza X.
+    const priced = new Map<string, { bundle: number; coupon: number }>();
+    {
+      const sorted = [...merged.keys()].sort();
+      const subs = sorted.map((id) => ({
+        productId: id,
+        subtotal: (s.products.find((x) => x.id === id)?.price ?? 0) * merged.get(id)!,
+      }));
+      const gross = subs.reduce((t, l) => t + l.subtotal, 0);
+      if (coupon && gross < coupon.minSubtotal)
+        throw new Error(`Este cupón aplica desde ${cop(coupon.minSubtotal)} en productos`);
+      let left = coupon?.kind === "fixed" ? coupon.value : 0;
+      for (const l of subs) {
+        const plat = Math.round(l.subtotal * PLATFORM_RATE);
+        const b = bundleDiscount(l.subtotal, units);
+        let c = 0;
+        if (coupon?.kind === "percent")
+          c = Math.min(plat - b, Math.round((l.subtotal * coupon.value) / 100));
+        else if (coupon) {
+          c = Math.min(plat - b, left);
+          left -= c;
+        }
+        priced.set(l.productId, { bundle: b, coupon: c });
+      }
+    }
     for (const [productId, qty] of merged) {
       const p = s.products.find((x) => x.id === productId && x.active);
       const store = p && s.stores.find((x) => x.id === p.storeId && x.active);
@@ -831,7 +891,8 @@ export const demoBackend: Backend = {
       const referred = !!aff && aff.id !== store.ownerId && approved;
       const sub = p.price * qty;
       const split = splitSale(sub, p.commission, referred);
-      const disc = bundleDiscount(sub, units);
+      const pr = priced.get(productId)!;
+      const disc = pr.bundle + pr.coupon;
       items.push({
         id: uid(),
         orderId,
@@ -869,6 +930,8 @@ export const demoBackend: Backend = {
       status: "pending",
       total,
       discount,
+      couponDiscount: [...priced.values()].reduce((t, x) => t + x.coupon, 0),
+      couponId: coupon?.id ?? null,
       shipping,
       createdAt: now(),
       paidAt: null,
@@ -919,6 +982,91 @@ export const demoBackend: Backend = {
     const s = db();
     const o = s.orders.find((x) => x.id === id && x.buyerId === u?.id);
     return o ? { ...o, items: s.items.filter((i) => i.orderId === o.id) } : null;
+  },
+
+  async checkCoupon(code) {
+    await wait();
+    const u = me();
+    if (!u) throw new Error("Inicia sesión para usar cupones");
+    const {
+      id: _id,
+      uses: _u,
+      maxUses: _m,
+      startsAt: _s,
+      active: _a,
+      createdAt: _c,
+      ...rule
+    } = usableCoupon(code, u.id);
+    return rule;
+  },
+
+  async activeFlashSale() {
+    const t = Date.now();
+    return (
+      (db().flashSales ?? [])
+        .filter((f) => f.active && Date.parse(f.startsAt) <= t && Date.parse(f.endsAt) > t)
+        .sort((a, b) => a.endsAt.localeCompare(b.endsAt))[0] ?? null
+    );
+  },
+
+  async listCoupons() {
+    requireAdmin();
+    return (db().coupons ?? []).map((c) => ({
+      ...c,
+      uses: db().orders.filter((o) => o.couponId === c.id && o.status === "paid").length,
+    }));
+  },
+
+  async saveCoupon({ id, ...input }) {
+    await wait();
+    requireAdmin();
+    const s = db();
+    const code = input.code.trim().toUpperCase();
+    if (!/^[A-Z0-9-]{3,20}$/.test(code))
+      throw new Error("Código: 3 a 20 letras, números o guiones");
+    if (input.value <= 0 || (input.kind === "percent" && input.value > 50))
+      throw new Error("Valor inválido");
+    if (input.endsAt && Date.parse(input.endsAt) <= Date.parse(input.startsAt))
+      throw new Error("La fecha de fin debe ser posterior al inicio");
+    if (s.coupons!.some((c) => c.code === code && c.id !== id))
+      throw new Error("Ya existe un cupón con ese código");
+    const row = { ...input, code, description: input.description.trim() };
+    const prev = id ? s.coupons!.find((c) => c.id === id) : undefined;
+    if (prev) Object.assign(prev, row);
+    else s.coupons!.unshift({ ...row, id: uid(), uses: 0, createdAt: now() });
+    save();
+  },
+
+  async listFlashSales() {
+    requireAdmin();
+    return [...(db().flashSales ?? [])].sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  },
+
+  async saveFlashSale({ id, ...input }) {
+    await wait();
+    requireAdmin();
+    const s = db();
+    if (input.title.trim().length < 3) throw new Error("Título: mínimo 3 caracteres");
+    if (Date.parse(input.endsAt) <= Date.parse(input.startsAt))
+      throw new Error("La fecha de fin debe ser posterior al inicio");
+    const row = {
+      ...input,
+      title: input.title.trim(),
+      subtitle: input.subtitle.trim(),
+      couponCode: input.couponCode?.trim().toUpperCase() || null,
+      link: input.link?.trim() || null,
+    };
+    const prev = id ? s.flashSales!.find((f) => f.id === id) : undefined;
+    if (prev) Object.assign(prev, row);
+    else s.flashSales!.unshift({ ...row, id: uid() });
+    save();
+  },
+
+  async deleteFlashSale(id) {
+    requireAdmin();
+    const s = db();
+    s.flashSales = (s.flashSales ?? []).filter((f) => f.id !== id);
+    save();
   },
 
   async myAffiliations() {

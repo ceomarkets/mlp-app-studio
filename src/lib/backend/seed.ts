@@ -4,7 +4,9 @@ import type {
   AffiliateStatus,
   Announcement,
   Click,
+  Coupon,
   Dispute,
+  FlashSale,
   Order,
   OrderItem,
   Product,
@@ -39,7 +41,7 @@ export type DemoState = {
   users: DemoUser[];
   stores: Store[];
   products: Omit<Product, "store">[];
-  orders: Omit<Order, "items">[];
+  orders: (Omit<Order, "items"> & { couponId?: string | null })[];
   items: OrderItem[];
   clicks: (Click & { affiliateId: string })[];
   withdrawals: (Withdrawal & { userId: string })[];
@@ -50,6 +52,8 @@ export type DemoState = {
   admins?: string[];
   disputes?: (Dispute & { ip: string | null })[];
   affiliations?: DemoAffiliation[];
+  coupons?: Coupon[];
+  flashSales?: FlashSale[];
   /** Usuarios suspendidos. */
   banned?: string[];
   /** Archivos de evidencia del modo demo (referencia → data URL). */
@@ -408,6 +412,7 @@ export function buildSeed(now = Date.now()): DemoState {
       status: "paid",
       total: sub,
       discount: 0,
+      couponDiscount: 0,
       shipping: {
         name: `${buyer} ${["G.", "M.", "R.", "L."][i % 4]!}`,
         phone: "3000000000",
@@ -503,6 +508,35 @@ export function buildSeed(now = Date.now()): DemoState {
     session: null,
     announcements: seedAnnouncements(now),
     admins: DEMO_ADMINS,
+    // Ejemplos del modo demo: un cupón y una venta flash que termina 6 horas después de crear los datos.
+    coupons: [
+      {
+        id: "c-seed-1",
+        code: "BIENVENIDA",
+        description: "5% en tu primera compra desde $50.000",
+        kind: "percent" as const,
+        value: 5,
+        minSubtotal: 50000,
+        maxUses: null,
+        uses: 0,
+        startsAt: daysAgo(1, now),
+        endsAt: null,
+        active: true,
+        createdAt: daysAgo(1, now),
+      },
+    ],
+    flashSales: [
+      {
+        id: "f-seed-1",
+        title: "Semana de la artesanía nariñense",
+        subtitle: "Usa el cupón al pagar",
+        couponCode: "BIENVENIDA",
+        link: null,
+        startsAt: daysAgo(0.1, now),
+        endsAt: new Date(now + 6 * 3_600_000).toISOString(),
+        active: true,
+      },
+    ],
     // @laura (u-demo) ya trabaja con Café de Altura; @cami (u-buyer) pidió entrar a Tejidos.
     affiliations: [
       {

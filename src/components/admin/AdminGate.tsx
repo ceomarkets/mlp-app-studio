@@ -11,6 +11,7 @@ const SECTIONS = [
   { to: "/admin/anuncios", label: "Anuncios", icon: "fa-bullhorn" },
   { to: "/admin/disputas", label: "Disputas", icon: "fa-shield-halved" },
   { to: "/admin/tiendas", label: "Tiendas", icon: "fa-store" },
+  { to: "/admin/promos", label: "Flash y cupones", icon: "fa-bolt" },
 ] as const;
 
 /** Solo administración: pide sesión y permiso, y muestra la navegación del panel. */

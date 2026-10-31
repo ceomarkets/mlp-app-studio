@@ -9,7 +9,9 @@ import type {
   AdminStore,
   AffiliateRequest,
   Click,
+  Coupon,
   Dispute,
+  FlashSale,
   DisputeAudit,
   Order,
   OrderItem,
@@ -125,6 +127,17 @@ const toItem = (r: Row): OrderItem => ({
   createdAt: r.created_at,
 });
 
+const toFlash = (r: Row): FlashSale => ({
+  id: r.id,
+  title: r.title,
+  subtitle: r.subtitle ?? "",
+  couponCode: r.coupon_code,
+  link: r.link,
+  startsAt: r.starts_at,
+  endsAt: r.ends_at,
+  active: r.active,
+});
+
 const DISPUTE_COLS = "*, stores(name), order_items(product_name)";
 const toDispute = (r: Row): Dispute => ({
   id: r.id,
@@ -153,6 +166,7 @@ const toOrder = (r: Row): Order => ({
   status: r.status,
   total: r.total,
   discount: r.discount ?? 0,
+  couponDiscount: r.coupon_discount ?? 0,
   shipping: r.shipping,
   createdAt: r.created_at,
   paidAt: r.paid_at,
@@ -171,6 +185,10 @@ function humanize(msg: string) {
   if (msg.includes("User already registered")) return "Ya existe una cuenta con ese correo";
   if (msg.includes("Email not confirmed")) return "Confirma tu correo antes de entrar";
   if (msg.includes("Password should be")) return "La contraseña debe tener al menos 6 caracteres";
+  if (msg.includes("coupons_code_key")) return "Ya existe un cupón con ese código";
+  if (msg.includes("coupons_code_check")) return "Código: 3 a 20 letras, números o guiones";
+  if (msg.includes("flash_dates") || msg.includes("coupon_dates"))
+    return "La fecha de fin debe ser posterior al inicio";
   if (msg.includes("disputes_details_check")) return "Cuéntanos qué pasó (mínimo 20 caracteres)";
   if (msg.includes("disputes_one_open_per_item"))
     return "Ya hay una disputa abierta para este artículo";
@@ -331,6 +349,83 @@ export const supabaseBackend: Backend = {
     if (!(await currentUser())) return false;
     const { data, error } = await untyped.rpc("is_admin");
     return !error && data === true;
+  },
+
+  async listCoupons() {
+    const rows = ok(
+      await untyped.from("coupons").select("*").order("created_at", { ascending: false }),
+    ) as Row[];
+    const uses = await Promise.all(
+      rows.map(async (r) => {
+        const { count } = await untyped
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("coupon_id", r.id)
+          .eq("status", "paid");
+        return count ?? 0;
+      }),
+    );
+    return rows.map((r, i): Coupon => ({
+      id: r.id,
+      code: r.code,
+      description: r.description,
+      kind: r.kind,
+      value: r.value,
+      minSubtotal: r.min_subtotal,
+      maxUses: r.max_uses,
+      uses: uses[i] ?? 0,
+      startsAt: r.starts_at,
+      endsAt: r.ends_at,
+      active: r.active,
+      createdAt: r.created_at,
+    }));
+  },
+
+  async saveCoupon({ id, ...c }) {
+    const row = {
+      code: c.code.trim().toUpperCase(),
+      description: c.description.trim(),
+      kind: c.kind,
+      value: c.value,
+      min_subtotal: c.minSubtotal,
+      max_uses: c.maxUses,
+      starts_at: c.startsAt,
+      ends_at: c.endsAt,
+      active: c.active,
+    };
+    ok(
+      id
+        ? await untyped.from("coupons").update(row).eq("id", id)
+        : await untyped.from("coupons").insert(row),
+    );
+  },
+
+  async listFlashSales() {
+    const rows = ok(
+      await untyped.from("flash_sales").select("*").order("starts_at", { ascending: false }),
+    ) as Row[];
+    return rows.map(toFlash);
+  },
+
+  async saveFlashSale({ id, ...f }) {
+    const row = {
+      title: f.title.trim(),
+      subtitle: f.subtitle.trim(),
+      coupon_code: f.couponCode?.trim().toUpperCase() || null,
+      link: f.link?.trim() || null,
+      starts_at: f.startsAt,
+      ends_at: f.endsAt,
+      active: f.active,
+    };
+    ok(
+      id
+        ? await untyped.from("flash_sales").update(row).eq("id", id)
+        : await untyped.from("flash_sales").insert(row),
+    );
+  },
+
+  async deleteFlashSale(id) {
+    ok(await untyped.from("flash_sales").delete().eq("id", id));
   },
 
   async adminStores() {
@@ -727,16 +822,45 @@ export const supabaseBackend: Backend = {
     return data?.signedUrl ?? null;
   },
 
-  async createOrder(lines, ref, shipping) {
+  async createOrder(lines, ref, shipping, coupon) {
     const data = ok(
-      await supabase.rpc("create_order", {
+      await untyped.rpc("create_order", {
         p_items: lines.map((l) => ({ product_id: l.productId, qty: l.qty })),
         p_ref: ref ?? "",
         p_shipping: shipping,
+        ...(coupon ? { p_coupon: coupon } : {}),
       }),
     ) as Row[];
     const r = data[0];
     return { orderId: r.order_id, reference: r.reference, total: r.total };
+  },
+
+  async checkCoupon(code) {
+    const rows = ok(await untyped.rpc("check_coupon", { p_code: code })) as Row[];
+    const r = rows[0];
+    if (!r) throw new Error("Cupón no válido");
+    return {
+      code: r.code,
+      description: r.description,
+      kind: r.kind,
+      value: r.value,
+      minSubtotal: r.min_subtotal,
+      endsAt: r.ends_at,
+    };
+  },
+
+  async activeFlashSale() {
+    const now = new Date().toISOString();
+    const { data, error } = await untyped
+      .from("flash_sales")
+      .select("*")
+      .eq("active", true)
+      .lte("starts_at", now)
+      .gt("ends_at", now)
+      .order("ends_at")
+      .limit(1);
+    if (error || !data?.[0]) return null; // sin migración o sin ventas flash
+    return toFlash(data[0]);
   },
 
   async startPayment(orderId, returnUrl) {
