@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BadgeCheck, Share2, Store } from "lucide-react";
+import { ArrowRight, BadgeCheck, Store } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { addToCart } from "@/components/CartSheet";
 import { Leaderboard } from "@/components/Leaderboard";
@@ -296,6 +296,23 @@ function Plaza() {
           <Grid items={catalog} loading={results.isPending} onOpen={setQuick} />
         </section>
 
+        {/* Compartir la plaza: crecer por recomendación */}
+        <section className="mt-10 flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:flex-row sm:p-8">
+          <div className="text-center sm:text-left">
+            <h2 className="flex items-center justify-center gap-2 text-lg font-black text-slate-900 sm:justify-start sm:text-xl">
+              ¿Te gustó? Cuéntale a alguien 💛
+            </h2>
+            <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">
+              Un mensaje ayuda a una tienda local.
+            </p>
+          </div>
+          <ShareButton
+            data={plazaShare}
+            className="flex shrink-0 items-center gap-2.5 rounded-full bg-indigo-600 px-6 py-3 text-xs font-extrabold text-white shadow-md transition-transform hover:scale-105 hover:bg-indigo-700 sm:text-sm"
+          >
+            <i className="fa-solid fa-share-nodes text-sm" /> Compartir Plaza X
+          </ShareButton>
+        </section>
         {/* Tiendas */}
         {!!stores.data?.length && (
           <section className="mt-12">
@@ -336,22 +353,6 @@ function Plaza() {
             </div>
           </section>
         )}
-
-        {/* Compartir la plaza: crecer por recomendación */}
-        <section className="mt-10 flex flex-col items-center gap-3 rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm md:flex-row md:justify-between md:text-left">
-          <div>
-            <h2 className="text-lg font-extrabold text-slate-900">
-              ¿Te gustó? Cuéntale a alguien 💛
-            </h2>
-            <p className="text-sm text-slate-500">Un mensaje ayuda a una tienda local.</p>
-          </div>
-          <ShareButton
-            data={plazaShare}
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-indigo-600 px-6 font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-          >
-            <Share2 className="size-4" /> Compartir Plaza X
-          </ShareButton>
-        </section>
       </div>
 
       <QuickView product={quick} onClose={() => setQuick(null)} />

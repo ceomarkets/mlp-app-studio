@@ -45,7 +45,7 @@ import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
 const navBtn =
-  "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 data-[status=active]:bg-slate-100 data-[status=active]:font-bold data-[status=active]:text-slate-900";
+  "flex items-center gap-2 rounded-lg border border-transparent px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 data-[status=active]:border-slate-200 data-[status=active]:bg-slate-100 data-[status=active]:font-bold data-[status=active]:text-slate-900 data-[status=active]:shadow-sm";
 
 export function Shell({
   children,
@@ -70,12 +70,15 @@ export function Shell({
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-2 md:flex">
+            <Link to="/" activeOptions={{ exact: true }} className={navBtn}>
+              <i className="fa-solid fa-crown text-amber-400" /> Mercado
+            </Link>
             <Link to="/afiliados" className={navBtn}>
               <i className="fa-solid fa-users text-emerald-600" /> Panel Afiliado
             </Link>
             <Link to="/vendedores" className={navBtn}>
-              <i className="fa-solid fa-building text-indigo-600" /> Panel Empresa
+              <i className="fa-solid fa-building text-indigo-600" /> Panel Empresas
             </Link>
           </nav>
 
@@ -115,9 +118,9 @@ export function Shell({
       >
         {(
           [
-            { to: "/", label: "Mercado", icon: "fa-shop text-indigo-600" },
+            { to: "/", label: "Mercado", icon: "fa-crown text-amber-400" },
             { to: "/afiliados", label: "Afiliado", icon: "fa-users text-emerald-600" },
-            { to: "/vendedores", label: "Empresa", icon: "fa-building text-indigo-600" },
+            { to: "/vendedores", label: "Empresas", icon: "fa-building text-indigo-600" },
           ] as const
         ).map((n) => (
           <Link

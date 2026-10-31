@@ -144,6 +144,16 @@ export function CartSheet() {
             </p>
           </div>
         )}
+        <button
+          onClick={() => {
+            cartUI.close();
+            navigate({ to: "/cuenta", hash: "reportes" });
+          }}
+          className="mx-4 mt-3 mb-4 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200"
+        >
+          <i className="fa-solid fa-shield-cat text-rose-500" /> ¿Tuviste un problema o recibiste
+          algo diferente? Abrir Disputa
+        </button>
       </SheetContent>
     </Sheet>
   );

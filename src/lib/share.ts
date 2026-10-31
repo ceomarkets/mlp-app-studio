@@ -20,7 +20,7 @@ export function productShare(p: Product, username?: string | null) {
 export function plazaShare() {
   return {
     title: "Plaza X",
-    text: "🛍️ Lo más bonito de Nariño en un solo lugar. ¡Míralo!",
+    text: "¡Mira los productos y tiendas verificadas en Plaza X Colombia!",
     url: origin(),
   };
 }
