@@ -1,5 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { backend, type Product } from "@/lib/backend";
@@ -130,8 +130,17 @@ export function CartSheet() {
               <i className="fa-solid fa-lock me-1.5" /> Pagar Ahora
             </button>
             <p className="text-center text-[10px] text-slate-500">
-              <i className="fa-solid fa-shield-halved me-1 text-emerald-600" /> Pago seguro con
-              Wompi: tarjeta, PSE, Nequi o Bancolombia
+              <i className="fa-solid fa-shield-halved me-1 text-emerald-600" /> Pago en custodia:
+              el vendedor cobra cuando confirmas que recibiste. Si algo sale mal, abres una disputa
+              y te reembolsamos.{" "}
+              <Link
+                to="/legal"
+                hash="proteccion-comprador"
+                onClick={() => cartUI.close()}
+                className="font-semibold text-indigo-600 underline"
+              >
+                Cómo funciona
+              </Link>
             </p>
           </div>
         )}

@@ -46,7 +46,11 @@ export function WalletPanel() {
           value={w ? cop(w.pending) : "…"}
           hint={`Se libera ${HOLD_DAYS} días después de la entrega`}
         />
-        <Stat label="Retirado" value={w ? cop(w.withdrawn) : "…"} />
+        <Stat
+          label={w?.frozen ? "Retirado · Congelado" : "Retirado"}
+          value={w ? (w.frozen ? `${cop(w.withdrawn)} · ${cop(w.frozen)}` : cop(w.withdrawn)) : "…"}
+          hint={w?.frozen ? "Congelado por disputas abiertas" : undefined}
+        />
         <div className="flex flex-col justify-between gap-3 rounded-2xl bg-primary p-5 text-primary-foreground shadow-card">
           <div className="text-sm opacity-90">Recibe en Nequi, Daviplata o Bancolombia</div>
           <Button

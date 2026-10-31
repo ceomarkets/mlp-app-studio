@@ -90,10 +90,78 @@ describe("backend demo: flujo completo", () => {
     await b.signIn({ email: "nueva@tienda.co", password: "secreto1" });
     const [sale] = await b.sellerOrders();
     expect(sale?.shipping.city).toBe("Pasto");
-    await b.setFulfillment(sale!.id, "delivered");
+    await expect(b.setFulfillment(sale!.id, "delivered" as never)).rejects.toThrow(/inválido/);
+    await b.setFulfillment(sale!.id, "shipped", "9841203", "Servientrega");
     const w = await b.wallet();
-    expect(w).toEqual({ pending: 152000, available: 0, withdrawn: 0 }); // retenido 7 días
+    expect(w).toEqual({ pending: 152000, available: 0, withdrawn: 0, frozen: 0 }); // retenido
     await expect(b.requestWithdrawal(60000, "nequi", "3001234567")).rejects.toThrow(/insuficiente/);
+  });
+
+  it("disputa: congela el pago, reembolsa y suspende al vendedor", async () => {
+    await b.signUp({ email: "v@x.co", password: "secreto1", fullName: "Vendedor" });
+    await b.saveStore({
+      slug: "dudosa",
+      name: "Dudosa",
+      tagline: "",
+      city: "Pasto",
+      emoji: "🛍️",
+      whatsapp: null,
+      shipsNational: true,
+    });
+    const p = await b.saveProduct({
+      name: "Reloj",
+      description: "",
+      price: 100000,
+      category: "Artesanías",
+      commission: 0.1,
+      stock: 5,
+      images: [],
+      emoji: "⌚",
+      active: true,
+      compareAtPrice: null,
+      promoCopy: "",
+      promoImage: null,
+    });
+    await b.signOut();
+    await b.signUp({ email: "c@x.co", password: "secreto1", fullName: "Cliente" });
+    const order = await b.createOrder([{ productId: p.id, qty: 1 }], null, ship);
+    await b.simulatePayment!(order.orderId, true);
+    const item = (await b.getOrder(order.orderId))!.items[0]!;
+    await expect(
+      b.openDispute(item.id, { reason: "different", details: "corto", evidence: [] }),
+    ).rejects.toThrow(/mínimo/);
+    await b.openDispute(item.id, {
+      reason: "different",
+      details: "Llegó un reloj distinto al de la foto",
+      evidence: ["https://x.co/foto.jpg"],
+    });
+    await expect(
+      b.openDispute(item.id, {
+        reason: "damaged",
+        details: "Otra disputa sobre lo mismo",
+        evidence: [],
+      }),
+    ).rejects.toThrow(/abierta/);
+    await expect(b.confirmReceipt(item.id)).rejects.toThrow(/confirmar/); // aún sin despachar
+
+    await b.signOut();
+    await b.signIn({ email: "v@x.co", password: "secreto1" });
+    expect((await b.wallet()).frozen).toBe(91000);
+    const [d] = await b.storeDisputes();
+    await b.respondDispute(d!.id, "Enviamos el correcto, adjunto guía");
+    await expect(b.resolveDispute(d!.id, "refund", "x", false)).rejects.toThrow(/administradores/);
+
+    await b.signOut();
+    await b.signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
+    await b.resolveDispute(d!.id, "refund", "Fotos confirman la diferencia", true);
+    expect((await b.allDisputes()).find((x) => x.id === d!.id)?.status).toBe("refunded");
+    expect((await b.getProduct(p.id))?.stock).toBe(5);
+    expect((await b.listStores()).some((s) => s.slug === "dudosa")).toBe(false);
+    expect((await b.disputeAudit(d!.id))?.reporterEmail).toBe("c@x.co");
+
+    await b.signOut();
+    await b.signIn({ email: "v@x.co", password: "secreto1" });
+    expect(await b.wallet()).toMatchObject({ frozen: 0, pending: 0 });
   });
 
   it("no hay autorreferidos ni clics propios", async () => {

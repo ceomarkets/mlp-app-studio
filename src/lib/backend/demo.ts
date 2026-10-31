@@ -5,8 +5,9 @@ import {
   normalizeAnnouncement,
   validateAnnouncement,
 } from "@/lib/announcements";
+import { canDispute, validateDispute } from "@/lib/disputes";
 import { buildSeed, DEMO_ADMINS, seedAnnouncements, type DemoState } from "./seed";
-import type { Backend, OrderItem, Product, ProductFilter, Profile, Store } from "./types";
+import type { Backend, Dispute, OrderItem, Product, ProductFilter, Profile, Store } from "./types";
 
 /**
  * Backend local para desarrollar sin credenciales.
@@ -39,6 +40,65 @@ function upgrade(s: DemoState) {
     st.shipsNational ??= true;
     st.verified ??= st.id === "s-tejidos" || st.id === "s-cafe";
   }
+  for (const it of s.items) {
+    it.carrier ??= it.tracking?.startsWith("Servientrega") ? "Servientrega" : null;
+    if (it.tracking?.startsWith("Servientrega ")) it.tracking = it.tracking.slice(13);
+    it.shippedAt ??=
+      it.fulfillment === "shipped" || it.fulfillment === "delivered" ? it.createdAt : null;
+    it.refundedAt ??= null;
+  }
+  s.disputes ??= [];
+  s.banned ??= [];
+  s.evidenceFiles ??= {};
+}
+
+const hasOpenDispute = (itemId: string) =>
+  (db().disputes ?? []).some((d) => d.itemId === itemId && d.status === "open");
+
+function disputeView(d: Dispute & { ip: string | null }): Dispute {
+  const s = db();
+  const { ip: _ip, ...rest } = d;
+  return {
+    ...rest,
+    storeName: s.stores.find((x) => x.id === d.storeId)?.name ?? null,
+    productName: s.items.find((x) => x.id === d.itemId)?.productName ?? null,
+  };
+}
+
+function newDispute(
+  fields: Pick<
+    Dispute,
+    | "kind"
+    | "orderId"
+    | "itemId"
+    | "storeId"
+    | "reportedContact"
+    | "reason"
+    | "details"
+    | "evidence"
+  >,
+) {
+  const u = requireMe();
+  const problem = validateDispute(fields);
+  if (problem) throw new Error(problem);
+  const d: Dispute & { ip: string | null } = {
+    ...fields,
+    details: fields.details.trim(),
+    evidence: fields.evidence.map((e) => e.trim()).filter(Boolean),
+    id: uid(),
+    reporterId: u.id,
+    storeName: null,
+    productName: null,
+    status: "open",
+    sellerResponse: null,
+    resolutionNote: null,
+    createdAt: now(),
+    resolvedAt: null,
+    ip: "127.0.0.1 (demo)",
+  };
+  db().disputes!.push(d);
+  save();
+  return d.id;
 }
 
 function save() {
@@ -52,6 +112,7 @@ function save() {
 
 export function resetDemo() {
   state = buildSeed();
+  upgrade(state);
   save();
   emit();
 }
@@ -241,6 +302,66 @@ export const demoBackend: Backend = {
     return !!u && (db().admins ?? []).includes(u.id);
   },
 
+  async allDisputes() {
+    requireAdmin();
+    return (db().disputes ?? [])
+      .map(disputeView)
+      .sort(
+        (a, b) =>
+          Number(b.status === "open") - Number(a.status === "open") ||
+          b.createdAt.localeCompare(a.createdAt),
+      );
+  },
+
+  async resolveDispute(id, outcome, note, ban) {
+    await wait();
+    const admin = requireAdmin();
+    const s = db();
+    const d = s.disputes?.find((x) => x.id === id);
+    if (!d || d.status !== "open") throw new Error("La disputa no está abierta");
+    if (outcome === "refund" && d.kind !== "plazax_pay")
+      throw new Error("Los tratos externos no tienen reembolso por Plaza X");
+    if (outcome === "refund") {
+      const it = s.items.find((i) => i.id === d.itemId);
+      if (it) {
+        it.fulfillment = "cancelled";
+        it.refundedAt = now();
+        const p = s.products.find((x) => x.id === it.productId);
+        if (p) {
+          p.stock += it.qty;
+          p.soldCount = Math.max(0, p.soldCount - it.qty);
+        }
+      }
+    }
+    if (ban) {
+      const store = s.stores.find((x) => x.id === d.storeId);
+      if (!store) throw new Error("No hay una tienda que suspender");
+      if (store.ownerId === admin.id) throw new Error("No puedes suspender tu propia cuenta");
+      s.banned = [...new Set([...(s.banned ?? []), store.ownerId])];
+      s.stores.forEach((x) => x.ownerId === store.ownerId && (x.active = false));
+    }
+    d.status = outcome === "refund" ? "refunded" : outcome === "reject" ? "rejected" : "closed";
+    d.resolutionNote = note.trim() || null;
+    d.resolvedAt = now();
+    save();
+  },
+
+  async disputeAudit(id) {
+    requireAdmin();
+    const s = db();
+    const d = s.disputes?.find((x) => x.id === id);
+    if (!d) return null;
+    const owner = s.stores.find((x) => x.id === d.storeId)?.ownerId;
+    return {
+      reporterEmail: s.users.find((u) => u.id === d.reporterId)?.email ?? "",
+      reporterIp: d.ip,
+      reporterAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      createdAt: d.createdAt,
+      ownerEmail: s.users.find((u) => u.id === owner)?.email ?? null,
+      ownerBannedAt: owner && s.banned?.includes(owner) ? d.resolvedAt : null,
+    };
+  },
+
   async allAnnouncements() {
     requireAdmin();
     return [...announcements()].sort(byPriority);
@@ -424,10 +545,11 @@ export const demoBackend: Backend = {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
-  async setFulfillment(itemId, status, tracking) {
+  async setFulfillment(itemId, status, tracking, carrier) {
     const u = requireMe();
     const store = storeOf(u.id);
     const it = db().items.find((i) => i.id === itemId);
+    if (!["preparing", "shipped", "cancelled"].includes(status)) throw new Error("Estado inválido");
     if (
       !it ||
       it.storeId !== store?.id ||
@@ -436,10 +558,113 @@ export const demoBackend: Backend = {
     ) {
       throw new Error("No puedes modificar este pedido");
     }
+    if (status === "cancelled" && hasOpenDispute(itemId))
+      throw new Error("Hay una disputa abierta: la resuelve la administración");
     it.fulfillment = status;
     if (tracking?.trim()) it.tracking = tracking.trim();
-    if (status === "delivered") it.deliveredAt = now();
+    if (carrier?.trim()) it.carrier = carrier.trim();
+    if (status === "shipped") it.shippedAt ??= now();
     save();
+  },
+
+  async storeDisputes() {
+    const u = me();
+    const store = u && storeOf(u.id);
+    if (!store) return [];
+    return (db().disputes ?? [])
+      .filter((d) => d.storeId === store.id && d.kind === "plazax_pay")
+      .map(disputeView)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  async respondDispute(id, response) {
+    await wait();
+    const u = requireMe();
+    const d = db().disputes?.find((x) => x.id === id);
+    const store = storeOf(u.id);
+    if (!d || d.status !== "open" || d.kind !== "plazax_pay" || d.storeId !== store?.id)
+      throw new Error("No puedes responder esta disputa");
+    d.sellerResponse = response.trim().slice(0, 2000);
+    save();
+  },
+
+  async confirmReceipt(itemId) {
+    await wait();
+    const u = requireMe();
+    const s = db();
+    const it = s.items.find((i) => i.id === itemId);
+    const o = it && s.orders.find((x) => x.id === it.orderId);
+    if (
+      !it ||
+      o?.buyerId !== u.id ||
+      !it.paidAt ||
+      !["preparing", "shipped"].includes(it.fulfillment)
+    )
+      throw new Error("No puedes confirmar este artículo");
+    it.fulfillment = "delivered";
+    it.deliveredAt = now();
+    save();
+  },
+
+  async openDispute(itemId, input) {
+    await wait();
+    const u = requireMe();
+    const s = db();
+    const it = s.items.find((i) => i.id === itemId);
+    const o = it && s.orders.find((x) => x.id === it.orderId);
+    if (!it || o?.buyerId !== u.id) throw new Error("Este artículo no es de tus pedidos");
+    if (!canDispute(it)) throw new Error("Este artículo ya no admite disputas");
+    if (hasOpenDispute(itemId)) throw new Error("Ya hay una disputa abierta para este artículo");
+    return newDispute({
+      kind: "plazax_pay",
+      orderId: it.orderId,
+      itemId,
+      storeId: it.storeId,
+      reportedContact: null,
+      ...input,
+    });
+  },
+
+  async reportExternal(input) {
+    await wait();
+    const store = db().stores.find((x) => x.slug === input.storeSlug.trim());
+    if (!store && !input.contact.trim())
+      throw new Error("Indica la tienda o el contacto que denuncias");
+    return newDispute({
+      kind: "external_deal",
+      orderId: null,
+      itemId: null,
+      storeId: store?.id ?? null,
+      reportedContact: input.contact.trim().slice(0, 120) || null,
+      reason: input.reason,
+      details: input.details,
+      evidence: input.evidence,
+    });
+  },
+
+  async myDisputes() {
+    const u = me();
+    if (!u) return [];
+    return (db().disputes ?? [])
+      .filter((d) => d.reporterId === u.id)
+      .map(disputeView)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  async uploadEvidence(file) {
+    requireMe();
+    if (!file.type.startsWith("image/"))
+      throw new Error("En el modo demo solo se pueden subir fotos");
+    const data = await downscale(file, 700);
+    const ref = `evidence:demo/${uid()}`;
+    db().evidenceFiles![ref] = data;
+    save();
+    return ref;
+  },
+
+  async evidenceUrl(ref) {
+    if (ref.startsWith("https://")) return ref;
+    return db().evidenceFiles?.[ref] ?? null;
   },
 
   async createOrder(lines, ref, shipping) {
@@ -469,7 +694,8 @@ export const demoBackend: Backend = {
     for (const [productId, qty] of merged) {
       const p = s.products.find((x) => x.id === productId && x.active);
       const store = p && s.stores.find((x) => x.id === p.storeId && x.active);
-      if (!p || !store) throw new Error("Un producto ya no está disponible");
+      if (!p || !store || s.banned?.includes(store.ownerId))
+        throw new Error("Un producto ya no está disponible");
       if (p.stock < qty) throw new Error(`Sin stock suficiente de "${p.name}" (quedan ${p.stock})`);
       const referred = !!aff && aff.id !== store.ownerId;
       const sub = p.price * qty;
@@ -494,7 +720,10 @@ export const demoBackend: Backend = {
         paidAt: null,
         fulfillment: "pending",
         tracking: null,
+        carrier: null,
+        shippedAt: null,
         deliveredAt: null,
+        refundedAt: null,
         createdAt: now(),
       });
     }
@@ -586,7 +815,7 @@ export const demoBackend: Backend = {
 
   async wallet() {
     const u = me();
-    if (!u) return { pending: 0, available: 0, withdrawn: 0 };
+    if (!u) return { pending: 0, available: 0, withdrawn: 0, frozen: 0 };
     const s = db();
     const store = storeOf(u.id);
     const rows = s.items
@@ -598,6 +827,8 @@ export const demoBackend: Backend = {
         paidAt: i.paidAt,
         fulfillment: i.fulfillment,
         deliveredAt: i.deliveredAt,
+        shippedAt: i.shippedAt,
+        frozen: hasOpenDispute(i.id),
       }));
     const withdrawn = s.withdrawals
       .filter((w) => w.userId === u.id && w.status !== "rejected")
@@ -617,6 +848,8 @@ export const demoBackend: Backend = {
   async requestWithdrawal(amount, method, account) {
     await wait();
     const u = requireMe();
+    if (db().banned?.includes(u.id))
+      throw new Error("Tu cuenta está suspendida. Escríbenos a soporte");
     const w = await this.wallet();
     if (amount < MIN_WITHDRAWAL) throw new Error("El retiro mínimo es $50.000");
     if (amount > w.available) throw new Error("Saldo disponible insuficiente");

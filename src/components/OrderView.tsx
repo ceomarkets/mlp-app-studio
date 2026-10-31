@@ -1,5 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { Check } from "lucide-react";
-import type { Order, OrderItem } from "@/lib/backend";
+import { BuyerItemActions, disputeKeys, TrackingInfo } from "@/components/Disputes";
+import { backend, type Order, type OrderItem } from "@/lib/backend";
 import { cop, FULFILLMENT_LABEL } from "@/lib/plaza";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +23,7 @@ const STEPS: OrderItem["fulfillment"][] = ["pending", "preparing", "shipped", "d
 
 export function FulfillmentSteps({ value }: { value: OrderItem["fulfillment"] }) {
   if (value === "cancelled")
-    return <span className="text-xs font-semibold text-destructive">Cancelado por la tienda</span>;
+    return <span className="text-xs font-semibold text-destructive">Cancelado</span>;
   const at = STEPS.indexOf(value);
   return (
     <ol className="flex items-center gap-1 text-[11px] font-semibold">
@@ -44,6 +46,11 @@ export function FulfillmentSteps({ value }: { value: OrderItem["fulfillment"] })
 }
 
 export function OrderCard({ order }: { order: Order }) {
+  const disputes = useQuery({
+    queryKey: disputeKeys.mine,
+    queryFn: () => backend.myDisputes(),
+    enabled: order.status === "paid",
+  });
   return (
     <div className="rounded-2xl border bg-card p-4 shadow-card md:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -76,11 +83,17 @@ export function OrderCard({ order }: { order: Order }) {
                 {i.qty} × {i.productName}
               </div>
               {order.status === "paid" && <FulfillmentSteps value={i.fulfillment} />}
-              {i.tracking && (
-                <div className="mt-0.5 text-xs text-muted-foreground">Guía: {i.tracking}</div>
-              )}
+              <TrackingInfo item={i} />
             </div>
             <span className="text-sm">{cop(i.subtotal)}</span>
+            {order.status === "paid" && (
+              <div className="basis-full pl-13">
+                <BuyerItemActions
+                  item={i}
+                  dispute={disputes.data?.find((d) => d.itemId === i.id)}
+                />
+              </div>
+            )}
           </li>
         ))}
       </ul>

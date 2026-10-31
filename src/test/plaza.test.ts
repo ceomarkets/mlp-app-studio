@@ -40,7 +40,7 @@ describe("computeWallet", () => {
       40,
       now,
     );
-    expect(w).toEqual({ pending: 80, available: 60, withdrawn: 40 });
+    expect(w).toEqual({ pending: 80, available: 60, withdrawn: 40, frozen: 0 });
   });
 });
 

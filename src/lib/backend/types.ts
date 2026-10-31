@@ -1,3 +1,10 @@
+import type {
+  DisputeInput,
+  DisputeKind,
+  DisputeOutcome,
+  DisputeReason,
+  DisputeStatus,
+} from "@/lib/disputes";
 import type { Category, PayoutMethod } from "@/lib/plaza";
 
 export type Profile = {
@@ -101,7 +108,10 @@ export type OrderItem = {
   paidAt: string | null;
   fulfillment: Fulfillment;
   tracking: string | null;
+  carrier: string | null;
+  shippedAt: string | null;
   deliveredAt: string | null;
+  refundedAt: string | null;
   createdAt: string;
 };
 
@@ -136,7 +146,37 @@ export type Withdrawal = {
   createdAt: string;
 };
 
-export type Wallet = { pending: number; available: number; withdrawn: number };
+/** frozen: dinero retenido por disputas abiertas (no se libera ni se retira). */
+export type Wallet = { pending: number; available: number; withdrawn: number; frozen: number };
+
+export type Dispute = {
+  id: string;
+  kind: DisputeKind;
+  reporterId: string;
+  orderId: string | null;
+  itemId: string | null;
+  storeId: string | null;
+  storeName: string | null;
+  productName: string | null;
+  reportedContact: string | null;
+  reason: DisputeReason;
+  details: string;
+  evidence: string[];
+  status: DisputeStatus;
+  sellerResponse: string | null;
+  resolutionNote: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+};
+
+export type DisputeAudit = {
+  reporterEmail: string;
+  reporterIp: string | null;
+  reporterAgent: string | null;
+  createdAt: string;
+  ownerEmail: string | null;
+  ownerBannedAt: string | null;
+};
 
 export type AnnouncementTone = "promo" | "news" | "event" | "info";
 
@@ -227,6 +267,10 @@ export interface Backend {
   allAnnouncements(): Promise<Announcement[]>;
   saveAnnouncement(input: AnnouncementInput): Promise<Announcement>;
   deleteAnnouncement(id: string): Promise<void>;
+  /** Administración: todas las disputas y denuncias. */
+  allDisputes(): Promise<Dispute[]>;
+  resolveDispute(id: string, outcome: DisputeOutcome, note: string, ban: boolean): Promise<void>;
+  disputeAudit(id: string): Promise<DisputeAudit | null>;
   addReview(productId: string, rating: number, comment: string): Promise<void>;
 
   // Vendedor
@@ -237,7 +281,15 @@ export interface Backend {
   deleteProduct(id: string): Promise<void>;
   uploadImage(file: File): Promise<string>;
   sellerOrders(): Promise<SellerOrderItem[]>;
-  setFulfillment(itemId: string, status: Fulfillment, tracking?: string): Promise<void>;
+  setFulfillment(
+    itemId: string,
+    status: Exclude<Fulfillment, "pending" | "delivered">,
+    tracking?: string,
+    carrier?: string,
+  ): Promise<void>;
+  /** Disputas sobre artículos de mi tienda. */
+  storeDisputes(): Promise<Dispute[]>;
+  respondDispute(id: string, response: string): Promise<void>;
 
   // Comprador
   createOrder(
@@ -249,6 +301,15 @@ export interface Backend {
   getOrder(id: string): Promise<Order | null>;
   /** Devuelve la URL a la que se envía al comprador para pagar. */
   startPayment(orderId: string, returnUrl: string): Promise<string>;
+  /** El comprador confirma que recibió el artículo. */
+  confirmReceipt(itemId: string): Promise<void>;
+  openDispute(itemId: string, input: DisputeInput): Promise<string>;
+  reportExternal(input: DisputeInput & { storeSlug: string; contact: string }): Promise<string>;
+  myDisputes(): Promise<Dispute[]>;
+  /** Sube una foto, video o PDF privado y devuelve su referencia "evidence:<ruta>". */
+  uploadEvidence(file: File): Promise<string>;
+  /** URL temporal para ver una evidencia (enlaces https se devuelven tal cual). */
+  evidenceUrl(ref: string): Promise<string | null>;
   /** Solo modo demo: simula la respuesta de la pasarela. */
   simulatePayment?(orderId: string, approved: boolean): Promise<void>;
 

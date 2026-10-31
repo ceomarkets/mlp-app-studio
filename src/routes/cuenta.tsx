@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Loader2, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { DisputeCard, DisputeDialog, disputeKeys } from "@/components/Disputes";
 import { OrderCard } from "@/components/OrderView";
 import { Empty, Shell } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,12 @@ function Account() {
           )}
         </section>
 
-        <aside id="perfil" className="h-fit space-y-4 rounded-3xl border bg-card p-6 shadow-card">
+        <MyReports />
+
+        <aside
+          id="perfil"
+          className="h-fit md:col-start-2 md:row-span-2 md:row-start-1 space-y-4 rounded-3xl border bg-card p-6 shadow-card"
+        >
           <h2 className="text-xl font-bold">Perfil</h2>
           <div className="space-y-1.5">
             <Label>Correo</Label>
@@ -122,5 +128,36 @@ function Account() {
         </aside>
       </div>
     </Shell>
+  );
+}
+
+function MyReports() {
+  const [open, setOpen] = useState(false);
+  const list = useQuery({ queryKey: disputeKeys.mine, queryFn: () => backend.myDisputes() });
+  return (
+    <section id="reportes" className="scroll-mt-32 md:col-start-1">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-bold">Disputas y reportes</h2>
+        <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+          <i className="fa-solid fa-triangle-exclamation text-amber-600" /> Reportar trato externo
+        </Button>
+      </div>
+      <p className="mb-4 text-sm text-muted-foreground">
+        ¿Un problema con algo que pagaste aquí? Usa <b>Abrir disputa</b> en el artículo de tu
+        pedido: congelamos el pago mientras revisamos.
+      </p>
+      {list.data?.length ? (
+        <div className="space-y-4">
+          {list.data.map((d) => (
+            <DisputeCard key={d.id} d={d} />
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          No tienes reportes.
+        </p>
+      )}
+      <DisputeDialog open={open} onOpenChange={setOpen} />
+    </section>
   );
 }

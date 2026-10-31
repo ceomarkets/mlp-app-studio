@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { DisputeBadge, disputeKeys, SellerDisputes, TrackingInfo } from "@/components/Disputes";
 import { FulfillmentSteps } from "@/components/OrderView";
 import { ProductDialog, SplitPreview, StoreForm } from "@/components/panels/seller-forms";
 import { TrendChart } from "@/components/panels/TrendChart";
@@ -22,7 +23,14 @@ import { Empty, ProductImage, Shell, Stat } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { backend, type Fulfillment, type Product, type SellerOrderItem } from "@/lib/backend";
+import {
+  backend,
+  type Dispute,
+  type Fulfillment,
+  type Product,
+  type SellerOrderItem,
+} from "@/lib/backend";
+import { AUTO_CONFIRM_DAYS, CARRIERS } from "@/lib/disputes";
 import {
   AFFILIATE_MAX,
   AFFILIATE_MIN,
@@ -157,9 +165,14 @@ function Dashboard() {
   const store = useQuery({ queryKey: keys.myStore, queryFn: () => backend.myStore() }).data!;
   const products = useQuery({ queryKey: keys.myProducts, queryFn: () => backend.myProducts() });
   const orders = useQuery({ queryKey: keys.sellerOrders, queryFn: () => backend.sellerOrders() });
+  const disputes = useQuery({
+    queryKey: disputeKeys.store,
+    queryFn: () => backend.storeDisputes(),
+  });
   const toShip =
     orders.data?.filter((o) => o.fulfillment === "pending" || o.fulfillment === "preparing")
       .length ?? 0;
+  const openDisputes = disputes.data?.filter((d) => d.status === "open").length ?? 0;
 
   return (
     <Shell wide>
@@ -193,6 +206,14 @@ function Dashboard() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="disputas">
+            Disputas{" "}
+            {openDisputes > 0 && (
+              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] text-white">
+                {openDisputes}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="billetera">Billetera</TabsTrigger>
           <TabsTrigger value="tienda">Tienda</TabsTrigger>
         </TabsList>
@@ -203,7 +224,10 @@ function Dashboard() {
           <Products list={products.data} />
         </TabsContent>
         <TabsContent value="pedidos" className="mt-6">
-          <Orders list={orders.data} />
+          <Orders list={orders.data} disputes={disputes.data ?? []} />
+        </TabsContent>
+        <TabsContent value="disputas" className="mt-6">
+          <SellerDisputes />
         </TabsContent>
         <TabsContent value="billetera" className="mt-6">
           <WalletPanel />
@@ -435,21 +459,20 @@ function Products({ list }: { list: Product[] | undefined }) {
   );
 }
 
-const NEXT: Partial<Record<Fulfillment, { to: Fulfillment; label: string }>> = {
+const NEXT: Partial<Record<Fulfillment, { to: "preparing" | "shipped"; label: string }>> = {
   pending: { to: "preparing", label: "Empezar a preparar" },
-  preparing: { to: "shipped", label: "Marcar enviado" },
-  shipped: { to: "delivered", label: "Confirmar entrega" },
+  preparing: { to: "shipped", label: "Marcar despachado" },
 };
 
-function Orders({ list }: { list: SellerOrderItem[] | undefined }) {
+function Orders({ list, disputes }: { list: SellerOrderItem[] | undefined; disputes: Dispute[] }) {
   const [filter, setFilter] = useState<"activos" | Fulfillment>("activos");
   if (!list) return <div className="h-40 animate-pulse rounded-2xl bg-muted" />;
   const shown = list.filter((o) =>
     filter === "activos"
-      ? ["pending", "preparing", "shipped"].includes(o.fulfillment)
+      ? ["pending", "preparing"].includes(o.fulfillment)
       : o.fulfillment === filter,
   );
-  const tabs: ("activos" | Fulfillment)[] = ["activos", "delivered", "cancelled"];
+  const tabs: ("activos" | Fulfillment)[] = ["activos", "shipped", "delivered", "cancelled"];
 
   return (
     <div>
@@ -470,7 +493,7 @@ function Orders({ list }: { list: SellerOrderItem[] | undefined }) {
       {shown.length ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {shown.map((o) => (
-            <OrderRow key={o.id} o={o} />
+            <OrderRow key={o.id} o={o} dispute={disputes.find((d) => d.itemId === o.id)} />
           ))}
         </div>
       ) : (
@@ -482,12 +505,18 @@ function Orders({ list }: { list: SellerOrderItem[] | undefined }) {
   );
 }
 
-function OrderRow({ o }: { o: SellerOrderItem }) {
+function OrderRow({ o, dispute }: { o: SellerOrderItem; dispute?: Dispute | undefined }) {
   const qc = useQueryClient();
   const [tracking, setTracking] = useState(o.tracking ?? "");
+  const [carrier, setCarrier] = useState(o.carrier ?? CARRIERS[0].id);
   const next = NEXT[o.fulfillment];
+  const local = carrier === "Entrega local";
   const m = useMutation({
-    mutationFn: (to: Fulfillment) => backend.setFulfillment(o.id, to, tracking),
+    mutationFn: (to: "preparing" | "shipped" | "cancelled") => {
+      if (to === "shipped" && !local && !tracking.trim())
+        throw new Error("Escribe el número de guía de la transportadora");
+      return backend.setFulfillment(o.id, to, tracking, to === "shipped" ? carrier : undefined);
+    },
     onSuccess: (_d, to) => {
       toast.success(`Pedido ${o.reference}: ${FULFILLMENT_LABEL[to].toLowerCase()}`);
       qc.invalidateQueries({ queryKey: keys.sellerOrders });
@@ -495,9 +524,18 @@ function OrderRow({ o }: { o: SellerOrderItem }) {
     },
     onError: (e) => toast.error(e.message),
   });
+  const autoAt =
+    o.fulfillment === "shipped" && o.shippedAt
+      ? new Date(Date.parse(o.shippedAt) + AUTO_CONFIRM_DAYS * 86_400_000)
+      : null;
 
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-card">
+    <div
+      className={cn(
+        "rounded-2xl border bg-card p-4 shadow-card",
+        dispute?.status === "open" && "border-amber-300",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="font-mono text-xs text-muted-foreground">
@@ -510,6 +548,11 @@ function OrderRow({ o }: { o: SellerOrderItem }) {
           <div className="mt-0.5 font-semibold">
             {o.qty} × {o.productName}
           </div>
+          {dispute && (
+            <div className="mt-1">
+              <DisputeBadge d={dispute} />
+            </div>
+          )}
         </div>
         <div className="text-right">
           <div className="font-display font-bold">{cop(o.sellerAmount)}</div>
@@ -526,32 +569,54 @@ function OrderRow({ o }: { o: SellerOrderItem }) {
       </div>
       <div className="mt-3">
         <FulfillmentSteps value={o.fulfillment} />
+        <TrackingInfo item={o} />
       </div>
-      {next && (
-        <div className="mt-3 flex gap-2">
-          {o.fulfillment === "preparing" && (
+      {o.fulfillment === "preparing" && (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <label className="text-xs">
+            <span className="mb-1 block font-semibold text-slate-600">Transportadora</span>
+            <select
+              value={carrier}
+              onChange={(e) => setCarrier(e.target.value)}
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            >
+              {CARRIERS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.id}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs">
+            <span className="mb-1 block font-semibold text-slate-600">
+              Número de guía {local && "(opcional)"}
+            </span>
             <Input
-              placeholder="Guía de envío (opcional)"
+              placeholder="Ej.: 9841203"
               value={tracking}
               onChange={(e) => setTracking(e.target.value)}
-              className="h-9"
+              className="h-9 font-mono"
             />
-          )}
+          </label>
+        </div>
+      )}
+      {next && (
+        <div className="mt-3 flex gap-2">
           <Button
             size="sm"
             className="shrink-0"
             disabled={m.isPending}
             onClick={() => m.mutate(next.to)}
           >
-            {next.label}
+            {next.to === "shipped" && <Truck />} {next.label}
           </Button>
-          {o.fulfillment === "pending" && (
+          {o.fulfillment === "pending" && dispute?.status !== "open" && (
             <Button
               size="sm"
               variant="ghost"
               disabled={m.isPending}
               onClick={() =>
-                confirm("¿Cancelar este ítem? Deberás reembolsar al comprador.") &&
+                confirm("¿Cancelar este ítem? Plaza X reembolsará al comprador.") &&
                 m.mutate("cancelled")
               }
             >
@@ -560,8 +625,11 @@ function OrderRow({ o }: { o: SellerOrderItem }) {
           )}
         </div>
       )}
-      {o.tracking && o.fulfillment !== "preparing" && (
-        <div className="mt-2 text-xs text-muted-foreground">Guía: {o.tracking}</div>
+      {autoAt && (
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Esperando que el comprador confirme la recepción (o se confirma sola el{" "}
+          {autoAt.toLocaleDateString("es-CO", { day: "numeric", month: "long" })}).
+        </p>
       )}
     </div>
   );

@@ -6,6 +6,8 @@ import type {
   Announcement,
   Backend,
   Click,
+  Dispute,
+  DisputeAudit,
   Order,
   OrderItem,
   Product,
@@ -109,8 +111,32 @@ const toItem = (r: Row): OrderItem => ({
   paidAt: r.paid_at,
   fulfillment: r.fulfillment,
   tracking: r.tracking,
+  carrier: r.carrier ?? null,
+  shippedAt: r.shipped_at ?? null,
   deliveredAt: r.delivered_at,
+  refundedAt: r.refunded_at ?? null,
   createdAt: r.created_at,
+});
+
+const DISPUTE_COLS = "*, stores(name), order_items(product_name)";
+const toDispute = (r: Row): Dispute => ({
+  id: r.id,
+  kind: r.kind,
+  reporterId: r.reporter_id,
+  orderId: r.order_id,
+  itemId: r.item_id,
+  storeId: r.store_id,
+  storeName: r.stores?.name ?? null,
+  productName: r.order_items?.product_name ?? null,
+  reportedContact: r.reported_contact,
+  reason: r.reason,
+  details: r.details,
+  evidence: r.evidence ?? [],
+  status: r.status,
+  sellerResponse: r.seller_response,
+  resolutionNote: r.resolution_note,
+  createdAt: r.created_at,
+  resolvedAt: r.resolved_at,
 });
 
 const toOrder = (r: Row): Order => ({
@@ -138,6 +164,11 @@ function humanize(msg: string) {
   if (msg.includes("User already registered")) return "Ya existe una cuenta con ese correo";
   if (msg.includes("Email not confirmed")) return "Confirma tu correo antes de entrar";
   if (msg.includes("Password should be")) return "La contraseña debe tener al menos 6 caracteres";
+  if (msg.includes("disputes_details_check")) return "Cuéntanos qué pasó (mínimo 20 caracteres)";
+  if (msg.includes("disputes_one_open_per_item"))
+    return "Ya hay una disputa abierta para este artículo";
+  if (/function .*(open_dispute|confirm_receipt|report_external|resolve_dispute)/.test(msg))
+    return "Falta aplicar la migración de disputas en la base de datos";
   return msg;
 }
 
@@ -285,6 +316,44 @@ export const supabaseBackend: Backend = {
     if (!(await currentUser())) return false;
     const { data, error } = await untyped.rpc("is_admin");
     return !error && data === true;
+  },
+
+  async allDisputes() {
+    const rows = ok(
+      await untyped
+        .from("disputes")
+        .select(DISPUTE_COLS)
+        .order("status", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(500),
+    ) as Row[];
+    return rows.map(toDispute);
+  },
+
+  async resolveDispute(id, outcome, note, ban) {
+    ok(
+      await untyped.rpc("resolve_dispute", {
+        p_id: id,
+        p_outcome: outcome,
+        p_note: note,
+        p_ban: ban,
+      }),
+    );
+  },
+
+  async disputeAudit(id) {
+    const rows = ok(await untyped.rpc("dispute_audit", { p_id: id })) as Row[];
+    const r = rows[0];
+    return r
+      ? ({
+          reporterEmail: r.reporter_email,
+          reporterIp: r.reporter_ip,
+          reporterAgent: r.reporter_agent,
+          createdAt: r.created_at,
+          ownerEmail: r.owner_email,
+          ownerBannedAt: r.owner_banned_at,
+        } satisfies DisputeAudit)
+      : null;
   },
 
   async allAnnouncements() {
@@ -475,14 +544,95 @@ export const supabaseBackend: Backend = {
     }));
   },
 
-  async setFulfillment(itemId, status, tracking) {
+  async setFulfillment(itemId, status, tracking, carrier) {
     ok(
-      await supabase.rpc("set_fulfillment", {
+      await untyped.rpc("set_fulfillment", {
         p_item_id: itemId,
         p_status: status,
         ...(tracking !== undefined ? { p_tracking: tracking } : {}),
+        ...(carrier !== undefined ? { p_carrier: carrier } : {}),
       }),
     );
+  },
+
+  async storeDisputes() {
+    const store = await this.myStore();
+    if (!store) return [];
+    const rows = ok(
+      await untyped
+        .from("disputes")
+        .select(DISPUTE_COLS)
+        .eq("store_id", store.id)
+        .eq("kind", "plazax_pay")
+        .order("created_at", { ascending: false }),
+    ) as Row[];
+    return rows.map(toDispute);
+  },
+
+  async respondDispute(id, response) {
+    ok(await untyped.rpc("respond_dispute", { p_id: id, p_response: response }));
+  },
+
+  async confirmReceipt(itemId) {
+    ok(await untyped.rpc("confirm_receipt", { p_item_id: itemId }));
+  },
+
+  async openDispute(itemId, input) {
+    return ok(
+      await untyped.rpc("open_dispute", {
+        p_item_id: itemId,
+        p_reason: input.reason,
+        p_details: input.details,
+        p_evidence: input.evidence,
+      }),
+    ) as string;
+  },
+
+  async reportExternal(input) {
+    return ok(
+      await untyped.rpc("report_external", {
+        p_store_slug: input.storeSlug,
+        p_contact: input.contact,
+        p_reason: input.reason,
+        p_details: input.details,
+        p_evidence: input.evidence,
+      }),
+    ) as string;
+  },
+
+  async myDisputes() {
+    const u = await currentUser();
+    if (!u) return [];
+    const rows = ok(
+      await untyped
+        .from("disputes")
+        .select(DISPUTE_COLS)
+        .eq("reporter_id", u.id)
+        .order("created_at", { ascending: false }),
+    ) as Row[];
+    return rows.map(toDispute);
+  },
+
+  async uploadEvidence(file) {
+    const u = await requireUser();
+    if (file.size > 10 * 1024 * 1024) throw new Error("El archivo supera 10 MB");
+    const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const path = `${u.id}/${crypto.randomUUID()}.${ext}`;
+    ok(
+      await supabase.storage
+        .from("dispute-evidence")
+        .upload(path, file, { contentType: file.type }),
+    );
+    return `evidence:${path}`;
+  },
+
+  async evidenceUrl(ref) {
+    if (ref.startsWith("https://")) return ref;
+    if (!ref.startsWith("evidence:")) return null;
+    const { data } = await supabase.storage
+      .from("dispute-evidence")
+      .createSignedUrl(ref.slice("evidence:".length), 600);
+    return data?.signedUrl ?? null;
   },
 
   async createOrder(lines, ref, shipping) {
@@ -573,8 +723,13 @@ export const supabaseBackend: Backend = {
 
   async wallet() {
     const rows = ok(await supabase.rpc("my_wallet")) as Row[];
-    const r = rows[0] ?? { pending: 0, available: 0, withdrawn: 0 };
-    return { pending: r.pending, available: r.available, withdrawn: r.withdrawn };
+    const r = rows[0] ?? { pending: 0, available: 0, withdrawn: 0, frozen: 0 };
+    return {
+      pending: r.pending,
+      available: r.available,
+      withdrawn: r.withdrawn,
+      frozen: r.frozen ?? 0,
+    };
   },
 
   async myWithdrawals() {

@@ -77,27 +77,40 @@ export function slugify(s: string) {
 
 const DAY = 86_400_000;
 
+/** Días tras el despacho en que la entrega se confirma sola (igual que la base de datos). */
+export const AUTO_CONFIRM_DAYS = 10;
+
 export type EarningRow = {
   amount: number;
   paidAt: string | null;
   fulfillment: "pending" | "preparing" | "shipped" | "delivered" | "cancelled";
   deliveredAt: string | null;
+  shippedAt?: string | null;
+  /** Tiene una disputa abierta: el dinero queda congelado. */
+  frozen?: boolean;
 };
 
 /** Mismo cálculo que la función SQL my_wallet(). */
 export function computeWallet(rows: EarningRow[], withdrawn: number, now = Date.now()) {
   let pending = 0;
   let released = 0;
+  let frozen = 0;
   for (const r of rows) {
     if (!r.paidAt || r.fulfillment === "cancelled") continue;
-    const free =
-      r.fulfillment === "delivered" &&
-      !!r.deliveredAt &&
-      Date.parse(r.deliveredAt) <= now - HOLD_DAYS * DAY;
-    if (free) released += r.amount;
+    if (r.frozen) {
+      frozen += r.amount;
+      continue;
+    }
+    const delivered =
+      r.fulfillment === "delivered" && r.deliveredAt
+        ? Date.parse(r.deliveredAt)
+        : r.fulfillment === "shipped" && r.shippedAt
+          ? Date.parse(r.shippedAt) + AUTO_CONFIRM_DAYS * DAY
+          : null;
+    if (delivered !== null && delivered <= now - HOLD_DAYS * DAY) released += r.amount;
     else pending += r.amount;
   }
-  return { pending, available: released - withdrawn, withdrawn };
+  return { pending, available: released - withdrawn, withdrawn, frozen };
 }
 
 /** Agrupa fechas ISO en una serie diaria de los últimos `days` días (incluye hoy). */

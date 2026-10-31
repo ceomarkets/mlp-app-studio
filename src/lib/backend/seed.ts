@@ -2,6 +2,7 @@ import { daysAgo, splitSale } from "@/lib/plaza";
 import type {
   Announcement,
   Click,
+  Dispute,
   Order,
   OrderItem,
   Product,
@@ -34,6 +35,11 @@ export type DemoState = {
   announcements?: Announcement[];
   /** Usuarios que pueden publicar anuncios. */
   admins?: string[];
+  disputes?: (Dispute & { ip: string | null })[];
+  /** Usuarios suspendidos. */
+  banned?: string[];
+  /** Archivos de evidencia del modo demo (referencia → data URL). */
+  evidenceFiles?: Record<string, string>;
 };
 
 /** La cuenta demo administra los anuncios para poder probar la pantalla. */
@@ -407,10 +413,12 @@ export function buildSeed(now = Date.now()): DemoState {
       paidAt: created,
       fulfillment,
       tracking:
-        fulfillment === "shipped" || fulfillment === "delivered"
-          ? `Servientrega ${7000000 + i * 37}`
-          : null,
+        fulfillment === "shipped" || fulfillment === "delivered" ? `${7000000 + i * 37}` : null,
+      carrier: fulfillment === "shipped" || fulfillment === "delivered" ? "Servientrega" : null,
+      shippedAt:
+        fulfillment === "shipped" || fulfillment === "delivered" ? daysAgo(age - 1, now) : null,
       deliveredAt: fulfillment === "delivered" ? daysAgo(age - 3, now) : null,
+      refundedAt: null,
       createdAt: created,
     });
     p.soldCount += qty;
@@ -472,6 +480,35 @@ export function buildSeed(now = Date.now()): DemoState {
     session: null,
     announcements: seedAnnouncements(now),
     admins: DEMO_ADMINS,
+    // Una disputa abierta de ejemplo sobre una venta despachada de Tejidos Galeras.
+    disputes: (() => {
+      const it = items.find((x) => x.storeId === "s-tejidos" && x.fulfillment === "shipped");
+      return it
+        ? [
+            {
+              id: "d-seed-1",
+              kind: "plazax_pay" as const,
+              reporterId: "u-buyer",
+              orderId: it.orderId,
+              itemId: it.id,
+              storeId: it.storeId,
+              storeName: null,
+              productName: null,
+              reportedContact: null,
+              reason: "damaged" as const,
+              details:
+                "La prenda llegó con una costura abierta en la manga. Adjunto foto del empaque.",
+              evidence: [],
+              status: "open" as const,
+              sellerResponse: null,
+              resolutionNote: null,
+              createdAt: daysAgo(1, now),
+              resolvedAt: null,
+              ip: "190.0.0.1 (demo)",
+            },
+          ]
+        : [];
+    })(),
     users,
     stores,
     products,

@@ -265,6 +265,9 @@ function UserMenu() {
         <DropdownMenuItem onSelect={() => navigate({ to: "/favoritos" })}>
           <Heart /> Favoritos
         </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "reportes" })}>
+          <ShieldCheck /> Disputas y reportes
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "perfil" })}>
           <User /> Perfil
         </DropdownMenuItem>
@@ -286,6 +289,9 @@ function UserMenu() {
             </DropdownMenuLabel>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/anuncios" })}>
               <Megaphone /> Anuncios
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/disputas" })}>
+              <ShieldCheck /> Disputas
             </DropdownMenuItem>
           </>
         )}
