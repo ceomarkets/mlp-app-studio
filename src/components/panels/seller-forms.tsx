@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { COMPANY_NAME_KEY } from "@/components/AuthDialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -99,16 +100,29 @@ export function StoreForm({
   onSaved?: (s: Store) => void;
 }) {
   const qc = useQueryClient();
-  const [f, setF] = useState<StoreInput>({
-    name: store?.name ?? "",
-    slug: store?.slug ?? "",
-    tagline: store?.tagline ?? "",
-    city: store?.city ?? "",
-    emoji: store?.emoji ?? "🛍️",
-    whatsapp: store?.whatsapp ?? "",
-    shipsNational: store?.shipsNational ?? true,
+  const [f, setF] = useState<StoreInput>(() => {
+    let company = "";
+    try {
+      company = (!store && sessionStorage.getItem(COMPANY_NAME_KEY)) || "";
+    } catch {
+      /* sin almacenamiento */
+    }
+    return {
+      name: store?.name ?? company,
+      slug: store?.slug ?? "",
+      tagline: store?.tagline ?? "",
+      city: store?.city ?? "",
+      emoji: store?.emoji ?? "🛍️",
+      whatsapp: store?.whatsapp ?? "",
+      shipsNational: store?.shipsNational ?? true,
+      requireApproval: store?.requireApproval ?? false,
+    };
   });
   const [slugTouched, setSlugTouched] = useState(!!store);
+  useEffect(() => {
+    if (!store && f.name && !f.slug) setF((x) => ({ ...x, slug: slugify(x.name) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar
+  }, []);
   const save = useMutation({
     mutationFn: () =>
       backend.saveStore({
@@ -208,6 +222,19 @@ export function StoreForm({
           ))}
         </div>
       </fieldset>
+      <label className="flex items-center justify-between gap-3 rounded-xl border p-3">
+        <span className="text-sm">
+          <b>Aprobar afiliados</b>
+          <br />
+          <span className="text-muted-foreground">
+            Si lo activas, solo cobran comisión los afiliados que tú apruebes.
+          </span>
+        </span>
+        <Switch
+          checked={f.requireApproval}
+          onCheckedChange={(v) => setF({ ...f, requireApproval: v })}
+        />
+      </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="sc">Ciudad</Label>
@@ -267,6 +294,7 @@ const empty: ProductInput = {
   compareAtPrice: null,
   promoCopy: "",
   promoImage: null,
+  promoVideo: null,
 };
 
 export function ProductDialog({
@@ -296,6 +324,7 @@ export function ProductDialog({
             compareAtPrice: product.compareAtPrice,
             promoCopy: product.promoCopy,
             promoImage: product.promoImage,
+            promoVideo: product.promoVideo,
             category: product.category,
             commission: product.commission,
             stock: product.stock,
@@ -542,6 +571,16 @@ export function ProductDialog({
               placeholder="URL de Imagen Publicitaria / Banner (https://…)"
               value={f.promoImage ?? ""}
               onChange={(e) => setF({ ...f, promoImage: e.target.value || null })}
+              className="border-slate-200 bg-white text-xs"
+            />
+            <Input
+              aria-label="URL de video promocional"
+              type="url"
+              pattern="https://.*"
+              maxLength={500}
+              placeholder="Video promocional: Reels, TikTok o YouTube (https://…)"
+              value={f.promoVideo ?? ""}
+              onChange={(e) => setF({ ...f, promoVideo: e.target.value || null })}
               className="border-slate-200 bg-white text-xs"
             />
             <p className="text-[10px] text-slate-500">

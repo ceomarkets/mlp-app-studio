@@ -43,6 +43,13 @@
       "when": 1793392151767,
       "tag": "0005_disputes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793392152767,
+      "tag": "0006_affiliations",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,52 @@ export type Profile = {
   fullName: string;
   username: string | null;
   phone: string | null;
+  accountType: AccountType;
+  payoutMethod: PayoutMethod | null;
+  /** Suspendida por la administración. */
+  banned: boolean;
+};
+
+export type AccountType = "comprador" | "afiliado" | "empresa";
+
+export type AffiliateStatus = "pending" | "approved" | "rejected";
+
+/** Vínculo afiliado ↔ tienda (vista del afiliado). */
+export type Affiliation = {
+  id: string;
+  storeId: string;
+  status: AffiliateStatus;
+  createdAt: string;
+};
+
+/** Solicitud recibida por la tienda. */
+export type AffiliateRequest = {
+  id: string;
+  affiliateId: string;
+  username: string | null;
+  fullName: string;
+  status: AffiliateStatus;
+  message: string | null;
+  createdAt: string;
+  sales: number;
+};
+
+export type AdminStore = {
+  id: string;
+  ownerId: string;
+  slug: string;
+  name: string;
+  city: string;
+  emoji: string;
+  active: boolean;
+  verified: boolean;
+  verificationRequestedAt: string | null;
+  ownerEmail: string;
+  ownerBanned: boolean;
+  products: number;
+  sold: number;
+  openDisputes: number;
+  createdAt: string;
 };
 
 export type Store = {
@@ -29,11 +75,14 @@ export type Store = {
   shipsNational: boolean;
   /** Verificada por la administración (insignia azul). */
   verified: boolean;
+  /** Los afiliados necesitan aprobación para cobrar comisión. */
+  requireApproval: boolean;
+  verificationRequestedAt: string | null;
 };
 
 export type StoreInput = Pick<
   Store,
-  "slug" | "name" | "tagline" | "city" | "emoji" | "whatsapp" | "shipsNational"
+  "slug" | "name" | "tagline" | "city" | "emoji" | "whatsapp" | "shipsNational" | "requireApproval"
 >;
 
 export type Product = {
@@ -58,7 +107,12 @@ export type Product = {
   promoCopy: string;
   /** Imagen publicitaria (https) para afiliados. */
   promoImage: string | null;
-  store: Pick<Store, "slug" | "name" | "city" | "emoji" | "shipsNational" | "verified">;
+  /** Video promocional (https: Reels, TikTok, YouTube) para afiliados. */
+  promoVideo: string | null;
+  store: Pick<
+    Store,
+    "slug" | "name" | "city" | "emoji" | "shipsNational" | "verified" | "requireApproval"
+  >;
 };
 
 export type ProductInput = Pick<
@@ -75,6 +129,7 @@ export type ProductInput = Pick<
   | "active"
   | "promoCopy"
   | "promoImage"
+  | "promoVideo"
 > & { id?: string };
 
 export type Shipping = {
@@ -239,6 +294,8 @@ export interface Backend {
     email: string;
     password: string;
     fullName: string;
+    accountType?: AccountType;
+    payoutMethod?: PayoutMethod | null;
   }): Promise<{ needsConfirmation: boolean }>;
   signIn(input: { email: string; password: string }): Promise<void>;
   signOut(): Promise<void>;
@@ -247,6 +304,7 @@ export interface Backend {
     fullName?: string;
     username?: string;
     phone?: string | null;
+    payoutMethod?: PayoutMethod | null;
   }): Promise<Profile>;
   usernameAvailable(username: string): Promise<boolean>;
 
@@ -267,6 +325,10 @@ export interface Backend {
   allAnnouncements(): Promise<Announcement[]>;
   saveAnnouncement(input: AnnouncementInput): Promise<Announcement>;
   deleteAnnouncement(id: string): Promise<void>;
+  adminStores(): Promise<AdminStore[]>;
+  setStoreVerified(storeId: string, verified: boolean): Promise<void>;
+  setStoreActive(storeId: string, active: boolean): Promise<void>;
+  setUserBanned(userId: string, banned: boolean, reason?: string): Promise<void>;
   /** Administración: todas las disputas y denuncias. */
   allDisputes(): Promise<Dispute[]>;
   resolveDispute(id: string, outcome: DisputeOutcome, note: string, ban: boolean): Promise<void>;
@@ -287,6 +349,9 @@ export interface Backend {
     tracking?: string,
     carrier?: string,
   ): Promise<void>;
+  storeAffiliateRequests(): Promise<AffiliateRequest[]>;
+  decideAffiliation(id: string, approve: boolean): Promise<void>;
+  requestVerification(): Promise<void>;
   /** Disputas sobre artículos de mi tienda. */
   storeDisputes(): Promise<Dispute[]>;
   respondDispute(id: string, response: string): Promise<void>;
@@ -314,6 +379,9 @@ export interface Backend {
   simulatePayment?(orderId: string, approved: boolean): Promise<void>;
 
   // Afiliado
+  myAffiliations(): Promise<Affiliation[]>;
+  /** Devuelve "approved" (tienda abierta) o "pending" (requiere aprobación). */
+  requestAffiliation(storeSlug: string, message?: string): Promise<AffiliateStatus>;
   trackClick(username: string, productId: string): Promise<void>;
   myClicks(): Promise<Click[]>;
   myAffiliateItems(): Promise<OrderItem[]>;

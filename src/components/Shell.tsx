@@ -293,6 +293,9 @@ function UserMenu() {
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/disputas" })}>
               <ShieldCheck /> Disputas
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/tiendas" })}>
+              <StoreIcon /> Tiendas
+            </DropdownMenuItem>
           </>
         )}
         <DropdownMenuSeparator />

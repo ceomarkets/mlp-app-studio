@@ -5,6 +5,9 @@ import { normalizeAnnouncement, validateAnnouncement } from "@/lib/announcements
 import type {
   Announcement,
   Backend,
+  AccountType,
+  AdminStore,
+  AffiliateRequest,
   Click,
   Dispute,
   DisputeAudit,
@@ -45,6 +48,8 @@ const toStore = (r: Row): Store => ({
   active: r.active,
   shipsNational: r.ships_national ?? true,
   verified: r.verified ?? false,
+  requireApproval: r.require_approval ?? false,
+  verificationRequestedAt: r.verification_requested_at ?? null,
 });
 
 const toProduct = (r: Row): Product => ({
@@ -56,6 +61,7 @@ const toProduct = (r: Row): Product => ({
   compareAtPrice: r.compare_at_price ?? null,
   promoCopy: r.promo_copy ?? "",
   promoImage: r.promo_image ?? null,
+  promoVideo: r.promo_video ?? null,
   category: r.category as Category,
   commission: Number(r.commission),
   stock: r.stock,
@@ -73,6 +79,7 @@ const toProduct = (r: Row): Product => ({
     emoji: r.stores.emoji,
     shipsNational: r.stores.ships_national ?? true,
     verified: r.stores.verified ?? false,
+    requireApproval: r.stores.require_approval ?? false,
   },
 });
 
@@ -193,6 +200,9 @@ async function loadProfile(u: User): Promise<Profile> {
     fullName: data?.full_name || (u.user_metadata?.["full_name"] as string) || "",
     username: data?.username ?? null,
     phone: data?.phone ?? null,
+    accountType: ((data as Row)?.account_type as AccountType) ?? "comprador",
+    payoutMethod: ((data as Row)?.payout_method as PayoutMethod) ?? null,
+    banned: !!(data as Row)?.banned_at,
   };
 }
 
@@ -212,12 +222,16 @@ export const supabaseBackend: Backend = {
     return () => data.subscription.unsubscribe();
   },
 
-  async signUp({ email, password, fullName }) {
+  async signUp({ email, password, fullName, accountType, payoutMethod }) {
     const res = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: {
+          full_name: fullName,
+          account_type: accountType ?? "comprador",
+          ...(payoutMethod ? { payout_method: payoutMethod } : {}),
+        },
         ...(typeof window !== "undefined" && {
           emailRedirectTo: `${window.location.origin}/cuenta`,
         }),
@@ -251,7 +265,8 @@ export const supabaseBackend: Backend = {
     if (input.fullName !== undefined) patch.full_name = input.fullName;
     if (input.username !== undefined) patch.username = input.username.toLowerCase();
     if (input.phone !== undefined) patch.phone = input.phone || null;
-    ok(await supabase.from("profiles").update(patch).eq("id", u.id));
+    if (input.payoutMethod !== undefined) patch.payout_method = input.payoutMethod;
+    ok(await untyped.from("profiles").update(patch).eq("id", u.id));
     return loadProfile(u);
   },
 
@@ -316,6 +331,45 @@ export const supabaseBackend: Backend = {
     if (!(await currentUser())) return false;
     const { data, error } = await untyped.rpc("is_admin");
     return !error && data === true;
+  },
+
+  async adminStores() {
+    const rows = ok(await untyped.rpc("admin_stores")) as Row[];
+    return rows.map((r): AdminStore => ({
+      id: r.id,
+      ownerId: r.owner_id,
+      slug: r.slug,
+      name: r.name,
+      city: r.city,
+      emoji: r.emoji,
+      active: r.active,
+      verified: r.verified,
+      verificationRequestedAt: r.verification_requested_at,
+      ownerEmail: r.owner_email,
+      ownerBanned: r.owner_banned,
+      products: Number(r.products),
+      sold: Number(r.sold),
+      openDisputes: Number(r.open_disputes),
+      createdAt: r.created_at,
+    }));
+  },
+
+  async setStoreVerified(storeId, verified) {
+    ok(await untyped.rpc("set_store_verified", { p_store: storeId, p_verified: verified }));
+  },
+
+  async setStoreActive(storeId, active) {
+    ok(await untyped.from("stores").update({ active }).eq("id", storeId));
+  },
+
+  async setUserBanned(userId, banned, reason) {
+    ok(
+      await untyped.rpc("set_user_banned", {
+        p_user: userId,
+        p_banned: banned,
+        p_reason: reason ?? null,
+      }),
+    );
   },
 
   async allDisputes() {
@@ -453,19 +507,20 @@ export const supabaseBackend: Backend = {
 
   async saveStore(input) {
     const u = await requireUser();
-    const { shipsNational, ...rest } = input;
-    const row = {
+    const { shipsNational, requireApproval, ...rest } = input;
+    const row: Row = {
       ...rest,
       owner_id: u.id,
       whatsapp: input.whatsapp || null,
       ships_national: shipsNational,
+      require_approval: requireApproval,
     };
     const upsert = (data: Row) =>
       untyped.from("stores").upsert(data, { onConflict: "owner_id" }).select().single();
     let res = await upsert(row);
     // Base de datos sin la migración de perfil de tienda: se guarda sin el campo nuevo.
-    if (res.error?.message.includes("ships_national")) {
-      const { ships_national: _skip, ...legacy } = row;
+    if (/ships_national|require_approval/.test(res.error?.message ?? "")) {
+      const { ships_national: _a, require_approval: _b, ...legacy } = row;
       res = await upsert(legacy);
     }
     return toStore(ok(res));
@@ -487,18 +542,27 @@ export const supabaseBackend: Backend = {
   async saveProduct({ id, ...p }) {
     const store = await this.myStore();
     if (!store) throw new Error("Primero crea tu tienda");
-    const { compareAtPrice, promoCopy, promoImage, ...rest } = p;
-    const row = {
+    const { compareAtPrice, promoCopy, promoImage, promoVideo, ...rest } = p;
+    const row: Row = {
       ...rest,
       compare_at_price: compareAtPrice,
       promo_copy: promoCopy,
       promo_image: promoImage || null,
       store_id: store.id,
     };
-    const q = id
-      ? untyped.from("products").update(row).eq("id", id).select(PRODUCT_COLS).single()
-      : untyped.from("products").insert(row).select(PRODUCT_COLS).single();
-    return toProduct(ok(await q));
+    if (promoVideo) row.promo_video = promoVideo;
+    else if (id) row.promo_video = null;
+    const send = (data: Row) =>
+      id
+        ? untyped.from("products").update(data).eq("id", id).select(PRODUCT_COLS).single()
+        : untyped.from("products").insert(data).select(PRODUCT_COLS).single();
+    let res = await send(row);
+    // Base de datos sin la migración de afiliaciones: se guarda sin el video.
+    if (res.error?.message.includes("promo_video") && !promoVideo) {
+      const { promo_video: _v, ...legacy } = row;
+      res = await send(legacy);
+    }
+    return toProduct(ok(res));
   },
 
   async deleteProduct(id) {
@@ -552,6 +616,34 @@ export const supabaseBackend: Backend = {
         ...(tracking !== undefined ? { p_tracking: tracking } : {}),
         ...(carrier !== undefined ? { p_carrier: carrier } : {}),
       }),
+    );
+  },
+
+  async storeAffiliateRequests() {
+    const rows = ok(await untyped.rpc("store_affiliate_requests")) as Row[];
+    return rows.map((r): AffiliateRequest => ({
+      id: r.id,
+      affiliateId: r.affiliate_id,
+      username: r.username,
+      fullName: r.full_name,
+      status: r.status,
+      message: r.message,
+      createdAt: r.created_at,
+      sales: Number(r.sales),
+    }));
+  },
+
+  async decideAffiliation(id, approve) {
+    ok(await untyped.rpc("decide_affiliation", { p_id: id, p_approve: approve }));
+  },
+
+  async requestVerification() {
+    const u = await requireUser();
+    ok(
+      await untyped
+        .from("stores")
+        .update({ verification_requested_at: new Date().toISOString() })
+        .eq("owner_id", u.id),
     );
   },
 
@@ -681,6 +773,31 @@ export const supabaseBackend: Backend = {
       await supabase.from("orders").select("*, order_items(*)").eq("id", id).maybeSingle(),
     );
     return r ? toOrder(r) : null;
+  },
+
+  async myAffiliations() {
+    const u = await currentUser();
+    if (!u) return [];
+    const { data, error } = await untyped
+      .from("affiliate_requests")
+      .select("id, store_id, status, created_at")
+      .eq("affiliate_id", u.id);
+    if (error) return []; // migración aún no aplicada
+    return (data as Row[]).map((r) => ({
+      id: r.id,
+      storeId: r.store_id,
+      status: r.status,
+      createdAt: r.created_at,
+    }));
+  },
+
+  async requestAffiliation(storeSlug, message) {
+    return ok(
+      await untyped.rpc("request_affiliation", {
+        p_store_slug: storeSlug,
+        p_message: message ?? null,
+      }),
+    ) as "pending" | "approved";
   },
 
   async trackClick(username, productId) {

@@ -6,11 +6,15 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { backend, IS_DEMO } from "@/lib/backend";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
+import { PAYOUT_METHODS, type PayoutMethod } from "@/lib/plaza";
 import { keys } from "@/lib/session";
 import { authUI } from "@/lib/ui-state";
 import { cn } from "@/lib/utils";
 
-type Role = "afiliado" | "empresa";
+type Role = "comprador" | "afiliado" | "empresa";
+
+/** Nombre comercial elegido al registrarse como empresa (prellena el formulario de tienda). */
+export const COMPANY_NAME_KEY = "plazax-company-name";
 type Mode = "login" | "signup" | "reset";
 
 const input =
@@ -29,10 +33,11 @@ export function AuthForm({
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [role, setRole] = useState<Role>("afiliado");
+  const [role, setRole] = useState<Role>("comprador");
   const [mode, setMode] = useState<Mode>("login");
   const [busy, setBusy] = useState(false);
-  const [f, setF] = useState({ email: "", password: "", name: "" });
+  const [f, setF] = useState({ email: "", password: "", name: "", company: "" });
+  const [payout, setPayout] = useState<PayoutMethod>("nequi");
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -50,7 +55,16 @@ export function AuthForm({
           email: f.email,
           password: f.password,
           fullName: name,
+          accountType: role,
+          payoutMethod: role === "afiliado" ? payout : null,
         });
+        if (role === "empresa" && f.company.trim()) {
+          try {
+            sessionStorage.setItem(COMPANY_NAME_KEY, f.company.trim());
+          } catch {
+            /* sin almacenamiento */
+          }
+        }
         if (needsConfirmation) {
           toast.success("¡Cuenta creada! Revisa tu correo para confirmarla.");
           setMode("login");
@@ -62,7 +76,8 @@ export function AuthForm({
       await qc.invalidateQueries({ queryKey: keys.me });
       toast.success("¡Sesión iniciada con éxito!");
       onDone?.();
-      navigate({ to: redirectTo ?? (role === "empresa" ? "/vendedores" : "/afiliados") });
+      const home = role === "empresa" ? "/vendedores" : role === "afiliado" ? "/afiliados" : null;
+      if (redirectTo ?? home) navigate({ to: redirectTo ?? home! });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -70,37 +85,78 @@ export function AuthForm({
     }
   }
 
-  const roleBtn = (r: Role, icon: string, title: string, sub: string) => (
-    <button
-      type="button"
-      onClick={() => setRole(r)}
-      aria-pressed={role === r}
-      className={cn(
-        "rounded-xl p-3 text-left",
-        role === r
-          ? "border-2 border-indigo-500 bg-indigo-50"
-          : "border border-slate-200 bg-slate-50",
-      )}
-    >
-      <i className={cn("fa-solid mb-1 block text-lg text-indigo-600", icon)} />
-      <span className="block text-xs font-bold text-slate-900">{title}</span>
-      <span className="text-[10px] text-slate-500">{sub}</span>
-    </button>
-  );
+  const ROLES: { id: Role; label: string; icon: string }[] = [
+    { id: "comprador", label: "Comprador", icon: "fa-bag-shopping" },
+    { id: "afiliado", label: "Afiliado", icon: "fa-users" },
+    { id: "empresa", label: "Empresa", icon: "fa-building" },
+  ];
 
   return (
     <div>
-      <h3 className="mb-1 text-xl font-bold text-slate-900">Unirse a Plaza X</h3>
-      <p className="mb-6 text-xs text-slate-500">
-        Selecciona cómo deseas participar en la plataforma:
-      </p>
+      <h3 className="mb-1 text-xl font-bold text-slate-900">
+        {mode === "signup" ? "Crea tu cuenta" : "Bienvenido a Plaza X"}
+      </h3>
+      <p className="mb-5 text-xs text-slate-500">¿Cómo quieres usar la plataforma?</p>
 
-      <div className="mb-6 grid grid-cols-2 gap-3">
-        {roleBtn("afiliado", "fa-user-ninja", "Soy Afiliado", "Promociono productos")}
-        {roleBtn("empresa", "fa-building", "Soy Empresa", "Subo mis productos")}
+      <div
+        role="radiogroup"
+        aria-label="Tipo de cuenta"
+        className="mb-6 grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-bold"
+      >
+        {ROLES.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            role="radio"
+            aria-checked={role === r.id}
+            onClick={() => setRole(r.id)}
+            className={cn(
+              "flex items-center justify-center gap-1.5 rounded-lg py-2 transition",
+              role === r.id
+                ? "bg-white text-indigo-600 shadow-sm"
+                : "text-slate-600 hover:text-slate-900",
+            )}
+          >
+            <i className={cn("fa-solid", r.icon)} /> {r.label}
+          </button>
+        ))}
       </div>
 
       <form onSubmit={submit} className="space-y-4">
+        {mode === "signup" && role === "afiliado" && (
+          <div>
+            <label htmlFor="auth-pay" className="mb-1 block text-xs font-semibold text-slate-600">
+              Método de cobro preferido
+            </label>
+            <select
+              id="auth-pay"
+              value={payout}
+              onChange={(e) => setPayout(e.target.value as PayoutMethod)}
+              className={input}
+            >
+              {PAYOUT_METHODS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {mode === "signup" && role === "empresa" && (
+          <div>
+            <label htmlFor="auth-co" className="mb-1 block text-xs font-semibold text-slate-600">
+              Nombre comercial de la empresa
+            </label>
+            <input
+              id="auth-co"
+              placeholder="Ej.: Moda & Estilo SAS"
+              maxLength={60}
+              value={f.company}
+              onChange={(e) => setF({ ...f, company: e.target.value })}
+              className={input}
+            />
+          </div>
+        )}
         {mode === "signup" && (
           <div>
             <label htmlFor="auth-name" className="mb-1 block text-xs font-semibold text-slate-600">

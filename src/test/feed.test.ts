@@ -34,6 +34,7 @@ function prod(id: string, over: Partial<Product> = {}): Product {
     createdAt: ago(60),
     promoCopy: "",
     promoImage: null,
+    promoVideo: null,
     store: {
       slug: "s",
       name: "S",
@@ -41,6 +42,7 @@ function prod(id: string, over: Partial<Product> = {}): Product {
       emoji: "🛍️",
       shipsNational: true,
       verified: false,
+      requireApproval: false,
     },
     ...over,
   };
@@ -111,6 +113,7 @@ describe("leaderboard", () => {
     emoji: "🥔",
     shipsNational: false,
     verified: true,
+    requireApproval: false,
   };
   const products = [
     prod("n", { createdAt: ago(1) }),

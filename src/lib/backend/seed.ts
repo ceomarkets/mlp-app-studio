@@ -1,5 +1,7 @@
-import { daysAgo, splitSale } from "@/lib/plaza";
+import { daysAgo, splitSale, type PayoutMethod } from "@/lib/plaza";
 import type {
+  AccountType,
+  AffiliateStatus,
   Announcement,
   Click,
   Dispute,
@@ -18,6 +20,17 @@ export type DemoUser = {
   fullName: string;
   username: string | null;
   phone: string | null;
+  accountType?: AccountType;
+  payoutMethod?: PayoutMethod | null;
+};
+
+export type DemoAffiliation = {
+  id: string;
+  storeId: string;
+  affiliateId: string;
+  status: AffiliateStatus;
+  message: string | null;
+  createdAt: string;
 };
 
 export type DemoState = {
@@ -36,6 +49,7 @@ export type DemoState = {
   /** Usuarios que pueden publicar anuncios. */
   admins?: string[];
   disputes?: (Dispute & { ip: string | null })[];
+  affiliations?: DemoAffiliation[];
   /** Usuarios suspendidos. */
   banned?: string[];
   /** Archivos de evidencia del modo demo (referencia → data URL). */
@@ -177,6 +191,8 @@ export function buildSeed(now = Date.now()): DemoState {
       active: true,
       verified: true,
       shipsNational: true,
+      requireApproval: false,
+      verificationRequestedAt: null,
     },
     {
       id: "s-cafe",
@@ -190,6 +206,8 @@ export function buildSeed(now = Date.now()): DemoState {
       active: true,
       verified: true,
       shipsNational: true,
+      requireApproval: false,
+      verificationRequestedAt: null,
     },
     {
       id: "s-barniz",
@@ -203,6 +221,8 @@ export function buildSeed(now = Date.now()): DemoState {
       active: true,
       verified: false,
       shipsNational: true,
+      requireApproval: true,
+      verificationRequestedAt: null,
     },
     {
       id: "s-campo",
@@ -216,6 +236,8 @@ export function buildSeed(now = Date.now()): DemoState {
       active: true,
       verified: false,
       shipsNational: false,
+      requireApproval: false,
+      verificationRequestedAt: daysAgo(2, now),
     },
   ];
 
@@ -228,6 +250,7 @@ export function buildSeed(now = Date.now()): DemoState {
     compareAtPrice: null as number | null,
     promoCopy: "",
     promoImage: null as string | null,
+    promoVideo: null as string | null,
   };
   const products: DemoState["products"] = [
     {
@@ -480,6 +503,25 @@ export function buildSeed(now = Date.now()): DemoState {
     session: null,
     announcements: seedAnnouncements(now),
     admins: DEMO_ADMINS,
+    // @laura (u-demo) ya trabaja con Café de Altura; @cami (u-buyer) pidió entrar a Tejidos.
+    affiliations: [
+      {
+        id: "a-seed-1",
+        storeId: "s-cafe",
+        affiliateId: "u-demo",
+        status: "approved" as const,
+        message: null,
+        createdAt: daysAgo(40, now),
+      },
+      {
+        id: "a-seed-2",
+        storeId: "s-tejidos",
+        affiliateId: "u-buyer",
+        status: "approved" as const,
+        message: "Comparto artesanía nariñense en mi Instagram",
+        createdAt: daysAgo(44, now),
+      },
+    ],
     // Una disputa abierta de ejemplo sobre una venta despachada de Tejidos Galeras.
     disputes: (() => {
       const it = items.find((x) => x.storeId === "s-tejidos" && x.fulfillment === "shipped");

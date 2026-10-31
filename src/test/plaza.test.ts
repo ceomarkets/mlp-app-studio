@@ -70,8 +70,8 @@ describe("utilidades", () => {
 describe("affiliateLevel", () => {
   it("sube de nivel con ventas reales", async () => {
     const { affiliateLevel } = await import("@/lib/plaza");
-    expect(affiliateLevel(0)).toMatchObject({ name: "Inicial", missing: 10 });
-    expect(affiliateLevel(23)).toMatchObject({ name: "Emprendedor", missing: 27 });
+    expect(affiliateLevel(0)).toMatchObject({ name: "Principiante", missing: 10 });
+    expect(affiliateLevel(23)).toMatchObject({ name: "Activo", missing: 27 });
     expect(affiliateLevel(78)).toMatchObject({ name: "Líder", missing: 22 });
     expect(affiliateLevel(150)).toMatchObject({ name: "Leyenda", next: null, progress: 1 });
   });

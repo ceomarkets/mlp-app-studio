@@ -39,7 +39,11 @@ function upgrade(s: DemoState) {
   for (const st of s.stores) {
     st.shipsNational ??= true;
     st.verified ??= st.id === "s-tejidos" || st.id === "s-cafe";
+    st.requireApproval ??= st.id === "s-barniz";
+    st.verificationRequestedAt ??= null;
   }
+  for (const p of s.products) p.promoVideo ??= null;
+  s.affiliations ??= [];
   for (const it of s.items) {
     it.carrier ??= it.tracking?.startsWith("Servientrega") ? "Servientrega" : null;
     if (it.tracking?.startsWith("Servientrega ")) it.tracking = it.tracking.slice(13);
@@ -154,6 +158,9 @@ const toProfile = (u: NonNullable<ReturnType<typeof me>>): Profile => ({
   fullName: u.fullName,
   username: u.username,
   phone: u.phone,
+  accountType: u.accountType ?? "comprador",
+  payoutMethod: u.payoutMethod ?? null,
+  banned: !!db().banned?.includes(u.id),
 });
 function emit() {
   const u = me();
@@ -171,6 +178,7 @@ function withStore(p: DemoState["products"][number]): Product {
       emoji: s.emoji,
       shipsNational: s.shipsNational,
       verified: s.verified,
+      requireApproval: s.requireApproval,
     },
   };
 }
@@ -191,14 +199,23 @@ export const demoBackend: Backend = {
     return () => listeners.delete(cb);
   },
 
-  async signUp({ email, password, fullName }) {
+  async signUp({ email, password, fullName, accountType, payoutMethod }) {
     await wait();
     const s = db();
     email = email.trim().toLowerCase();
     if (s.users.some((u) => u.email === email))
       throw new Error("Ya existe una cuenta con ese correo");
     if (password.length < 6) throw new Error("La contraseña debe tener al menos 6 caracteres");
-    const u = { id: uid(), email, password, fullName, username: null, phone: null };
+    const u = {
+      id: uid(),
+      email,
+      password,
+      fullName,
+      username: null,
+      phone: null,
+      accountType: accountType ?? "comprador",
+      payoutMethod: payoutMethod ?? null,
+    };
     s.users.push(u);
     s.session = u.id;
     save();
@@ -240,6 +257,7 @@ export const demoBackend: Backend = {
     }
     if (input.fullName !== undefined) u.fullName = input.fullName;
     if (input.phone !== undefined) u.phone = input.phone || null;
+    if (input.payoutMethod !== undefined) u.payoutMethod = input.payoutMethod;
     save();
     emit();
     return toProfile(u);
@@ -300,6 +318,65 @@ export const demoBackend: Backend = {
   async isAdmin() {
     const u = me();
     return !!u && (db().admins ?? []).includes(u.id);
+  },
+
+  async adminStores() {
+    requireAdmin();
+    const s = db();
+    return s.stores
+      .map((st) => ({
+        id: st.id,
+        ownerId: st.ownerId,
+        slug: st.slug,
+        name: st.name,
+        city: st.city,
+        emoji: st.emoji,
+        active: st.active,
+        verified: st.verified,
+        verificationRequestedAt: st.verificationRequestedAt,
+        ownerEmail: s.users.find((u) => u.id === st.ownerId)?.email ?? "",
+        ownerBanned: !!s.banned?.includes(st.ownerId),
+        products: s.products.filter((p) => p.storeId === st.id && p.active).length,
+        sold: s.products.filter((p) => p.storeId === st.id).reduce((t, p) => t + p.soldCount, 0),
+        openDisputes: (s.disputes ?? []).filter((d) => d.storeId === st.id && d.status === "open")
+          .length,
+        createdAt: s.products.find((p) => p.storeId === st.id)?.createdAt ?? now(),
+      }))
+      .sort((a, b) =>
+        (b.verificationRequestedAt ?? "").localeCompare(a.verificationRequestedAt ?? ""),
+      );
+  },
+
+  async setStoreVerified(storeId, verified) {
+    await wait();
+    requireAdmin();
+    const st = db().stores.find((x) => x.id === storeId);
+    if (!st) throw new Error("Tienda no encontrada");
+    st.verified = verified;
+    if (verified) st.verificationRequestedAt = null;
+    save();
+  },
+
+  async setStoreActive(storeId, active) {
+    await wait();
+    requireAdmin();
+    const s = db();
+    const st = s.stores.find((x) => x.id === storeId);
+    if (!st) throw new Error("Tienda no encontrada");
+    st.active = active && !s.banned?.includes(st.ownerId);
+    save();
+  },
+
+  async setUserBanned(userId, banned) {
+    await wait();
+    const admin = requireAdmin();
+    if (userId === admin.id) throw new Error("No puedes suspender tu propia cuenta");
+    const s = db();
+    s.banned = banned
+      ? [...new Set([...(s.banned ?? []), userId])]
+      : (s.banned ?? []).filter((x) => x !== userId);
+    if (banned) s.stores.forEach((x) => x.ownerId === userId && (x.active = false));
+    save();
   },
 
   async allDisputes() {
@@ -469,6 +546,7 @@ export const demoBackend: Backend = {
         ownerId: u.id,
         active: true,
         verified: false,
+        verificationRequestedAt: null,
         ...input,
         whatsapp: input.whatsapp || null,
       };
@@ -564,6 +642,53 @@ export const demoBackend: Backend = {
     if (tracking?.trim()) it.tracking = tracking.trim();
     if (carrier?.trim()) it.carrier = carrier.trim();
     if (status === "shipped") it.shippedAt ??= now();
+    save();
+  },
+
+  async storeAffiliateRequests() {
+    const u = me();
+    const store = u && storeOf(u.id);
+    if (!store) return [];
+    const s = db();
+    return (s.affiliations ?? [])
+      .filter((a) => a.storeId === store.id)
+      .map((a) => {
+        const aff = s.users.find((x) => x.id === a.affiliateId);
+        return {
+          id: a.id,
+          affiliateId: a.affiliateId,
+          username: aff?.username ?? null,
+          fullName: aff?.fullName ?? "",
+          status: a.status,
+          message: a.message,
+          createdAt: a.createdAt,
+          sales: s.items.filter(
+            (i) => i.storeId === store.id && i.affiliateId === a.affiliateId && i.paidAt,
+          ).length,
+        };
+      })
+      .sort(
+        (a, b) =>
+          Number(b.status === "pending") - Number(a.status === "pending") ||
+          b.createdAt.localeCompare(a.createdAt),
+      );
+  },
+
+  async decideAffiliation(id, approve) {
+    await wait();
+    const u = requireMe();
+    const a = db().affiliations?.find((x) => x.id === id);
+    if (!a || a.storeId !== storeOf(u.id)?.id) throw new Error("No puedes decidir esta solicitud");
+    a.status = approve ? "approved" : "rejected";
+    save();
+  },
+
+  async requestVerification() {
+    await wait();
+    const u = requireMe();
+    const store = storeOf(u.id);
+    if (!store) throw new Error("Primero crea tu tienda");
+    store.verificationRequestedAt = now();
     save();
   },
 
@@ -697,7 +822,13 @@ export const demoBackend: Backend = {
       if (!p || !store || s.banned?.includes(store.ownerId))
         throw new Error("Un producto ya no está disponible");
       if (p.stock < qty) throw new Error(`Sin stock suficiente de "${p.name}" (quedan ${p.stock})`);
-      const referred = !!aff && aff.id !== store.ownerId;
+      // Tienda con aprobación: sin solicitud aprobada, la comisión vuelve a la tienda.
+      const approved =
+        !store.requireApproval ||
+        (s.affiliations ?? []).some(
+          (a) => a.storeId === store.id && a.affiliateId === aff?.id && a.status === "approved",
+        );
+      const referred = !!aff && aff.id !== store.ownerId && approved;
       const sub = p.price * qty;
       const split = splitSale(sub, p.commission, referred);
       const disc = bundleDiscount(sub, units);
@@ -788,6 +919,41 @@ export const demoBackend: Backend = {
     const s = db();
     const o = s.orders.find((x) => x.id === id && x.buyerId === u?.id);
     return o ? { ...o, items: s.items.filter((i) => i.orderId === o.id) } : null;
+  },
+
+  async myAffiliations() {
+    const u = me();
+    if (!u) return [];
+    return (db().affiliations ?? [])
+      .filter((a) => a.affiliateId === u.id)
+      .map(({ id, storeId, status, createdAt }) => ({ id, storeId, status, createdAt }));
+  },
+
+  async requestAffiliation(storeSlug, message) {
+    await wait();
+    const u = requireMe();
+    const s = db();
+    if (s.banned?.includes(u.id)) throw new Error("Tu cuenta está suspendida");
+    const store = s.stores.find((x) => x.slug === storeSlug && x.active);
+    if (!store) throw new Error("Tienda no encontrada");
+    if (store.ownerId === u.id) throw new Error("No puedes afiliarte a tu propia tienda");
+    if (!u.username) throw new Error("Primero elige tu usuario de afiliado");
+    const prev = s.affiliations!.find((a) => a.storeId === store.id && a.affiliateId === u.id);
+    if (prev?.status === "approved") return "approved";
+    if (prev?.status === "rejected") throw new Error("La tienda no aprobó tu solicitud");
+    const status = store.requireApproval ? "pending" : "approved";
+    if (prev) prev.message = message?.trim().slice(0, 300) || null;
+    else
+      s.affiliations!.push({
+        id: uid(),
+        storeId: store.id,
+        affiliateId: u.id,
+        status,
+        message: message?.trim().slice(0, 300) || null,
+        createdAt: now(),
+      });
+    save();
+    return status;
   },
 
   async trackClick(username, productId) {

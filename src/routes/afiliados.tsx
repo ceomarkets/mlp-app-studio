@@ -20,6 +20,7 @@ import { ShareLink } from "@/components/ShareLink";
 import { Empty, ProductCard, ProductGridSkeleton, Shell, Stat } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Companies } from "@/components/panels/Companies";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   backend,
@@ -216,6 +217,7 @@ function Dashboard({ username }: { username: string }) {
       <Tabs defaultValue="resumen" className="mt-8">
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
+          <TabsTrigger value="empresas">Empresas</TabsTrigger>
           <TabsTrigger value="vitrina">Vitrina</TabsTrigger>
           <TabsTrigger value="herramientas">Herramientas</TabsTrigger>
           <TabsTrigger value="ventas">Mis ventas</TabsTrigger>
@@ -223,6 +225,9 @@ function Dashboard({ username }: { username: string }) {
         </TabsList>
         <TabsContent value="resumen" className="mt-6">
           <Overview clicks={clicks.data ?? []} items={items.data ?? []} />
+        </TabsContent>
+        <TabsContent value="empresas" className="mt-6">
+          <Companies username={username} />
         </TabsContent>
         <TabsContent value="vitrina" className="mt-6">
           <Showcase username={username} />
@@ -281,7 +286,12 @@ function Overview({ clicks, items }: { clicks: Click[]; items: OrderItem[] }) {
       r.earned += i.affiliateAmount;
       per.set(i.productId, r);
     });
+    const all = items.filter((i) => i.paidAt && i.fulfillment !== "cancelled");
+    const total = all.reduce((t, i) => t + i.affiliateAmount, 0);
+    const gross = all.reduce((t, i) => t + i.subtotal, 0);
     return {
+      total,
+      avgRate: gross ? total / gross : 0,
       clicks: c30.length,
       sales: sales.length,
       earned,
@@ -312,6 +322,19 @@ function Overview({ clicks, items }: { clicks: Click[]; items: OrderItem[] }) {
         <Stat label="Clics (30 días)" value={s.clicks.toLocaleString("es-CO")} />
         <Stat label="Conversión" value={pct(s.conversion)} hint="ventas por cada clic" />
         <Stat label="Ganancia por clic" value={cop(Math.round(s.epc))} hint="promedio" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Stat label="Total ganado (histórico)" value={cop(s.total)} hint="comisiones pagadas" />
+        <Stat label="Comisión promedio" value={pct(s.avgRate)} hint="sobre lo que vendiste" />
+        <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <span className="text-xs font-semibold text-emerald-800 uppercase">
+            Proyección mensual
+          </span>
+          <span className="text-2xl font-extrabold text-emerald-700">{cop(s.earned)} / mes</span>
+          <span className="text-[11px] text-emerald-800/80">
+            Si mantienes el ritmo real de tus últimos 30 días ({pct(s.conversion)} de conversión).
+          </span>
+        </div>
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <div className="rounded-3xl border bg-card p-5 shadow-card">

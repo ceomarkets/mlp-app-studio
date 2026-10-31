@@ -7,13 +7,15 @@ import { affiliateLevel, clampCommission, cop, splitSale } from "@/lib/plaza";
 import { keys } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
-type Kind = "all" | "imagen" | "texto";
+type Kind = "all" | "imagen" | "video" | "texto";
 
 const TABS: { id: Kind; label: string; icon: string }[] = [
   { id: "all", label: "Todos", icon: "fa-layer-group" },
   { id: "imagen", label: "Imágenes & Banners", icon: "fa-image" },
+  { id: "video", label: "Vídeos & Reels", icon: "fa-video" },
   { id: "texto", label: "Textos & Copies", icon: "fa-file-lines" },
 ];
+const KIND_ICON = { imagen: "fa-image", video: "fa-video", texto: "fa-file-lines" } as const;
 
 type Tool = { key: string; kind: Exclude<Kind, "all">; p: Product; value: string };
 
@@ -30,7 +32,14 @@ async function copy(text: string, what: string) {
  * Herramientas de afiliado: los textos e imágenes publicitarias que cada tienda
  * comparte en sus productos, listos para copiar junto con el enlace propio.
  */
-export function AffiliateTools({ username }: { username: string }) {
+export function AffiliateTools({
+  username,
+  storeSlug,
+}: {
+  username: string;
+  /** Solo los materiales de esta tienda. */
+  storeSlug?: string;
+}) {
   const [kind, setKind] = useState<Kind>("all");
   const products = useQuery({ queryKey: keys.products({}), queryFn: () => backend.listProducts() });
   const myStore = useQuery({ queryKey: keys.myStore, queryFn: () => backend.myStore() });
@@ -39,11 +48,13 @@ export function AffiliateTools({ username }: { username: string }) {
     const out: Tool[] = [];
     for (const p of products.data ?? []) {
       if (p.storeId === myStore.data?.id) continue; // sin comisión en la tienda propia
+      if (storeSlug && p.store.slug !== storeSlug) continue;
       if (p.promoImage) out.push({ key: `i-${p.id}`, kind: "imagen", p, value: p.promoImage });
+      if (p.promoVideo) out.push({ key: `v-${p.id}`, kind: "video", p, value: p.promoVideo });
       if (p.promoCopy) out.push({ key: `t-${p.id}`, kind: "texto", p, value: p.promoCopy });
     }
     return out.filter((t) => kind === "all" || t.kind === kind);
-  }, [products.data, myStore.data, kind]);
+  }, [products.data, myStore.data, kind, storeSlug]);
 
   const link = (p: Product) => `${window.location.origin}/r/${username}/${p.id}`;
 
@@ -102,16 +113,15 @@ export function AffiliateTools({ username }: { username: string }) {
               )}
               <div className="min-w-0">
                 <h4 className="truncate text-xs font-bold text-slate-900">
-                  <i
-                    className={cn(
-                      "fa-solid me-1 text-purple-600",
-                      t.kind === "imagen" ? "fa-image" : "fa-file-lines",
-                    )}
-                  />
+                  <i className={cn("fa-solid me-1 text-purple-600", KIND_ICON[t.kind])} />
                   {t.p.name} · {t.p.store.name}
                 </h4>
                 <p className="line-clamp-2 text-[11px] text-slate-500">
-                  {t.kind === "texto" ? t.value : "Banner publicitario oficial de la tienda"}
+                  {t.kind === "texto"
+                    ? t.value
+                    : t.kind === "video"
+                      ? "Video oficial para Reels, TikTok o Shorts"
+                      : "Banner publicitario oficial de la tienda"}
                 </p>
                 <p className="text-[10px] font-bold text-emerald-600">
                   Ganas {cop(splitSale(t.p.price, t.p.commission).affiliate)} (
@@ -135,7 +145,8 @@ export function AffiliateTools({ username }: { username: string }) {
                   download
                   className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-800 transition hover:bg-slate-200"
                 >
-                  <i className="fa-solid fa-download me-1" /> Abrir imagen
+                  <i className="fa-solid fa-download me-1" />{" "}
+                  {t.kind === "video" ? "Ver video" : "Abrir imagen"}
                 </a>
               )}
               <button

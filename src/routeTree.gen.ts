@@ -19,6 +19,7 @@ import { Route as LegalRouteImport } from './routes/legal'
 import { Route as VendedoresRouteImport } from './routes/vendedores'
 import { Route as AdminAnunciosRouteImport } from './routes/admin.anuncios'
 import { Route as AdminDisputasRouteImport } from './routes/admin.disputas'
+import { Route as AdminTiendasRouteImport } from './routes/admin.tiendas'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
 import { Route as ProductoIdRouteImport } from './routes/producto.$id'
 import { Route as TiendaSlugRouteImport } from './routes/tienda.$slug'
@@ -74,6 +75,11 @@ const AdminDisputasRoute = AdminDisputasRouteImport.update({
   path: '/admin/disputas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminTiendasRoute = AdminTiendasRouteImport.update({
+  id: '/admin/tiendas',
+  path: '/admin/tiendas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PedidoIdRoute = PedidoIdRouteImport.update({
   id: '/pedido/$id',
   path: '/pedido/$id',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/vendedores': typeof VendedoresRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/disputas': typeof AdminDisputasRoute
+  '/admin/tiendas': typeof AdminTiendasRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/tienda/$slug': typeof TiendaSlugRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/vendedores': typeof VendedoresRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/disputas': typeof AdminDisputasRoute
+  '/admin/tiendas': typeof AdminTiendasRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/tienda/$slug': typeof TiendaSlugRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/vendedores': typeof VendedoresRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/disputas': typeof AdminDisputasRoute
+  '/admin/tiendas': typeof AdminTiendasRoute
   '/pedido/$id': typeof PedidoIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/tienda/$slug': typeof TiendaSlugRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/vendedores'
     | '/admin/anuncios'
     | '/admin/disputas'
+    | '/admin/tiendas'
     | '/pedido/$id'
     | '/producto/$id'
     | '/tienda/$slug'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/vendedores'
     | '/admin/anuncios'
     | '/admin/disputas'
+    | '/admin/tiendas'
     | '/pedido/$id'
     | '/producto/$id'
     | '/tienda/$slug'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/vendedores'
     | '/admin/anuncios'
     | '/admin/disputas'
+    | '/admin/tiendas'
     | '/pedido/$id'
     | '/producto/$id'
     | '/tienda/$slug'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   VendedoresRoute: typeof VendedoresRoute
   AdminAnunciosRoute: typeof AdminAnunciosRoute
   AdminDisputasRoute: typeof AdminDisputasRoute
+  AdminTiendasRoute: typeof AdminTiendasRoute
   PedidoIdRoute: typeof PedidoIdRoute
   ProductoIdRoute: typeof ProductoIdRoute
   TiendaSlugRoute: typeof TiendaSlugRoute
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDisputasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/tiendas': {
+      id: '/admin/tiendas'
+      path: '/admin/tiendas'
+      fullPath: '/admin/tiendas'
+      preLoaderRoute: typeof AdminTiendasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pedido/$id': {
       id: '/pedido/$id'
       path: '/pedido/$id'
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   VendedoresRoute: VendedoresRoute,
   AdminAnunciosRoute: AdminAnunciosRoute,
   AdminDisputasRoute: AdminDisputasRoute,
+  AdminTiendasRoute: AdminTiendasRoute,
   PedidoIdRoute: PedidoIdRoute,
   ProductoIdRoute: ProductoIdRoute,
   TiendaSlugRoute: TiendaSlugRoute,

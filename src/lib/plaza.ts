@@ -152,8 +152,8 @@ export const FULFILLMENT_LABEL: Record<EarningRow["fulfillment"], string> = {
 
 /** Niveles de afiliado por ventas referidas reales (pagadas y no canceladas). */
 export const AFFILIATE_LEVELS = [
-  { name: "Inicial", min: 0 },
-  { name: "Emprendedor", min: 10 },
+  { name: "Principiante", min: 0 },
+  { name: "Activo", min: 10 },
   { name: "Líder", min: 50 },
   { name: "Leyenda", min: 100 },
 ] as const;

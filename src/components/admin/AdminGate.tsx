@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 const SECTIONS = [
   { to: "/admin/anuncios", label: "Anuncios", icon: "fa-bullhorn" },
   { to: "/admin/disputas", label: "Disputas", icon: "fa-shield-halved" },
+  { to: "/admin/tiendas", label: "Tiendas", icon: "fa-store" },
 ] as const;
 
 /** Solo administración: pide sesión y permiso, y muestra la navegación del panel. */

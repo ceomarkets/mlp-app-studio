@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DisputeBadge, disputeKeys, SellerDisputes, TrackingInfo } from "@/components/Disputes";
 import { FulfillmentSteps } from "@/components/OrderView";
+import { AffiliateRequests, affKeys, VerificationBar } from "@/components/panels/Companies";
 import { ProductDialog, SplitPreview, StoreForm } from "@/components/panels/seller-forms";
 import { TrendChart } from "@/components/panels/TrendChart";
 import { WalletPanel } from "@/components/panels/Wallet";
@@ -173,6 +174,11 @@ function Dashboard() {
     orders.data?.filter((o) => o.fulfillment === "pending" || o.fulfillment === "preparing")
       .length ?? 0;
   const openDisputes = disputes.data?.filter((d) => d.status === "open").length ?? 0;
+  const requests = useQuery({
+    queryKey: affKeys.store,
+    queryFn: () => backend.storeAffiliateRequests(),
+  });
+  const pendingReq = requests.data?.filter((r) => r.status === "pending").length ?? 0;
 
   return (
     <Shell wide>
@@ -194,7 +200,11 @@ function Dashboard() {
         </div>
       </div>
 
-      <Tabs defaultValue="resumen" className="mt-8">
+      <div className="mt-6">
+        <VerificationBar store={store} />
+      </div>
+
+      <Tabs defaultValue="resumen" className="mt-6">
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
           <TabsTrigger value="productos">Productos ({products.data?.length ?? 0})</TabsTrigger>
@@ -203,6 +213,14 @@ function Dashboard() {
             {toShip > 0 && (
               <span className="ml-1.5 rounded-full bg-primary px-1.5 text-[11px] text-primary-foreground">
                 {toShip}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="afiliados">
+            Afiliados{" "}
+            {pendingReq > 0 && (
+              <span className="ml-1.5 rounded-full bg-indigo-600 px-1.5 text-[11px] text-white">
+                {pendingReq}
               </span>
             )}
           </TabsTrigger>
@@ -225,6 +243,9 @@ function Dashboard() {
         </TabsContent>
         <TabsContent value="pedidos" className="mt-6">
           <Orders list={orders.data} disputes={disputes.data ?? []} />
+        </TabsContent>
+        <TabsContent value="afiliados" className="mt-6">
+          <AffiliateRequests store={store} />
         </TabsContent>
         <TabsContent value="disputas" className="mt-6">
           <SellerDisputes />

@@ -34,6 +34,7 @@ describe("backend demo: flujo completo", () => {
       emoji: "🌽",
       whatsapp: null,
       shipsNational: true,
+      requireApproval: false,
     });
     const p = await b.saveProduct({
       name: "Mochila",
@@ -48,6 +49,7 @@ describe("backend demo: flujo completo", () => {
       compareAtPrice: null,
       promoCopy: "",
       promoImage: null,
+      promoVideo: null,
     });
     await expect(
       b.saveStore({
@@ -58,6 +60,7 @@ describe("backend demo: flujo completo", () => {
         emoji: "x",
         whatsapp: null,
         shipsNational: true,
+        requireApproval: false,
       }),
     ).rejects.toThrow(/en uso/);
 
@@ -107,6 +110,7 @@ describe("backend demo: flujo completo", () => {
       emoji: "🛍️",
       whatsapp: null,
       shipsNational: true,
+      requireApproval: false,
     });
     const p = await b.saveProduct({
       name: "Reloj",
@@ -121,6 +125,7 @@ describe("backend demo: flujo completo", () => {
       compareAtPrice: null,
       promoCopy: "",
       promoImage: null,
+      promoVideo: null,
     });
     await b.signOut();
     await b.signUp({ email: "c@x.co", password: "secreto1", fullName: "Cliente" });
@@ -162,6 +167,55 @@ describe("backend demo: flujo completo", () => {
     await b.signOut();
     await b.signIn({ email: "v@x.co", password: "secreto1" });
     expect(await b.wallet()).toMatchObject({ frozen: 0, pending: 0 });
+  });
+
+  it("tienda con aprobación: sin aprobar no hay comisión", async () => {
+    await b.signUp({ email: "t@x.co", password: "secreto1", fullName: "Tienda" });
+    await b.saveStore({
+      slug: "selecta",
+      name: "Selecta",
+      tagline: "",
+      city: "Pasto",
+      emoji: "🛍️",
+      whatsapp: null,
+      shipsNational: true,
+      requireApproval: true,
+    });
+    const p = await b.saveProduct({
+      name: "Bolso",
+      description: "",
+      price: 100000,
+      category: "Artesanías",
+      commission: 0.1,
+      stock: 9,
+      images: [],
+      emoji: "👜",
+      active: true,
+      compareAtPrice: null,
+      promoCopy: "",
+      promoImage: null,
+      promoVideo: "https://youtu.be/demo",
+    });
+    await b.signOut();
+    await b.signUp({ email: "c2@x.co", password: "secreto1", fullName: "Cliente" });
+    const o1 = await b.createOrder([{ productId: p.id, qty: 1 }], "laura", ship);
+    expect((await b.getOrder(o1.orderId))!.items[0]).toMatchObject({
+      affiliateId: null,
+      affiliateAmount: 0,
+      sellerAmount: 91000,
+    });
+    await b.signOut();
+    await b.signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
+    expect(await b.requestAffiliation("selecta", "Hola")).toBe("pending");
+    await b.signOut();
+    await b.signIn({ email: "t@x.co", password: "secreto1" });
+    const [req] = await b.storeAffiliateRequests();
+    expect(req).toMatchObject({ username: "laura", status: "pending" });
+    await b.decideAffiliation(req!.id, true);
+    await b.signOut();
+    await b.signIn({ email: "c2@x.co", password: "secreto1" });
+    const o2 = await b.createOrder([{ productId: p.id, qty: 1 }], "laura", ship);
+    expect((await b.getOrder(o2.orderId))!.items[0]!.affiliateAmount).toBe(10000);
   });
 
   it("no hay autorreferidos ni clics propios", async () => {
