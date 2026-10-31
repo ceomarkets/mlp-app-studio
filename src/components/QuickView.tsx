@@ -10,6 +10,8 @@ import {
   Timer,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { openAuth } from "@/components/AuthDialog";
 import { addToCart } from "@/components/CartSheet";
 import { FavoriteButton, Price, ProductImage } from "@/components/Shell";
 import { ShareButton } from "@/components/ShareSheet";
@@ -18,9 +20,31 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import type { Product } from "@/lib/backend";
 import { cart } from "@/lib/client-state";
 import { discountPct, LOW_STOCK } from "@/lib/feed";
-import { cop } from "@/lib/plaza";
+import { cop, splitSale } from "@/lib/plaza";
 import { useUser } from "@/lib/session";
 import { productShare } from "@/lib/share";
+
+/**
+ * "Afiliarse": con usuario de afiliado copia su enlace al instante; si aún no
+ * lo tiene, lo lleva a activarlo; sin sesión, abre el inicio de sesión.
+ */
+export function useAffiliate() {
+  const { user } = useUser();
+  const navigate = useNavigate();
+  return async (p: Product) => {
+    if (!user) return openAuth();
+    if (!user.username) return navigate({ to: "/afiliados" });
+    const link = `${window.location.origin}/r/${user.username}/${p.id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("¡Tu enlace de afiliado está listo!", {
+        description: `Ganas ${cop(splitSale(p.price, p.commission).affiliate)} por cada venta. Ya está copiado.`,
+      });
+    } catch {
+      toast.message("Tu enlace de afiliado", { description: link });
+    }
+  };
+}
 
 /**
  * Vista rápida: todo lo necesario para decidir y comprar sin salir de la portada.
@@ -36,6 +60,7 @@ export function QuickView({
   const [qty, setQty] = useState(1);
   const navigate = useNavigate();
   const { user } = useUser();
+  const affiliate = useAffiliate();
   useEffect(() => setQty(1), [p?.id]);
   if (!p) return null;
   const off = discountPct(p);
@@ -148,6 +173,14 @@ export function QuickView({
                 }}
               >
                 <ShoppingBag /> Agregar al carrito
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                onClick={() => affiliate(p)}
+              >
+                <i className="fa-solid fa-sack-dollar" /> Afiliarse y ganar{" "}
+                {cop(splitSale(p.price, p.commission).affiliate)}
               </Button>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">

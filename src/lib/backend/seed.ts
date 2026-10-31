@@ -212,6 +212,8 @@ export function buildSeed(now = Date.now()): DemoState {
     ratingCount: 0,
     soldCount: 0,
     compareAtPrice: null as number | null,
+    promoCopy: "",
+    promoImage: null as string | null,
   };
   const products: DemoState["products"] = [
     {
@@ -227,6 +229,8 @@ export function buildSeed(now = Date.now()): DemoState {
       stock: 14,
       emoji: "🧣",
       compareAtPrice: 220000,
+      promoCopy:
+        "🧣 Ruana de lana virgen tejida a mano en Pasto. Abrigo de verdad para el frío andino. ¡Pídela hoy!",
       createdAt: daysAgo(60, now),
     },
     {
@@ -253,6 +257,8 @@ export function buildSeed(now = Date.now()): DemoState {
       commission: 0.15,
       stock: 120,
       emoji: "☕",
+      promoCopy:
+        "☕ Café especial de La Unión, Nariño: notas de panela y cítricos. Tu mañana merece este sabor.",
       createdAt: daysAgo(55, now),
     },
     {
@@ -294,6 +300,7 @@ export function buildSeed(now = Date.now()): DemoState {
       stock: 11,
       emoji: "🎁",
       compareAtPrice: 95000,
+      promoCopy: "🎁 Caja joyero en barniz de Pasto (mopa-mopa). El regalo único que sí sorprende.",
       createdAt: daysAgo(9, now),
     },
     {
@@ -363,6 +370,7 @@ export function buildSeed(now = Date.now()): DemoState {
       buyerId: "u-buyer",
       status: "paid",
       total: sub,
+      discount: 0,
       shipping: {
         name: `${buyer} ${["G.", "M.", "R.", "L."][i % 4]!}`,
         phone: "3000000000",
@@ -386,6 +394,7 @@ export function buildSeed(now = Date.now()): DemoState {
       sellerAmount: split.seller,
       affiliateAmount: split.affiliate,
       platformAmount: split.platform,
+      discountAmount: 0,
       affiliateId: affiliate,
       paidAt: created,
       fulfillment,

@@ -45,6 +45,8 @@ describe("backend demo: flujo completo", () => {
       emoji: "🎒",
       active: true,
       compareAtPrice: null,
+      promoCopy: "",
+      promoImage: null,
     });
     await expect(
       b.saveStore({
@@ -100,6 +102,25 @@ describe("backend demo: flujo completo", () => {
     const order = await b.createOrder([{ productId: "p3", qty: 1 }], "laura", ship);
     await b.simulatePayment!(order.orderId, true);
     expect((await b.getOrder(order.orderId))?.items[0]?.affiliateAmount).toBe(0);
+  });
+
+  it("descuento por volumen: 3 unidades pagan 5% menos y Plaza X lo absorbe", async () => {
+    await b.signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
+    const two = await b.createOrder([{ productId: "p3", qty: 2 }], null, ship);
+    expect(two.total).toBe(76000);
+    const three = await b.createOrder(
+      [
+        { productId: "p3", qty: 2 },
+        { productId: "p7", qty: 1 },
+      ],
+      null,
+      ship,
+    );
+    expect(three.total).toBe(Math.round((76000 + 28000) * 0.95));
+    const o = await b.getOrder(three.orderId);
+    expect(o?.discount).toBe(5200);
+    const cafe = o!.items.find((i) => i.productId === "p3")!;
+    expect(cafe).toMatchObject({ sellerAmount: 69160, discountAmount: 3800, platformAmount: 3040 });
   });
 
   it("pago rechazado no descuenta stock", async () => {

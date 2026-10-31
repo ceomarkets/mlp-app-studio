@@ -32,6 +32,8 @@ function prod(id: string, over: Partial<Product> = {}): Product {
     rating: 0,
     ratingCount: 0,
     createdAt: ago(60),
+    promoCopy: "",
+    promoImage: null,
     store: { slug: "s", name: "S", city: "Pasto", emoji: "🛍️" },
     ...over,
   };

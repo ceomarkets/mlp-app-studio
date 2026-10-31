@@ -1,4 +1,4 @@
-import { CATEGORIES, computeWallet, MIN_WITHDRAWAL, splitSale } from "@/lib/plaza";
+import { bundleDiscount, CATEGORIES, computeWallet, MIN_WITHDRAWAL, splitSale } from "@/lib/plaza";
 import {
   byPriority,
   isLive,
@@ -445,6 +445,7 @@ export const demoBackend: Backend = {
     lines.forEach((l) =>
       merged.set(l.productId, Math.min(99, (merged.get(l.productId) ?? 0) + Math.max(1, l.qty))),
     );
+    const units = [...merged.values()].reduce((t, q) => t + q, 0);
     for (const [productId, qty] of merged) {
       const p = s.products.find((x) => x.id === productId && x.active);
       const store = p && s.stores.find((x) => x.id === p.storeId && x.active);
@@ -453,6 +454,7 @@ export const demoBackend: Backend = {
       const referred = !!aff && aff.id !== store.ownerId;
       const sub = p.price * qty;
       const split = splitSale(sub, p.commission, referred);
+      const disc = bundleDiscount(sub, units);
       items.push({
         id: uid(),
         orderId,
@@ -466,7 +468,8 @@ export const demoBackend: Backend = {
         subtotal: sub,
         sellerAmount: split.seller,
         affiliateAmount: split.affiliate,
-        platformAmount: split.platform,
+        platformAmount: split.platform - disc,
+        discountAmount: disc,
         affiliateId: referred ? aff!.id : null,
         paidAt: null,
         fulfillment: "pending",
@@ -475,7 +478,8 @@ export const demoBackend: Backend = {
         createdAt: now(),
       });
     }
-    const total = items.reduce((t, i) => t + i.subtotal, 0);
+    const discount = items.reduce((t, i) => t + i.discountAmount, 0);
+    const total = items.reduce((t, i) => t + i.subtotal, 0) - discount;
     const d = new Date();
     const reference = `PX${d.toISOString().slice(2, 10).replace(/-/g, "")}-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
     s.orders.push({
@@ -484,6 +488,7 @@ export const demoBackend: Backend = {
       buyerId: u.id,
       status: "pending",
       total,
+      discount,
       shipping,
       createdAt: now(),
       paidAt: null,

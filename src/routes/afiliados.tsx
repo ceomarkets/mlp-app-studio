@@ -13,6 +13,7 @@ import {
 import type React from "react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AffiliateTools, LevelCard } from "@/components/panels/AffiliateTools";
 import { TrendChart } from "@/components/panels/TrendChart";
 import { WalletPanel } from "@/components/panels/Wallet";
 import { ShareLink } from "@/components/ShareLink";
@@ -28,6 +29,7 @@ import {
   type ProductFilter,
 } from "@/lib/backend";
 import {
+  affiliateLevel,
   cop,
   dailySeries,
   FULFILLMENT_LABEL,
@@ -215,6 +217,7 @@ function Dashboard({ username }: { username: string }) {
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
           <TabsTrigger value="vitrina">Vitrina</TabsTrigger>
+          <TabsTrigger value="herramientas">Herramientas</TabsTrigger>
           <TabsTrigger value="ventas">Mis ventas</TabsTrigger>
           <TabsTrigger value="billetera">Billetera</TabsTrigger>
         </TabsList>
@@ -223,6 +226,9 @@ function Dashboard({ username }: { username: string }) {
         </TabsContent>
         <TabsContent value="vitrina" className="mt-6">
           <Showcase username={username} />
+        </TabsContent>
+        <TabsContent value="herramientas" className="mt-6">
+          <AffiliateTools username={username} />
         </TabsContent>
         <TabsContent value="ventas" className="mt-6">
           <Sales items={items.data} />
@@ -289,9 +295,14 @@ function Overview({ clicks, items }: { clicks: Click[]; items: OrderItem[] }) {
   }, [clicks, items]);
   const name = (id: string) => products.data?.find((p) => p.id === id);
 
+  const level = affiliateLevel(
+    items.filter((i) => i.paidAt && i.fulfillment !== "cancelled").length,
+  );
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-5">
+        <LevelCard level={level} />
         <Stat
           tone="ink"
           label="Comisiones (30 días)"

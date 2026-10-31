@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { FolderPlus, ImagePlus, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { discountPct } from "@/lib/feed";
@@ -234,6 +234,8 @@ const empty: ProductInput = {
   emoji: "📦",
   active: true,
   compareAtPrice: null,
+  promoCopy: "",
+  promoImage: null,
 };
 
 export function ProductDialog({
@@ -261,6 +263,8 @@ export function ProductDialog({
             description: product.description,
             price: product.price,
             compareAtPrice: product.compareAtPrice,
+            promoCopy: product.promoCopy,
+            promoImage: product.promoImage,
             category: product.category,
             commission: product.commission,
             stock: product.stock,
@@ -485,6 +489,33 @@ export function ProductDialog({
               className="w-full accent-primary"
             />
             <SplitPreview price={f.price || 0} rate={f.commission} />
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 p-3">
+            <span className="flex items-center gap-1 text-xs font-bold text-purple-400">
+              <FolderPlus className="size-3.5" /> Añadir Recursos para Afiliados
+            </span>
+            <Textarea
+              aria-label="Copy o texto promocional"
+              rows={2}
+              maxLength={600}
+              placeholder="Copy o texto promocional de muestra"
+              value={f.promoCopy}
+              onChange={(e) => setF({ ...f, promoCopy: e.target.value })}
+              className="border-slate-800 bg-slate-900 text-xs"
+            />
+            <Input
+              aria-label="URL de imagen publicitaria"
+              type="url"
+              pattern="https://.*"
+              placeholder="URL de Imagen Publicitaria / Banner (https://…)"
+              value={f.promoImage ?? ""}
+              onChange={(e) => setF({ ...f, promoImage: e.target.value || null })}
+              className="border-slate-800 bg-slate-900 text-xs"
+            />
+            <p className="text-[10px] text-slate-500">
+              Tus afiliados los verán en “Herramientas Afiliado”, junto con las fotos del producto.
+            </p>
           </div>
 
           <label className="flex items-center justify-between rounded-xl border p-3">

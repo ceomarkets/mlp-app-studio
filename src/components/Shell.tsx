@@ -17,9 +17,11 @@ import {
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { AuthDialog, openAuth } from "@/components/AuthDialog";
+import { BridgeLogo } from "@/components/BridgeLogo";
 import { CartSheet, openCart } from "@/components/CartSheet";
+import { RewardsBar, RewardsModal, useRewards } from "@/components/Rewards";
 import { ShareButton } from "@/components/ShareSheet";
-import { Ticker } from "@/components/Ticker";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,118 +36,151 @@ import { resetDemo } from "@/lib/backend/demo";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
 import { favorites, useCart, useFavorites } from "@/lib/client-state";
 import { discountPct, isNew } from "@/lib/feed";
-import { compact, cop } from "@/lib/plaza";
+import { BUNDLE_MIN, compact, cop } from "@/lib/plaza";
+import { rewardsUI } from "@/lib/ui-state";
 import { keys, useUser } from "@/lib/session";
 import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
-// Navegación centrada en comprar. Mi Tienda y Mi Red viven, discretas, en el
-// menú de cuenta y en el pie de página.
-const mobileNav = [
-  { to: "/", label: "Inicio", icon: Home },
-  { to: "/favoritos", label: "Favoritos", icon: Heart },
-  { to: "/cuenta", label: "Pedidos", icon: Package },
-] as const;
+const navBtn =
+  "nav-tab flex items-center gap-2 transition-colors hover:text-indigo-400 data-[status=active]:font-bold data-[status=active]:text-indigo-400";
 
 export function Shell({
   children,
   wide = false,
-  top,
+  bare = false,
 }: {
   children: ReactNode;
   wide?: boolean;
-  /** Contenido a todo el ancho justo debajo de la cabecera (p. ej. el leaderboard). */
-  top?: ReactNode;
+  /** Sin contenedor: la página maneja su propio ancho (portada). */
+  bare?: boolean;
 }) {
   return (
-    <div className="flex min-h-screen flex-col pb-16 md:pb-0">
+    <div className="flex min-h-full flex-col bg-slate-950 pb-16 font-sans text-slate-100 antialiased md:pb-0">
       {IS_DEMO && <DemoBanner />}
-      <header className="sticky top-0 z-30 bg-background/90 shadow-[0_1px_0_var(--color-border)] backdrop-blur-md">
-        <Ticker />
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 md:px-5">
-          <Link to="/" className="flex items-center gap-2 font-display text-2xl font-extrabold">
-            <span className="grid size-8 place-items-center rounded-xl bg-primary text-primary-foreground shadow-card">
-              <Store className="size-4.5" strokeWidth={2.5} />
-            </span>
-            <span>
-              Plaza<span className="text-primary">X</span>
+      {/* Cabecera */}
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="flex cursor-pointer items-center space-x-2.5">
+            <BridgeLogo />
+            <span className="block bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-lg leading-none font-extrabold text-transparent">
+              Plaza X
             </span>
           </Link>
-          <div className="flex items-center gap-1">
-            <Link
-              to="/favoritos"
-              aria-label="Favoritos"
-              className="relative hidden size-9 place-items-center rounded-full hover:bg-muted md:grid"
-            >
-              <Heart className="size-5" />
-              <FavCount />
+
+          <nav className="hidden space-x-8 text-sm font-medium text-slate-300 md:flex">
+            <Link to="/" activeOptions={{ exact: true }} className={navBtn}>
+              <i className="fa-solid fa-crown text-amber-400" /> Mercado
             </Link>
-            <CartSheet />
+            <Link to="/afiliados" className={navBtn}>
+              <i className="fa-solid fa-user-ninja text-emerald-400" /> Panel Afiliado
+            </Link>
+            <Link to="/vendedores" className={navBtn}>
+              <i className="fa-solid fa-building text-indigo-400" /> Panel Empresa
+            </Link>
+            <RewardsButton />
+            <button
+              onClick={openCart}
+              className="relative flex items-center gap-2 transition-colors hover:text-indigo-400"
+            >
+              <i className="fa-solid fa-cart-shopping text-base text-orange-500" /> Carrito
+              <CartCount />
+            </button>
+          </nav>
+
+          <div className="flex items-center space-x-3">
             <UserMenu />
           </div>
         </div>
       </header>
-      {top}
+
+      <RewardsBar />
+
       <main
         className={cn(
-          "mx-auto w-full flex-1 px-4 py-6 md:px-5 md:py-10",
-          wide ? "max-w-7xl" : "max-w-6xl",
+          "w-full flex-grow",
+          !bare && "mx-auto px-4 py-8 sm:px-6 md:py-10 lg:px-8",
+          !bare && (wide ? "max-w-7xl" : "max-w-6xl"),
         )}
       >
         {children}
       </main>
-      <footer className="border-t py-8 text-center text-sm text-muted-foreground">
-        <div className="flex items-center justify-center gap-2">
-          <ShieldCheck className="size-4 text-primary" /> Pagos seguros con Wompi · Hecho en Pasto,
-          Nariño
-        </div>
-        <div className="mt-3 flex items-center justify-center gap-4 text-xs">
-          <Link to="/vendedores" className="hover:text-primary">
-            Vende en Plaza X
-          </Link>
-          <span aria-hidden>·</span>
-          <Link to="/afiliados" className="hover:text-primary">
-            Gana recomendando
-          </Link>
-        </div>
-      </footer>
+
+      {/* Navegación en el celular */}
       <nav
         aria-label="Navegación principal"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-800 bg-slate-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
       >
-        {mobileNav.map((n) => (
+        {(
+          [
+            { to: "/", label: "Mercado", icon: "fa-crown text-amber-400" },
+            { to: "/afiliados", label: "Afiliado", icon: "fa-user-ninja text-emerald-400" },
+            { to: "/vendedores", label: "Empresa", icon: "fa-building text-indigo-400" },
+          ] as const
+        ).map((n) => (
           <Link
             key={n.to}
             to={n.to}
             activeOptions={{ exact: n.to === "/" }}
-            className="group flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-muted-foreground data-[status=active]:text-primary"
+            className="flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-400 data-[status=active]:text-indigo-400"
           >
-            <span className="grid h-7 w-12 place-items-center rounded-full transition group-data-[status=active]:bg-primary/12">
-              <n.icon className="size-5" />
-            </span>
+            <i className={cn("fa-solid text-base", n.icon)} />
             {n.label}
           </Link>
         ))}
         <button
-          onClick={openCart}
-          className="flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-muted-foreground"
+          onClick={rewardsUI.open}
+          className="flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-400"
         >
-          <span className="relative grid h-7 w-12 place-items-center rounded-full">
-            <ShoppingBag className="size-5" />
-            <CartCount />
+          <i className="fa-solid fa-gift text-base text-amber-400" />
+          Premio
+        </button>
+        <button
+          onClick={openCart}
+          className="relative flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-400"
+        >
+          <span className="relative">
+            <i className="fa-solid fa-cart-shopping text-base text-orange-500" />
+            <CartCount floating />
           </span>
           Carrito
         </button>
       </nav>
+
+      {/* Ventanas globales */}
+      <CartSheet />
+      <RewardsModal />
+      <AuthDialog />
     </div>
   );
 }
 
-function CartCount() {
-  const n = useCart().reduce((t, l) => t + l.qty, 0);
-  if (!n) return null;
+function RewardsButton() {
+  const r = useRewards();
   return (
-    <span className="absolute right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+    <button
+      onClick={rewardsUI.open}
+      className="relative flex animate-pulse items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 transition-colors hover:text-amber-300"
+    >
+      <i className="fa-solid fa-gift text-base text-amber-400" />
+      <span className="hidden text-xs font-bold text-amber-300 lg:inline">Premio</span>
+      <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-slate-950">
+        {Math.min(r.count, BUNDLE_MIN)}/{BUNDLE_MIN}
+      </span>
+    </button>
+  );
+}
+
+function CartCount({ floating = false }: { floating?: boolean }) {
+  const n = useCart().reduce((t, l) => t + l.qty, 0);
+  return (
+    <span
+      className={cn(
+        "flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-black text-white",
+        floating && "absolute -right-3 -top-2",
+        floating && !n && "hidden",
+      )}
+    >
       {n}
     </span>
   );
@@ -164,7 +199,7 @@ function FavCount() {
 function DemoBanner() {
   const qc = useQueryClient();
   return (
-    <div className="bg-sun px-4 py-1.5 text-center text-[11px] font-semibold text-accent-foreground">
+    <div className="border-b border-slate-800 bg-slate-950 px-4 py-1 text-center text-[11px] text-slate-400">
       Modo demo: los datos viven en este navegador. Entra con <b>{DEMO_EMAIL}</b> /{" "}
       <b>{DEMO_PASSWORD}</b> ·{" "}
       <button
@@ -192,11 +227,14 @@ function UserMenu() {
   if (loading) return <div className="size-9" />;
   if (!user)
     return (
-      <Button asChild size="sm" className="rounded-full">
-        <Link to="/entrar" search={{ to: undefined }}>
-          Entrar
-        </Link>
-      </Button>
+      <button
+        onClick={openAuth}
+        className="rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 sm:text-sm"
+      >
+        <i className="fa-solid fa-user me-1" />{" "}
+        <span className="hidden sm:inline">Iniciar Sesión / Registro</span>
+        <span className="sm:hidden">Entrar</span>
+      </button>
     );
   const initials = (user.fullName || user.email)
     .split(" ")
@@ -208,7 +246,7 @@ function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="grid size-9 place-items-center rounded-full bg-ink text-xs font-bold text-ink-foreground"
+          className="grid size-9 place-items-center rounded-lg border border-slate-700 bg-slate-800 text-xs font-bold text-slate-200 hover:bg-slate-700"
           aria-label="Mi cuenta"
         >
           {initials}

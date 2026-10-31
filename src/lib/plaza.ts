@@ -8,6 +8,15 @@ export const PLATFORM_RATE = 0.09;
 export const AFFILIATE_MIN = 0.03;
 export const AFFILIATE_MAX = 0.2;
 export const MIN_WITHDRAWAL = 50000;
+/** Descuento por volumen: desde BUNDLE_MIN unidades, BUNDLE_RATE menos (lo absorbe Plaza X). */
+export const BUNDLE_MIN = 3;
+export const BUNDLE_RATE = 0.05;
+
+/** Descuento por volumen de una línea, igual que create_order() en la base de datos. */
+export function bundleDiscount(subtotal: number, totalUnits: number) {
+  if (BUNDLE_RATE <= 0 || totalUnits < BUNDLE_MIN) return 0;
+  return Math.min(Math.round(subtotal * PLATFORM_RATE), Math.round(subtotal * BUNDLE_RATE));
+}
 /** Días que se retienen las ganancias después de la entrega. */
 export const HOLD_DAYS = 7;
 /** Ventana de atribución de un enlace de afiliado. */
@@ -127,3 +136,20 @@ export const FULFILLMENT_LABEL: Record<EarningRow["fulfillment"], string> = {
   delivered: "Entregado",
   cancelled: "Cancelado",
 };
+
+/** Niveles de afiliado por ventas referidas reales (pagadas y no canceladas). */
+export const AFFILIATE_LEVELS = [
+  { name: "Inicial", min: 0 },
+  { name: "Emprendedor", min: 10 },
+  { name: "Líder", min: 50 },
+  { name: "Leyenda", min: 100 },
+] as const;
+
+export function affiliateLevel(sales: number) {
+  let i = 0;
+  while (i + 1 < AFFILIATE_LEVELS.length && sales >= AFFILIATE_LEVELS[i + 1]!.min) i++;
+  const level = AFFILIATE_LEVELS[i]!;
+  const next = AFFILIATE_LEVELS[i + 1] ?? null;
+  const progress = next ? (sales - level.min) / (next.min - level.min) : 1;
+  return { name: level.name, sales, next, missing: next ? next.min - sales : 0, progress };
+}

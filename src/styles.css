@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -37,30 +37,31 @@
 }
 
 :root {
-  --radius: 1rem;
-  --background: oklch(0.975 0.015 85);
-  --foreground: oklch(0.22 0.03 150);
-  --card: oklch(0.995 0.008 85);
-  --card-foreground: oklch(0.22 0.03 150);
-  --popover: oklch(0.995 0.008 85);
-  --popover-foreground: oklch(0.22 0.03 150);
-  --primary: oklch(0.6 0.16 40);
-  --primary-foreground: oklch(0.985 0.01 85);
-  --secondary: oklch(0.92 0.04 140);
-  --secondary-foreground: oklch(0.3 0.06 150);
-  --muted: oklch(0.94 0.02 85);
-  --muted-foreground: oklch(0.48 0.03 150);
-  --accent: oklch(0.88 0.12 90);
-  --accent-foreground: oklch(0.25 0.04 60);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.88 0.025 85);
-  --input: oklch(0.88 0.025 85);
-  --ring: oklch(0.6 0.16 40);
-  --ink: oklch(0.3 0.07 155);
-  --ink-foreground: oklch(0.96 0.03 90);
-  --sun: oklch(0.83 0.15 85);
-  --shadow-card: 0 1px 0 oklch(0.88 0.025 85), 0 12px 30px -18px oklch(0.3 0.07 155 / 0.35);
+  /* Paleta del diseño Plaza X (Tailwind slate / indigo / amber / emerald) */
+  --radius: 0.75rem;
+  --background: #020617; /* slate-950 */
+  --foreground: #f1f5f9; /* slate-100 */
+  --card: #0f172a; /* slate-900 */
+  --card-foreground: #f1f5f9;
+  --popover: #0f172a;
+  --popover-foreground: #f1f5f9;
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b; /* slate-800 */
+  --secondary-foreground: #e2e8f0; /* slate-200 */
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8; /* slate-400 */
+  --accent: #1e293b;
+  --accent-foreground: #f1f5f9;
+  --destructive: #ef4444; /* red-500 */
+  --destructive-foreground: #ffffff;
+  --border: #1e293b; /* slate-800 */
+  --input: #1e293b;
+  --ring: #6366f1; /* indigo-500 */
+  --ink: #0f172a;
+  --ink-foreground: #f1f5f9;
+  --sun: #fbbf24; /* amber-400 */
+  --shadow-card: 0 10px 25px -15px rgb(0 0 0 / 0.6);
 }
 
 @layer base {
@@ -71,6 +72,9 @@
     font-family: var(--font-sans);
   }
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  html { color-scheme: dark; background-color: #020617; }
+  body { -webkit-font-smoothing: antialiased; }
+  ::selection { background: #6366f1; color: #fff; }
 }
 
 @utility shadow-card { box-shadow: var(--shadow-card); }
@@ -135,4 +139,28 @@ html {
 .board-mask {
   -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
   mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+/* ===== Diseño Plaza X ===== */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(99, 102, 241, 0.5); }
+  50% { opacity: 0.7; box-shadow: 0 0 5px rgba(99, 102, 241, 0.2); }
+}
+.animate-pulse-glow { animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Carrusel del leaderboard (diseño Plaza X): derecha a izquierda, pausa al pasar el ratón. */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-content { animation: marquee 35s linear infinite; will-change: transform; }
+.marquee-container:hover .marquee-content,
+.marquee-container:focus-within .marquee-content { animation-play-state: paused; }
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-content { animation: none; }
+  .marquee-container { overflow-x: auto; }
 }

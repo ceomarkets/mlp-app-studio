@@ -40,6 +40,10 @@ export type Product = {
   rating: number;
   ratingCount: number;
   createdAt: string;
+  /** Texto promocional que la empresa comparte con sus afiliados. */
+  promoCopy: string;
+  /** Imagen publicitaria (https) para afiliados. */
+  promoImage: string | null;
   store: Pick<Store, "slug" | "name" | "city" | "emoji">;
 };
 
@@ -55,6 +59,8 @@ export type ProductInput = Pick<
   | "images"
   | "emoji"
   | "active"
+  | "promoCopy"
+  | "promoImage"
 > & { id?: string };
 
 export type Shipping = {
@@ -82,6 +88,8 @@ export type OrderItem = {
   sellerAmount: number;
   affiliateAmount: number;
   platformAmount: number;
+  /** Descuento por volumen aplicado a esta línea (sale de la parte de Plaza X). */
+  discountAmount: number;
   affiliateId: string | null;
   paidAt: string | null;
   fulfillment: Fulfillment;
@@ -96,6 +104,8 @@ export type Order = {
   buyerId: string;
   status: OrderStatus;
   total: number;
+  /** Descuento por volumen del pedido (ya restado del total). */
+  discount: number;
   shipping: Shipping;
   createdAt: string;
   paidAt: string | null;

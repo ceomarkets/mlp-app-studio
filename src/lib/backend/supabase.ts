@@ -49,6 +49,8 @@ const toProduct = (r: Row): Product => ({
   description: r.description,
   price: r.price,
   compareAtPrice: r.compare_at_price ?? null,
+  promoCopy: r.promo_copy ?? "",
+  promoImage: r.promo_image ?? null,
   category: r.category as Category,
   commission: Number(r.commission),
   stock: r.stock,
@@ -92,6 +94,7 @@ const toItem = (r: Row): OrderItem => ({
   sellerAmount: r.seller_amount,
   affiliateAmount: r.affiliate_amount,
   platformAmount: r.platform_amount,
+  discountAmount: r.discount_amount ?? 0,
   affiliateId: r.affiliate_id,
   paidAt: r.paid_at,
   fulfillment: r.fulfillment,
@@ -106,6 +109,7 @@ const toOrder = (r: Row): Order => ({
   buyerId: r.buyer_id,
   status: r.status,
   total: r.total,
+  discount: r.discount ?? 0,
   shipping: r.shipping,
   createdAt: r.created_at,
   paidAt: r.paid_at,
@@ -393,8 +397,14 @@ export const supabaseBackend: Backend = {
   async saveProduct({ id, ...p }) {
     const store = await this.myStore();
     if (!store) throw new Error("Primero crea tu tienda");
-    const { compareAtPrice, ...rest } = p;
-    const row = { ...rest, compare_at_price: compareAtPrice, store_id: store.id };
+    const { compareAtPrice, promoCopy, promoImage, ...rest } = p;
+    const row = {
+      ...rest,
+      compare_at_price: compareAtPrice,
+      promo_copy: promoCopy,
+      promo_image: promoImage || null,
+      store_id: store.id,
+    };
     const q = id
       ? untyped.from("products").update(row).eq("id", id).select(PRODUCT_COLS).single()
       : untyped.from("products").insert(row).select(PRODUCT_COLS).single();

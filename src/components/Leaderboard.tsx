@@ -14,7 +14,7 @@ import {
   Trophy,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   AnnouncementCard,
   AnnouncementDialog,
@@ -84,7 +84,14 @@ function badgeText(it: BoardItem) {
  * Se pausa al pasar el cursor, con el foco del teclado o con el botón de pausa;
  * al hacer clic abre la vista rápida del producto (o la tienda).
  */
-export function Leaderboard({ products }: { products: Product[] }) {
+export function Leaderboard({
+  products,
+  search,
+}: {
+  products: Product[];
+  /** Buscador opcional dentro de la banda, encima del leaderboard (diseño del prototipo). */
+  search?: ReactNode;
+}) {
   const [filter, setFilter] = useState<BoardFilter>("all");
   const [paused, setPaused] = useState(false);
   const [open, setOpen] = useState<Product | null>(null);
@@ -134,10 +141,12 @@ export function Leaderboard({ products }: { products: Product[] }) {
   return (
     <section
       aria-labelledby="board-title"
-      className="w-full border-y border-slate-800 bg-slate-900 py-4 font-sans text-slate-100"
+      className="relative my-4 w-full border-y border-slate-800 bg-slate-900/60 py-6 font-sans text-slate-100 shadow-2xl"
     >
+      {search && <div className="mx-auto mb-6 max-w-7xl px-4 sm:px-6 lg:px-8">{search}</div>}
+
       {/* Encabezado con filtros */}
-      <div className="mx-auto mb-3 flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4">
+      <div className="mx-auto mb-4 flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
           <span className="relative flex size-3">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75 motion-reduce:hidden" />
@@ -145,13 +154,14 @@ export function Leaderboard({ products }: { products: Product[] }) {
           </span>
           <h2
             id="board-title"
-            className="text-xs font-bold uppercase tracking-widest text-slate-300 sm:text-sm"
+            className="text-sm font-bold uppercase tracking-widest text-slate-300"
           >
-            Leaderboard en vivo
+            En Vivo
           </h2>
         </div>
 
         <div className="flex max-w-full items-center gap-2">
+          <span className="hidden text-xs text-slate-400 sm:inline">Filtrar:</span>
           <div
             role="tablist"
             aria-label="Filtrar leaderboard"

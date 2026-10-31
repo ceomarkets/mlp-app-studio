@@ -1,26 +1,17 @@
 import { useQueries } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { useSyncExternalStore } from "react";
-import { ProductImage } from "@/components/Shell";
-import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { backend, type Product } from "@/lib/backend";
 import { cart, useCart } from "@/lib/client-state";
-import { cop } from "@/lib/plaza";
+import { BUNDLE_MIN, BUNDLE_RATE, bundleDiscount, cop } from "@/lib/plaza";
 import { keys } from "@/lib/session";
+import { cartUI } from "@/lib/ui-state";
+import { cn } from "@/lib/utils";
 
 export type CartRow = { product: Product; qty: number };
 
-/** Líneas del carrito con los datos actuales de cada producto (precio y stock reales). */
+/** Líneas del carrito con precio y stock actuales, y el descuento por volumen. */
 export function useCartDetails() {
   const lines = useCart();
   const results = useQueries({
@@ -35,86 +26,113 @@ export function useCartDetails() {
     const p = results[i]?.data;
     if (p) rows.push({ product: p, qty: l.qty });
   });
-  const total = rows.reduce((t, r) => t + r.product.price * r.qty, 0);
   const count = lines.reduce((t, l) => t + l.qty, 0);
-  return { lines, rows, total, count, loading };
+  const subtotal = rows.reduce((t, r) => t + r.product.price * r.qty, 0);
+  // Mismo cálculo que create_order() en la base de datos.
+  const discount = rows.reduce((t, r) => t + bundleDiscount(r.product.price * r.qty, count), 0);
+  return { lines, rows, subtotal, discount, total: subtotal - discount, count, loading };
 }
 
-const openStore = {
-  open: false,
-  subs: new Set<() => void>(),
-  set(v: boolean) {
-    this.open = v;
-    this.subs.forEach((s) => s());
-  },
-};
-/** Abre el carrito desde cualquier parte (p. ej. al agregar un producto). */
-export const openCart = () => openStore.set(true);
+export const openCart = cartUI.open;
 
 export function addToCart(p: Product, qty = 1) {
   if (p.stock < 1) return void toast.error("Producto agotado");
   cart.add(p.id, qty, p.stock);
-  toast.success(`¡Listo! ${p.name} va en tu carrito 🛍️`, {
-    action: { label: "Pagar", onClick: openCart },
-  });
+  openCart();
 }
 
+/** Cajón del carrito (derecha), con el progreso del premio por volumen. */
 export function CartSheet() {
-  const { rows, total, count } = useCartDetails();
-  const open = useSyncExternalStore(
-    (fn) => {
-      openStore.subs.add(fn);
-      return () => openStore.subs.delete(fn);
-    },
-    () => openStore.open,
-    () => false,
-  );
-  const setOpen = (v: boolean) => openStore.set(v);
+  const open = cartUI.use();
+  const navigate = useNavigate();
+  const { rows, subtotal, discount, total, count } = useCartDetails();
+  const pct = Math.min(100, Math.round((count / BUNDLE_MIN) * 100));
+  const unlocked = count >= BUNDLE_MIN;
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button
-          className="relative grid size-9 place-items-center rounded-full hover:bg-muted"
-          aria-label={`Carrito, ${count} productos`}
-        >
-          <ShoppingBag className="size-5" />
-          {count > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
-              {count}
+    <Sheet open={open} onOpenChange={cartUI.set}>
+      <SheetContent
+        side="right"
+        className="flex w-screen max-w-md flex-col gap-0 border-l border-slate-800 bg-slate-900 p-0 text-slate-100 shadow-2xl sm:max-w-md [&>button]:text-slate-400"
+      >
+        {/* Encabezado */}
+        <div className="flex items-center justify-between border-b border-slate-800 p-4">
+          <SheetTitle className="flex items-center gap-2 text-lg font-extrabold text-white">
+            <i className="fa-solid fa-cart-shopping text-orange-500" /> Carrito de Compras
+          </SheetTitle>
+          <SheetDescription className="sr-only">Productos en tu carrito</SheetDescription>
+        </div>
+
+        {/* Premio por volumen */}
+        <div className="border-b border-slate-800 bg-slate-950 p-3">
+          <div className="mb-1.5 flex items-center justify-between text-xs">
+            <span className="flex items-center gap-1.5 font-bold text-amber-300">
+              <i className="fa-solid fa-award text-amber-400" /> Tu Premio Comprador:
             </span>
-          )}
-        </button>
-      </SheetTrigger>
-      <SheetContent className="flex w-full flex-col sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle className="font-display text-2xl">Tu carrito</SheetTitle>
-          <SheetDescription>
-            {count
-              ? `${count} productos de ${new Set(rows.map((r) => r.product.storeId)).size} tiendas`
-              : "Aún no agregas productos"}
-          </SheetDescription>
-        </SheetHeader>
-        <div className="-mx-6 flex-1 space-y-3 overflow-y-auto px-6 py-4">
-          {rows.map((r) => (
-            <CartLineRow key={r.product.id} row={r} />
-          ))}
-          {!rows.length && (
-            <div className="py-16 text-center text-sm text-muted-foreground">
-              <ShoppingBag className="mx-auto mb-3 size-10 opacity-40" />
-              Explora la plaza y agrega lo que te guste.
+            <span
+              className={cn(
+                unlocked
+                  ? "animate-pulse font-black text-emerald-400"
+                  : "font-extrabold text-amber-400",
+              )}
+            >
+              {unlocked
+                ? `¡${Math.round(BUNDLE_RATE * 100)}% OFF DESBLOQUEADO! 🎁`
+                : `Faltan ${BUNDLE_MIN - count} ítem(s)`}
+            </span>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full border border-slate-800 bg-slate-900">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Productos */}
+        <div className="flex-grow space-y-3 overflow-y-auto p-4">
+          {rows.length === 0 ? (
+            <div className="py-12 text-center text-sm text-slate-500">
+              <i className="fa-solid fa-cart-flatbed mb-2 block text-3xl text-slate-600" />
+              Tu carrito está vacío
             </div>
+          ) : (
+            rows.map((r) => <CartLineRow key={r.product.id} row={r} />)
           )}
         </div>
+
+        {/* Total y pago */}
         {rows.length > 0 && (
-          <div className="space-y-3 border-t pt-4">
-            <div className="flex items-center justify-between text-lg">
-              <span>Total</span>
-              <span className="font-display font-bold">{cop(total)}</span>
+          <div className="space-y-2 border-t border-slate-800 bg-slate-950 p-4">
+            {discount > 0 && (
+              <>
+                <div className="flex justify-between text-xs text-slate-400">
+                  <span>Subtotal</span>
+                  <span>{cop(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-emerald-400">
+                  <span>Premio {Math.round(BUNDLE_RATE * 100)}% OFF</span>
+                  <span>−{cop(discount)}</span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-300">Total</span>
+              <span className="text-xl font-extrabold text-white">{cop(total)}</span>
             </div>
-            <Button asChild size="lg" className="w-full" onClick={() => setOpen(false)}>
-              <Link to="/carrito">Ir a pagar</Link>
-            </Button>
+            <button
+              onClick={() => {
+                cartUI.close();
+                navigate({ to: "/carrito" });
+              }}
+              className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 py-3 text-sm font-black text-slate-950 shadow-lg shadow-orange-500/20 transition hover:from-orange-400 hover:to-amber-400"
+            >
+              <i className="fa-solid fa-lock me-1.5" /> Pagar Ahora
+            </button>
+            <p className="text-center text-[10px] text-slate-500">
+              <i className="fa-solid fa-shield-halved me-1 text-emerald-400" /> Pago seguro con
+              Wompi: tarjeta, PSE, Nequi o Bancolombia
+            </p>
           </div>
         )}
       </SheetContent>
@@ -125,43 +143,39 @@ export function CartSheet() {
 export function CartLineRow({ row: { product: p, qty } }: { row: CartRow }) {
   const over = qty > p.stock;
   return (
-    <div className="flex gap-3 rounded-2xl border bg-card p-3">
-      <ProductImage p={p} className="size-16 shrink-0 text-3xl" />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-xs text-muted-foreground">{p.store.name}</div>
-        <div className="truncate font-semibold">{p.name}</div>
-        <div className="mt-1 flex items-center justify-between">
-          <div className="flex items-center rounded-full border">
-            <button
-              className="grid size-7 place-items-center"
-              onClick={() => cart.setQty(p.id, qty - 1)}
-              aria-label="Quitar uno"
-            >
-              <Minus className="size-3.5" />
-            </button>
-            <span className="w-6 text-center text-sm font-semibold">{qty}</span>
-            <button
-              className="grid size-7 place-items-center disabled:opacity-30"
-              disabled={qty >= p.stock}
-              onClick={() => cart.setQty(p.id, qty + 1)}
-              aria-label="Agregar uno"
-            >
-              <Plus className="size-3.5" />
-            </button>
-          </div>
-          <span className="font-semibold">{cop(p.price * qty)}</span>
-        </div>
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3">
+      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-900 text-2xl">
+        {p.images[0] ? (
+          <img src={p.images[0]} alt="" className="size-full object-cover" />
+        ) : (
+          <span aria-hidden>{p.emoji}</span>
+        )}
+      </span>
+      <div className="min-w-0 flex-grow">
+        <h4 className="truncate text-xs font-bold text-white">{p.name}</h4>
+        <span className="text-xs font-bold text-emerald-400">{cop(p.price * qty)}</span>
         {over && (
-          <div className="mt-1 text-xs font-semibold text-destructive">Solo quedan {p.stock}</div>
+          <span className="block text-[10px] font-bold text-red-400">Solo quedan {p.stock}</span>
         )}
       </div>
-      <button
-        className="self-start text-muted-foreground hover:text-destructive"
-        onClick={() => cart.remove(p.id)}
-        aria-label="Eliminar"
-      >
-        <Trash2 className="size-4" />
-      </button>
+      <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 p-1">
+        <button
+          onClick={() => cart.setQty(p.id, qty - 1)}
+          aria-label="Quitar uno"
+          className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-white"
+        >
+          -
+        </button>
+        <span className="w-4 text-center text-xs font-bold text-white">{qty}</span>
+        <button
+          onClick={() => cart.setQty(p.id, qty + 1)}
+          disabled={qty >= p.stock}
+          aria-label="Agregar uno"
+          className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-white disabled:opacity-30"
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 }
