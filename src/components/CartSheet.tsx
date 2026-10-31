@@ -130,9 +130,9 @@ export function CartSheet() {
               <i className="fa-solid fa-lock me-1.5" /> Pagar Ahora
             </button>
             <p className="text-center text-[10px] text-slate-500">
-              <i className="fa-solid fa-shield-halved me-1 text-emerald-600" /> Pago en custodia:
-              el vendedor cobra cuando confirmas que recibiste. Si algo sale mal, abres una disputa
-              y te reembolsamos.{" "}
+              <i className="fa-solid fa-shield-halved me-1 text-emerald-600" /> Pago en custodia: el
+              vendedor cobra cuando confirmas que recibiste. Si algo sale mal, abres una disputa y
+              te reembolsamos.{" "}
               <Link
                 to="/legal"
                 hash="proteccion-comprador"
