@@ -29,7 +29,16 @@ function db(): DemoState {
     }
   }
   state ??= buildSeed();
+  upgrade(state);
   return state;
+}
+
+/** Completa datos guardados con versiones anteriores sin borrar nada. */
+function upgrade(s: DemoState) {
+  for (const st of s.stores) {
+    st.shipsNational ??= true;
+    st.verified ??= st.id === "s-tejidos" || st.id === "s-cafe";
+  }
 }
 
 function save() {
@@ -92,7 +101,17 @@ function emit() {
 
 function withStore(p: DemoState["products"][number]): Product {
   const s = db().stores.find((x) => x.id === p.storeId)!;
-  return { ...p, store: { slug: s.slug, name: s.name, city: s.city, emoji: s.emoji } };
+  return {
+    ...p,
+    store: {
+      slug: s.slug,
+      name: s.name,
+      city: s.city,
+      emoji: s.emoji,
+      shipsNational: s.shipsNational,
+      verified: s.verified,
+    },
+  };
 }
 function storeOf(userId: string): Store | null {
   return db().stores.find((s) => s.ownerId === userId) ?? null;
@@ -328,6 +347,7 @@ export const demoBackend: Backend = {
         id: uid(),
         ownerId: u.id,
         active: true,
+        verified: false,
         ...input,
         whatsapp: input.whatsapp || null,
       };

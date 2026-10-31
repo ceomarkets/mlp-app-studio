@@ -82,7 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Plaza X - Mercado Digital" },
-      { name: "theme-color", content: "#020617" },
+      { name: "theme-color", content: "#ffffff" },
       { name: "description", content: "Marketplace multitienda con red de afiliados." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -110,7 +110,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className="h-full bg-slate-950 text-slate-100">
+    <html lang="es" className="h-full bg-slate-50 text-slate-900">
       <head>
         <HeadContent />
       </head>

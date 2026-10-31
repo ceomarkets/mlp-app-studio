@@ -5,7 +5,7 @@ export function BridgeLogo({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "group relative flex size-8 items-center justify-center overflow-hidden rounded-lg border border-slate-800 bg-slate-950 shadow-sm",
+        "group relative flex size-8 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm",
         className,
       )}
     >

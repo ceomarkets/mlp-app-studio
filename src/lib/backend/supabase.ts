@@ -28,7 +28,8 @@ type Row = any;
  */
 const untyped = supabase as unknown as SupabaseClient;
 
-const PRODUCT_COLS = "*, stores!inner(slug, name, city, emoji, active)";
+// `stores!inner(*)`: las columnas nuevas llegan solas cuando se aplica su migración.
+const PRODUCT_COLS = "*, stores!inner(*)";
 
 const toStore = (r: Row): Store => ({
   id: r.id,
@@ -40,6 +41,8 @@ const toStore = (r: Row): Store => ({
   emoji: r.emoji,
   whatsapp: r.whatsapp,
   active: r.active,
+  shipsNational: r.ships_national ?? true,
+  verified: r.verified ?? false,
 });
 
 const toProduct = (r: Row): Product => ({
@@ -61,7 +64,14 @@ const toProduct = (r: Row): Product => ({
   rating: Number(r.rating),
   ratingCount: r.rating_count,
   createdAt: r.created_at,
-  store: { slug: r.stores.slug, name: r.stores.name, city: r.stores.city, emoji: r.stores.emoji },
+  store: {
+    slug: r.stores.slug,
+    name: r.stores.name,
+    city: r.stores.city,
+    emoji: r.stores.emoji,
+    shipsNational: r.stores.ships_national ?? true,
+    verified: r.stores.verified ?? false,
+  },
 });
 
 const toAnnouncement = (r: Row): Announcement => ({
@@ -374,11 +384,22 @@ export const supabaseBackend: Backend = {
 
   async saveStore(input) {
     const u = await requireUser();
-    const row = { ...input, owner_id: u.id, whatsapp: input.whatsapp || null };
-    const r = ok(
-      await supabase.from("stores").upsert(row, { onConflict: "owner_id" }).select().single(),
-    );
-    return toStore(r);
+    const { shipsNational, ...rest } = input;
+    const row = {
+      ...rest,
+      owner_id: u.id,
+      whatsapp: input.whatsapp || null,
+      ships_national: shipsNational,
+    };
+    const upsert = (data: Row) =>
+      untyped.from("stores").upsert(data, { onConflict: "owner_id" }).select().single();
+    let res = await upsert(row);
+    // Base de datos sin la migración de perfil de tienda: se guarda sin el campo nuevo.
+    if (res.error?.message.includes("ships_national")) {
+      const { ships_national: _skip, ...legacy } = row;
+      res = await upsert(legacy);
+    }
+    return toStore(ok(res));
   },
 
   async myProducts() {

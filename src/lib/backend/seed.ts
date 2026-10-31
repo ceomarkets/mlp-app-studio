@@ -169,6 +169,8 @@ export function buildSeed(now = Date.now()): DemoState {
       emoji: "🧶",
       whatsapp: "3001234567",
       active: true,
+      verified: true,
+      shipsNational: true,
     },
     {
       id: "s-cafe",
@@ -180,6 +182,8 @@ export function buildSeed(now = Date.now()): DemoState {
       emoji: "☕",
       whatsapp: null,
       active: true,
+      verified: true,
+      shipsNational: true,
     },
     {
       id: "s-barniz",
@@ -191,6 +195,8 @@ export function buildSeed(now = Date.now()): DemoState {
       emoji: "🎨",
       whatsapp: null,
       active: true,
+      verified: false,
+      shipsNational: true,
     },
     {
       id: "s-campo",
@@ -202,6 +208,8 @@ export function buildSeed(now = Date.now()): DemoState {
       emoji: "🥔",
       whatsapp: null,
       active: true,
+      verified: false,
+      shipsNational: false,
     },
   ];
 

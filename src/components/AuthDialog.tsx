@@ -14,7 +14,7 @@ type Role = "afiliado" | "empresa";
 type Mode = "login" | "signup" | "reset";
 
 const input =
-  "w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none";
+  "w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none";
 
 /**
  * Formulario "Unirse a Plaza X": elige rol (afiliado o empresa), correo y
@@ -78,20 +78,20 @@ export function AuthForm({
       className={cn(
         "rounded-xl p-3 text-left",
         role === r
-          ? "border-2 border-indigo-500 bg-indigo-500/10"
-          : "border border-slate-800 bg-slate-950",
+          ? "border-2 border-indigo-500 bg-indigo-50"
+          : "border border-slate-200 bg-slate-50",
       )}
     >
-      <i className={cn("fa-solid mb-1 block text-lg text-indigo-400", icon)} />
-      <span className="block text-xs font-bold text-white">{title}</span>
-      <span className="text-[10px] text-slate-400">{sub}</span>
+      <i className={cn("fa-solid mb-1 block text-lg text-indigo-600", icon)} />
+      <span className="block text-xs font-bold text-slate-900">{title}</span>
+      <span className="text-[10px] text-slate-500">{sub}</span>
     </button>
   );
 
   return (
     <div>
-      <h3 className="mb-1 text-xl font-bold text-white">Unirse a Plaza X</h3>
-      <p className="mb-6 text-xs text-slate-400">
+      <h3 className="mb-1 text-xl font-bold text-slate-900">Unirse a Plaza X</h3>
+      <p className="mb-6 text-xs text-slate-500">
         Selecciona cómo deseas participar en la plataforma:
       </p>
 
@@ -103,7 +103,7 @@ export function AuthForm({
       <form onSubmit={submit} className="space-y-4">
         {mode === "signup" && (
           <div>
-            <label htmlFor="auth-name" className="mb-1 block text-xs font-semibold text-slate-300">
+            <label htmlFor="auth-name" className="mb-1 block text-xs font-semibold text-slate-600">
               Nombre
             </label>
             <input
@@ -117,7 +117,7 @@ export function AuthForm({
           </div>
         )}
         <div>
-          <label htmlFor="auth-email" className="mb-1 block text-xs font-semibold text-slate-300">
+          <label htmlFor="auth-email" className="mb-1 block text-xs font-semibold text-slate-600">
             Correo Electrónico
           </label>
           <input
@@ -133,7 +133,7 @@ export function AuthForm({
         </div>
         {mode !== "reset" && (
           <div>
-            <label htmlFor="auth-pass" className="mb-1 block text-xs font-semibold text-slate-300">
+            <label htmlFor="auth-pass" className="mb-1 block text-xs font-semibold text-slate-600">
               Contraseña
             </label>
             <input
@@ -159,16 +159,16 @@ export function AuthForm({
         </button>
       </form>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
         <button
           type="button"
-          className="font-semibold text-indigo-400 hover:text-indigo-300"
+          className="font-semibold text-indigo-600 hover:text-indigo-600"
           onClick={() => setMode(mode === "signup" ? "login" : "signup")}
         >
           {mode === "signup" ? "¿Ya tienes cuenta? Ingresa" : "¿Nuevo? Crea tu cuenta gratis"}
         </button>
         {mode === "login" && (
-          <button type="button" className="hover:text-slate-200" onClick={() => setMode("reset")}>
+          <button type="button" className="hover:text-slate-800" onClick={() => setMode("reset")}>
             ¿Olvidaste tu contraseña?
           </button>
         )}
@@ -177,7 +177,7 @@ export function AuthForm({
         <button
           type="button"
           onClick={() => setF({ ...f, email: DEMO_EMAIL, password: DEMO_PASSWORD })}
-          className="mt-3 w-full rounded-lg border border-slate-800 bg-slate-950 py-2 text-xs text-slate-300 hover:border-indigo-500/50"
+          className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 text-xs text-slate-600 hover:border-indigo-200"
         >
           Usar la cuenta demo
         </button>
@@ -192,7 +192,7 @@ export function AuthDialog() {
   const open = authUI.use();
   return (
     <Dialog open={open} onOpenChange={authUI.set}>
-      <DialogContent className="max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 text-slate-100 shadow-2xl [&>button]:text-slate-400">
+      <DialogContent className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl [&>button]:text-slate-500">
         <DialogTitle className="sr-only">Unirse a Plaza X</DialogTitle>
         <DialogDescription className="sr-only">Inicia sesión o crea tu cuenta</DialogDescription>
         <AuthForm onDone={authUI.close} />

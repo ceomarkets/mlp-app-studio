@@ -53,27 +53,27 @@ export function CartSheet() {
     <Sheet open={open} onOpenChange={cartUI.set}>
       <SheetContent
         side="right"
-        className="flex w-screen max-w-md flex-col gap-0 border-l border-slate-800 bg-slate-900 p-0 text-slate-100 shadow-2xl sm:max-w-md [&>button]:text-slate-400"
+        className="flex w-screen max-w-md flex-col gap-0 border-l border-slate-200 bg-white p-0 text-slate-900 shadow-2xl sm:max-w-md [&>button]:text-slate-500"
       >
         {/* Encabezado */}
-        <div className="flex items-center justify-between border-b border-slate-800 p-4">
-          <SheetTitle className="flex items-center gap-2 text-lg font-extrabold text-white">
+        <div className="flex items-center justify-between border-b border-slate-200 p-4">
+          <SheetTitle className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
             <i className="fa-solid fa-cart-shopping text-orange-500" /> Carrito de Compras
           </SheetTitle>
           <SheetDescription className="sr-only">Productos en tu carrito</SheetDescription>
         </div>
 
         {/* Premio por volumen */}
-        <div className="border-b border-slate-800 bg-slate-950 p-3">
+        <div className="border-b border-slate-200 bg-slate-50 p-3">
           <div className="mb-1.5 flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5 font-bold text-amber-300">
-              <i className="fa-solid fa-award text-amber-400" /> Tu Premio Comprador:
+            <span className="flex items-center gap-1.5 font-bold text-amber-700">
+              <i className="fa-solid fa-award text-amber-700" /> Tu Premio Comprador:
             </span>
             <span
               className={cn(
                 unlocked
-                  ? "animate-pulse font-black text-emerald-400"
-                  : "font-extrabold text-amber-400",
+                  ? "animate-pulse font-black text-emerald-600"
+                  : "font-extrabold text-amber-700",
               )}
             >
               {unlocked
@@ -81,7 +81,7 @@ export function CartSheet() {
                 : `Faltan ${BUNDLE_MIN - count} ítem(s)`}
             </span>
           </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full border border-slate-800 bg-slate-900">
+          <div className="h-2.5 w-full overflow-hidden rounded-full border border-slate-200 bg-white">
             <div
               className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500"
               style={{ width: `${pct}%` }}
@@ -103,22 +103,22 @@ export function CartSheet() {
 
         {/* Total y pago */}
         {rows.length > 0 && (
-          <div className="space-y-2 border-t border-slate-800 bg-slate-950 p-4">
+          <div className="space-y-2 border-t border-slate-200 bg-slate-50 p-4">
             {discount > 0 && (
               <>
-                <div className="flex justify-between text-xs text-slate-400">
+                <div className="flex justify-between text-xs text-slate-500">
                   <span>Subtotal</span>
                   <span>{cop(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-xs font-bold text-emerald-400">
+                <div className="flex justify-between text-xs font-bold text-emerald-600">
                   <span>Premio {Math.round(BUNDLE_RATE * 100)}% OFF</span>
                   <span>−{cop(discount)}</span>
                 </div>
               </>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-300">Total</span>
-              <span className="text-xl font-extrabold text-white">{cop(total)}</span>
+              <span className="text-sm font-semibold text-slate-600">Total</span>
+              <span className="text-xl font-extrabold text-slate-900">{cop(total)}</span>
             </div>
             <button
               onClick={() => {
@@ -130,7 +130,7 @@ export function CartSheet() {
               <i className="fa-solid fa-lock me-1.5" /> Pagar Ahora
             </button>
             <p className="text-center text-[10px] text-slate-500">
-              <i className="fa-solid fa-shield-halved me-1 text-emerald-400" /> Pago seguro con
+              <i className="fa-solid fa-shield-halved me-1 text-emerald-600" /> Pago seguro con
               Wompi: tarjeta, PSE, Nequi o Bancolombia
             </p>
           </div>
@@ -143,8 +143,8 @@ export function CartSheet() {
 export function CartLineRow({ row: { product: p, qty } }: { row: CartRow }) {
   const over = qty > p.stock;
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3">
-      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-900 text-2xl">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-white text-2xl">
         {p.images[0] ? (
           <img src={p.images[0]} alt="" className="size-full object-cover" />
         ) : (
@@ -152,26 +152,26 @@ export function CartLineRow({ row: { product: p, qty } }: { row: CartRow }) {
         )}
       </span>
       <div className="min-w-0 flex-grow">
-        <h4 className="truncate text-xs font-bold text-white">{p.name}</h4>
-        <span className="text-xs font-bold text-emerald-400">{cop(p.price * qty)}</span>
+        <h4 className="truncate text-xs font-bold text-slate-900">{p.name}</h4>
+        <span className="text-xs font-bold text-emerald-600">{cop(p.price * qty)}</span>
         {over && (
-          <span className="block text-[10px] font-bold text-red-400">Solo quedan {p.stock}</span>
+          <span className="block text-[10px] font-bold text-red-600">Solo quedan {p.stock}</span>
         )}
       </div>
-      <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 p-1">
+      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1">
         <button
           onClick={() => cart.setQty(p.id, qty - 1)}
           aria-label="Quitar uno"
-          className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-white"
+          className="flex size-5 items-center justify-center text-xs text-slate-500 hover:text-slate-900"
         >
           -
         </button>
-        <span className="w-4 text-center text-xs font-bold text-white">{qty}</span>
+        <span className="w-4 text-center text-xs font-bold text-slate-900">{qty}</span>
         <button
           onClick={() => cart.setQty(p.id, qty + 1)}
           disabled={qty >= p.stock}
           aria-label="Agregar uno"
-          className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-white disabled:opacity-30"
+          className="flex size-5 items-center justify-center text-xs text-slate-500 hover:text-slate-900 disabled:opacity-30"
         >
           +
         </button>

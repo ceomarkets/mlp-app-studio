@@ -33,6 +33,7 @@ describe("backend demo: flujo completo", () => {
       city: "Pasto",
       emoji: "🌽",
       whatsapp: null,
+      shipsNational: true,
     });
     const p = await b.saveProduct({
       name: "Mochila",
@@ -56,6 +57,7 @@ describe("backend demo: flujo completo", () => {
         city: "",
         emoji: "x",
         whatsapp: null,
+        shipsNational: true,
       }),
     ).rejects.toThrow(/en uso/);
 

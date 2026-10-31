@@ -18,9 +18,16 @@ export type Store = {
   emoji: string;
   whatsapp: string | null;
   active: boolean;
+  /** Envía a todo Colombia (si no, solo cobertura local en su ciudad). */
+  shipsNational: boolean;
+  /** Verificada por la administración (insignia azul). */
+  verified: boolean;
 };
 
-export type StoreInput = Pick<Store, "slug" | "name" | "tagline" | "city" | "emoji" | "whatsapp">;
+export type StoreInput = Pick<
+  Store,
+  "slug" | "name" | "tagline" | "city" | "emoji" | "whatsapp" | "shipsNational"
+>;
 
 export type Product = {
   id: string;
@@ -44,7 +51,7 @@ export type Product = {
   promoCopy: string;
   /** Imagen publicitaria (https) para afiliados. */
   promoImage: string | null;
-  store: Pick<Store, "slug" | "name" | "city" | "emoji">;
+  store: Pick<Store, "slug" | "name" | "city" | "emoji" | "shipsNational" | "verified">;
 };
 
 export type ProductInput = Pick<

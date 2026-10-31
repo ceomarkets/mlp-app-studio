@@ -15,10 +15,10 @@ import { cn } from "@/lib/utils";
 
 /** Insignia translúcida por tipo de anuncio (paleta de la cinta del leaderboard). */
 export const TONE_BADGE: Record<AnnouncementTone, string> = {
-  promo: "border-rose-500/30 bg-rose-500/20 text-rose-400",
-  news: "border-indigo-500/30 bg-indigo-500/20 text-indigo-400",
-  event: "border-fuchsia-500/30 bg-fuchsia-500/20 text-fuchsia-400",
-  info: "border-sky-500/30 bg-sky-500/20 text-sky-400",
+  promo: "border-rose-200 bg-rose-50 text-rose-600",
+  news: "border-indigo-200 bg-indigo-50 text-indigo-600",
+  event: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-600",
+  info: "border-sky-200 bg-sky-50 text-sky-600",
 };
 
 const TONE_TILE: Record<AnnouncementTone, string> = {
@@ -66,7 +66,7 @@ export function AnnouncementCard({
       {/* Imagen o ícono */}
       <span
         className={cn(
-          "relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-950 bg-gradient-to-br text-4xl",
+          "relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-50 bg-gradient-to-br text-4xl",
           !a.image && TONE_TILE[a.tone],
         )}
       >
@@ -96,21 +96,21 @@ export function AnnouncementCard({
           >
             {toneBadge(a.tone)}
           </span>
-          <span className="shrink-0 text-[10px] text-slate-400">Anuncio</span>
+          <span className="shrink-0 text-[10px] text-slate-500">Anuncio</span>
         </span>
-        <span className="block truncate text-xs font-bold text-white transition-colors group-hover:text-indigo-400">
+        <span className="block truncate text-xs font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
           {a.title || "Título del anuncio"}
         </span>
-        <span className="mb-1 flex items-center gap-1 truncate text-[10px] text-slate-400">
+        <span className="mb-1 flex items-center gap-1 truncate text-[10px] text-slate-500">
           <Megaphone className="size-3 shrink-0 text-slate-500" /> Plaza X
         </span>
 
         {/* Recuadro inferior: mensaje y llamado a la acción */}
-        <span className="mt-1 flex items-center justify-between gap-2 rounded-lg border border-slate-800/80 bg-slate-950/80 p-1.5">
-          <span className="line-clamp-2 min-w-0 text-[10px] leading-snug text-slate-300">
+        <span className="mt-1 flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-1.5">
+          <span className="line-clamp-2 min-w-0 text-[10px] leading-snug text-slate-600">
             {a.body || "Toca para ver más"}
           </span>
-          <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-extrabold uppercase text-indigo-400">
+          <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-extrabold uppercase text-indigo-600">
             {a.cta || "Ver más"}
             {external ? <ExternalLink className="size-3" /> : <ArrowRight className="size-3" />}
           </span>
@@ -119,7 +119,7 @@ export function AnnouncementCard({
     </span>
   );
   const cls =
-    "group block w-80 shrink-0 rounded-xl border border-slate-800 bg-slate-900 p-3 text-left transition-all duration-300 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 focus-visible:border-indigo-500 focus-visible:outline-none";
+    "group block w-80 shrink-0 rounded-xl border border-slate-200 bg-white p-3 text-left transition-all duration-300 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10 focus-visible:border-indigo-500 focus-visible:outline-none";
   if (as === "div") return <div className={cls}>{inner}</div>;
   return (
     <button

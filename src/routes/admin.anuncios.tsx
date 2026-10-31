@@ -286,8 +286,8 @@ function Editor({
         </DialogHeader>
 
         {/* Vista previa en la cinta oscura */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-300">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-600">
             <Eye className="size-3.5" /> Así se verá
           </p>
           <AnnouncementCard as="div" a={f} />

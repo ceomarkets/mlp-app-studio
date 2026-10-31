@@ -37,31 +37,31 @@
 }
 
 :root {
-  /* Paleta del diseño Plaza X (Tailwind slate / indigo / amber / emerald) */
+  /* Paleta Plaza X, tema claro (Tailwind slate / indigo / amber / emerald) */
   --radius: 0.75rem;
-  --background: #020617; /* slate-950 */
-  --foreground: #f1f5f9; /* slate-100 */
-  --card: #0f172a; /* slate-900 */
-  --card-foreground: #f1f5f9;
-  --popover: #0f172a;
-  --popover-foreground: #f1f5f9;
+  --background: #f1f5f9; /* slate-100 */
+  --foreground: #1e293b; /* slate-800 */
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
   --primary: #4f46e5; /* indigo-600 */
   --primary-foreground: #ffffff;
-  --secondary: #1e293b; /* slate-800 */
-  --secondary-foreground: #e2e8f0; /* slate-200 */
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8; /* slate-400 */
-  --accent: #1e293b;
-  --accent-foreground: #f1f5f9;
-  --destructive: #ef4444; /* red-500 */
+  --secondary: #f1f5f9;
+  --secondary-foreground: #334155; /* slate-700 */
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b; /* slate-500 */
+  --accent: #eef2ff; /* indigo-50 */
+  --accent-foreground: #3730a3; /* indigo-800 */
+  --destructive: #dc2626; /* red-600 */
   --destructive-foreground: #ffffff;
-  --border: #1e293b; /* slate-800 */
-  --input: #1e293b;
-  --ring: #6366f1; /* indigo-500 */
+  --border: #e2e8f0; /* slate-200 */
+  --input: #cbd5e1; /* slate-300 */
+  --ring: #4f46e5;
   --ink: #0f172a;
-  --ink-foreground: #f1f5f9;
-  --sun: #fbbf24; /* amber-400 */
-  --shadow-card: 0 10px 25px -15px rgb(0 0 0 / 0.6);
+  --ink-foreground: #f8fafc;
+  --sun: #f59e0b; /* amber-500 */
+  --shadow-card: 0 10px 25px -15px rgb(15 23 42 / 0.25);
 }
 
 @layer base {
@@ -72,7 +72,7 @@
     font-family: var(--font-sans);
   }
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
-  html { color-scheme: dark; background-color: #020617; }
+  html { color-scheme: light; background-color: #f1f5f9; }
   body { -webkit-font-smoothing: antialiased; }
   ::selection { background: #6366f1; color: #fff; }
 }

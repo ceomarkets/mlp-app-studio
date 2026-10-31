@@ -29,6 +29,13 @@
       "when": 1793392149767,
       "tag": "0003_bundle_promo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793392150767,
+      "tag": "0004_store_profile",
+      "breakpoints": true
     }
   ]
 }

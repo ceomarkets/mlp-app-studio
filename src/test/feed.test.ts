@@ -34,7 +34,14 @@ function prod(id: string, over: Partial<Product> = {}): Product {
     createdAt: ago(60),
     promoCopy: "",
     promoImage: null,
-    store: { slug: "s", name: "S", city: "Pasto", emoji: "🛍️" },
+    store: {
+      slug: "s",
+      name: "S",
+      city: "Pasto",
+      emoji: "🛍️",
+      shipsNational: true,
+      verified: false,
+    },
     ...over,
   };
 }
@@ -97,7 +104,14 @@ describe("feed", () => {
 });
 
 describe("leaderboard", () => {
-  const store2 = { slug: "s2", name: "S2", city: "Ipiales", emoji: "🥔" };
+  const store2 = {
+    slug: "s2",
+    name: "S2",
+    city: "Ipiales",
+    emoji: "🥔",
+    shipsNational: false,
+    verified: true,
+  };
   const products = [
     prod("n", { createdAt: ago(1) }),
     prod("d", { compareAtPrice: 20000 }),

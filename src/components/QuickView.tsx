@@ -176,7 +176,7 @@ export function QuickView({
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                className="w-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-600"
                 onClick={() => affiliate(p)}
               >
                 <i className="fa-solid fa-sack-dollar" /> Afiliarse y ganar{" "}

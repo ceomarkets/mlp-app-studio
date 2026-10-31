@@ -2,8 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
+  BadgeCheck,
+  BadgePercent,
   Flame,
   HandCoins,
+  History,
   LayoutGrid,
   Megaphone,
   Pause,
@@ -35,26 +38,35 @@ import { clampCommission, cop, splitSale } from "@/lib/plaza";
 import { keys } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
-const FILTERS: { id: BoardFilter; label: string; icon: LucideIcon }[] = [
-  { id: "all", label: "Todos", icon: LayoutGrid },
-  { id: "news", label: "Anuncios", icon: Megaphone },
-  { id: "deals", label: "Descuentos", icon: Flame },
-  { id: "earn", label: "Comisiones", icon: HandCoins },
-  { id: "new", label: "Recientes", icon: Sparkles },
-  { id: "top", label: "Top Ventas", icon: Trophy },
-  { id: "rated", label: "Mejor valorados", icon: Star },
-  { id: "stores", label: "Tiendas top", icon: Store },
+const FILTERS: { id: BoardFilter; label: string; icon: LucideIcon; tint: string }[] = [
+  { id: "all", label: "Todos", icon: LayoutGrid, tint: "" },
+  { id: "today", label: "Lo Nuevo de Hoy", icon: Flame, tint: "text-orange-500" },
+  { id: "viewed", label: "Recientes", icon: History, tint: "text-indigo-600" },
+  { id: "earn", label: "Altas Comisiones", icon: HandCoins, tint: "text-emerald-600" },
+  { id: "news", label: "Anuncios", icon: Megaphone, tint: "text-indigo-600" },
+  { id: "deals", label: "Descuentos", icon: BadgePercent, tint: "text-red-500" },
+  { id: "new", label: "Lanzamientos", icon: Sparkles, tint: "text-indigo-600" },
+  { id: "top", label: "Top Ventas", icon: Trophy, tint: "text-amber-500" },
+  { id: "rated", label: "Mejor valorados", icon: Star, tint: "text-amber-500" },
+  { id: "stores", label: "Tiendas top", icon: Store, tint: "text-sky-600" },
 ];
+
+const EMPTY: Partial<Record<BoardFilter, string>> = {
+  today: "Hoy todavía no hay lanzamientos.",
+  viewed: "Aún no has visto productos: los que abras aparecerán aquí.",
+};
 
 /** Insignias translúcidas con borde: mismos colores que el código de referencia. */
 const BADGE: Record<Exclude<BoardFilter, "all">, string> = {
-  news: "border-indigo-500/30 bg-indigo-500/20 text-indigo-400",
-  deals: "border-red-500/30 bg-red-500/20 text-red-400",
-  earn: "border-emerald-500/30 bg-emerald-500/20 text-emerald-400",
-  new: "border-indigo-500/30 bg-indigo-500/20 text-indigo-400",
-  top: "border-amber-500/30 bg-amber-500/20 text-amber-400",
-  rated: "border-purple-500/30 bg-purple-500/20 text-purple-400",
-  stores: "border-sky-500/30 bg-sky-500/20 text-sky-400",
+  news: "border-indigo-200 bg-indigo-50 text-indigo-600",
+  today: "border-orange-200 bg-orange-50 text-orange-600",
+  viewed: "border-slate-200 bg-slate-50 text-slate-600",
+  deals: "border-red-200 bg-red-50 text-red-600",
+  earn: "border-emerald-200 bg-emerald-50 text-emerald-600",
+  new: "border-indigo-200 bg-indigo-50 text-indigo-600",
+  top: "border-amber-200 bg-amber-50 text-amber-700",
+  rated: "border-purple-200 bg-purple-50 text-purple-600",
+  stores: "border-sky-200 bg-sky-50 text-sky-600",
 };
 
 function badgeText(it: BoardItem) {
@@ -69,6 +81,10 @@ function badgeText(it: BoardItem) {
         : "COMISIÓN";
     case "new":
       return "RECIÉN LANZADO";
+    case "today":
+      return "NUEVO HOY";
+    case "viewed":
+      return "LO VISTE";
     case "top":
       return `TOP #${it.rank} VENTAS`;
     case "rated":
@@ -87,13 +103,21 @@ function badgeText(it: BoardItem) {
  */
 export function Leaderboard({
   products,
-  search,
+  controls,
+  filter: controlled,
+  onFilter,
+  viewed = [],
 }: {
   products: Product[];
-  /** Buscador opcional dentro de la banda, encima del leaderboard (diseño del prototipo). */
-  search?: ReactNode;
+  /** Selectores extra (ubicación, categoría, precio) junto a los filtros. */
+  controls?: ReactNode;
+  filter?: BoardFilter;
+  onFilter?: (f: BoardFilter) => void;
+  viewed?: string[];
 }) {
-  const [filter, setFilter] = useState<BoardFilter>("all");
+  const [own, setOwn] = useState<BoardFilter>("all");
+  const filter = controlled ?? own;
+  const setFilter = onFilter ?? setOwn;
   const [paused, setPaused] = useState(false);
   const [open, setOpen] = useState<Product | null>(null);
   const [notice, setNotice] = useState<Announcement | null>(null);
@@ -118,8 +142,8 @@ export function Leaderboard({
     refetchInterval: 60_000,
   });
   const items = useMemo(
-    () => buildLeaderboard(products, activity.data ?? [], filter, Date.now(), 8, news),
-    [products, activity.data, filter, news],
+    () => buildLeaderboard(products, activity.data ?? [], filter, Date.now(), 8, news, viewed),
+    [products, activity.data, filter, news, viewed],
   );
 
   const temps = useMemo(
@@ -147,57 +171,56 @@ export function Leaderboard({
   return (
     <section
       aria-labelledby="board-title"
-      className="relative my-4 w-full border-y border-slate-800 bg-slate-900/60 py-6 font-sans text-slate-100 shadow-2xl"
+      className="w-full border-b border-slate-200 bg-white py-4 font-sans text-slate-800 shadow-sm"
     >
-      {search && <div className="mx-auto mb-6 max-w-7xl px-4 sm:px-6 lg:px-8">{search}</div>}
-
-      {/* Encabezado con filtros */}
-      <div className="mx-auto mb-4 flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      {/* Encabezado con filtros, ubicación, categoría y precio */}
+      <div className="mx-auto mb-3 flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
-          <span className="relative flex size-3">
+          <span className="relative flex size-2.5">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75 motion-reduce:hidden" />
-            <span className="relative inline-flex size-3 rounded-full bg-red-500" />
+            <span className="relative inline-flex size-2.5 rounded-full bg-red-500" />
           </span>
           <h2
             id="board-title"
-            className="text-sm font-bold uppercase tracking-widest text-slate-300"
+            className="text-xs font-bold tracking-widest text-slate-600 uppercase"
           >
             En Vivo
           </h2>
-        </div>
-
-        <div className="flex max-w-full items-center gap-2">
-          <span className="hidden text-xs text-slate-400 sm:inline">Filtrar:</span>
-          <div
-            role="tablist"
-            aria-label="Filtrar leaderboard"
-            className="rail flex gap-2 overflow-x-auto text-xs"
-          >
-            {FILTERS.filter((f) => f.id !== "news" || hasNews).map((f) => (
-              <button
-                key={f.id}
-                role="tab"
-                aria-selected={filter === f.id}
-                onClick={() => setFilter(f.id)}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 font-medium transition",
-                  filter === f.id
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700",
-                )}
-              >
-                <f.icon className="size-3.5" /> {f.label}
-              </button>
-            ))}
-          </div>
           <button
             onClick={() => setPaused(!paused)}
             aria-pressed={paused}
             aria-label={paused ? "Reanudar" : "Pausar"}
-            className="grid size-7 shrink-0 place-items-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700"
+            className="grid size-6 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
           >
-            {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+            {paused ? <Play className="size-3" /> : <Pause className="size-3" />}
           </button>
+        </div>
+
+        {controls && <div className="flex flex-wrap items-center gap-1.5 text-xs">{controls}</div>}
+      </div>
+      <div className="mx-auto mb-3 flex max-w-7xl items-center gap-1.5 px-4 text-xs sm:px-6 lg:px-8">
+        <span className="mr-1 hidden shrink-0 font-medium text-slate-500 sm:inline">Filtrar:</span>
+        <div
+          role="tablist"
+          aria-label="Filtrar leaderboard"
+          className="rail -mr-4 flex min-w-0 gap-1.5 overflow-x-auto py-1 pr-4 sm:mr-0 sm:pr-0"
+        >
+          {FILTERS.filter((f) => f.id !== "news" || hasNews).map((f) => (
+            <button
+              key={f.id}
+              role="tab"
+              aria-selected={filter === f.id}
+              onClick={() => setFilter(f.id)}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 font-medium transition",
+                filter === f.id
+                  ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
+                  : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200",
+              )}
+            >
+              <f.icon className={cn("size-3.5", filter !== f.id && f.tint)} /> {f.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -238,26 +261,35 @@ export function Leaderboard({
         </div>
       ) : (
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <div className="flex w-80 max-w-full items-center gap-3 rounded-xl border border-dashed border-slate-700 bg-slate-900 p-3">
-            <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-slate-950 text-2xl">
+          <div className="flex w-80 max-w-full items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-white p-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-slate-50 text-2xl">
               🛍️
             </span>
-            <span className="text-xs text-slate-400">
-              Aún no hay productos en esta categoría.{" "}
-              <Link to="/vendedores" className="font-semibold text-indigo-400 hover:underline">
-                Publica el primero
-              </Link>
+            <span className="text-xs text-slate-500">
+              {EMPTY[filter] ?? "Aún no hay productos con estos filtros."}{" "}
+              {filter === "today" || filter === "viewed" ? (
+                <button
+                  onClick={() => setFilter("all")}
+                  className="font-semibold text-indigo-600 hover:underline"
+                >
+                  Ver todo
+                </button>
+              ) : (
+                <Link to="/vendedores" className="font-semibold text-indigo-600 hover:underline">
+                  Publica el primero
+                </Link>
+              )}
             </span>
           </div>
         </div>
       )}
 
       {filter === "earn" && (
-        <p className="mt-3 px-4 text-right text-xs text-slate-400">
+        <p className="mt-3 px-4 text-right text-xs text-slate-500">
           Comparte un producto y cobra cuando alguien compre.{" "}
           <Link
             to="/afiliados"
-            className="inline-flex items-center gap-0.5 font-semibold text-indigo-400 hover:underline"
+            className="inline-flex items-center gap-0.5 font-semibold text-indigo-600 hover:underline"
           >
             Activar mi enlace <ArrowRight className="size-3" />
           </Link>
@@ -289,15 +321,15 @@ function BoardCard({
       type="button"
       onClick={onSelect}
       tabIndex={tabbable ? 0 : -1}
-      className="group w-80 shrink-0 cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-3 text-left transition-all duration-300 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 focus-visible:border-indigo-500 focus-visible:outline-none"
+      className="group w-80 shrink-0 cursor-pointer rounded-xl border border-slate-200 bg-white p-3 shadow-sm text-left transition-all duration-300 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10 focus-visible:border-indigo-500 focus-visible:outline-none"
     >
       <span className="flex items-center gap-3">
         {/* Imagen con temperatura y descuento */}
-        <span className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-slate-950">
+        <span className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-slate-50">
           {p ? (
             <ProductImage
               p={p}
-              className="size-full rounded-none bg-slate-950 text-4xl transition-transform duration-300 group-hover:scale-105"
+              className="size-full rounded-none bg-slate-50 text-4xl transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <span className="grid size-full place-items-center text-4xl">
@@ -331,41 +363,44 @@ function BoardCard({
               {badgeText(it)}
             </span>
             {p && p.ratingCount > 0 && (
-              <span className="flex shrink-0 items-center gap-1 text-[10px] text-slate-400">
-                <Star className="size-3 fill-amber-400 text-amber-400" /> {p.rating.toFixed(1)}
+              <span className="flex shrink-0 items-center gap-1 text-[10px] text-slate-500">
+                <Star className="size-3 fill-amber-400 text-amber-700" /> {p.rating.toFixed(1)}
               </span>
             )}
           </span>
 
-          <span className="block truncate text-xs font-bold text-white transition-colors group-hover:text-indigo-400">
+          <span className="block truncate text-xs font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
             {p ? p.name : it.kind === "store" && it.store.name}
           </span>
-          <span className="mb-1 flex items-center gap-1 truncate text-[10px] text-slate-400">
+          <span className="mb-1 flex items-center gap-1 truncate text-[10px] text-slate-500">
             <Store className="size-3 shrink-0 text-slate-500" />
             {p
               ? p.store.name
               : it.kind === "store" && `${it.store.city} · ${it.products} productos`}
+            {(p ? p.store.verified : it.kind === "store" && it.store.verified) && (
+              <BadgeCheck className="size-3 shrink-0 text-sky-500" aria-label="Tienda verificada" />
+            )}
           </span>
 
           {p ? (
             /* Datos financieros: precio y lo que gana quien recomienda */
-            <span className="mt-1 flex items-center justify-between rounded-lg border border-slate-800/80 bg-slate-950/80 p-1.5">
+            <span className="mt-1 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-1.5">
               <span className="flex flex-col">
                 <span className="text-[9px] font-medium uppercase text-slate-500">Precio</span>
-                <span className="text-xs font-bold text-slate-300">{cop(p.price)}</span>
+                <span className="text-xs font-bold text-slate-600">{cop(p.price)}</span>
               </span>
-              <span className="h-6 w-px bg-slate-800" aria-hidden />
+              <span className="h-6 w-px bg-slate-100" aria-hidden />
               <span className="flex flex-col text-right">
-                <span className="flex items-center justify-end gap-0.5 text-[9px] font-bold uppercase text-emerald-400">
+                <span className="flex items-center justify-end gap-0.5 text-[9px] font-bold uppercase text-emerald-600">
                   <HandCoins className="size-3" /> Ganas ({rate}%)
                 </span>
-                <span className="text-xs font-extrabold text-emerald-400">
+                <span className="text-xs font-extrabold text-emerald-600">
                   {cop(splitSale(p.price, p.commission).affiliate)}
                 </span>
               </span>
             </span>
           ) : (
-            <span className="text-[10px] font-semibold text-indigo-400">{it.metric}</span>
+            <span className="text-[10px] font-semibold text-indigo-600">{it.metric}</span>
           )}
         </span>
       </span>

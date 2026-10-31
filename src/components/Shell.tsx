@@ -22,6 +22,7 @@ import { BridgeLogo } from "@/components/BridgeLogo";
 import { CartSheet, openCart } from "@/components/CartSheet";
 import { RewardsBar, RewardsModal, useRewards } from "@/components/Rewards";
 import { ShareButton } from "@/components/ShareSheet";
+import { LiveActivityToast, SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,7 +44,7 @@ import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
 const navBtn =
-  "nav-tab flex items-center gap-2 transition-colors hover:text-indigo-400 data-[status=active]:font-bold data-[status=active]:text-indigo-400";
+  "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 data-[status=active]:bg-slate-100 data-[status=active]:font-bold data-[status=active]:text-slate-900";
 
 export function Shell({
   children,
@@ -56,39 +57,36 @@ export function Shell({
   bare?: boolean;
 }) {
   return (
-    <div className="flex min-h-full flex-col bg-slate-950 pb-16 font-sans text-slate-100 antialiased md:pb-0">
+    <div className="flex min-h-full flex-col bg-slate-100 pb-16 font-sans text-slate-800 antialiased selection:bg-indigo-500 selection:text-white md:pb-0">
       {IS_DEMO && <DemoBanner />}
       {/* Cabecera */}
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex cursor-pointer items-center space-x-2.5">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="group flex items-center gap-2">
             <BridgeLogo />
-            <span className="block bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-lg leading-none font-extrabold text-transparent">
-              Plaza X
+            <span className="flex items-center text-xl font-extrabold tracking-tight text-slate-900">
+              Plaza&nbsp;<span className="text-indigo-600">X</span>
             </span>
           </Link>
 
-          <nav className="hidden space-x-8 text-sm font-medium text-slate-300 md:flex">
-            <Link to="/" activeOptions={{ exact: true }} className={navBtn}>
-              <i className="fa-solid fa-crown text-amber-400" /> Mercado
-            </Link>
+          <nav className="hidden items-center gap-1 md:flex">
             <Link to="/afiliados" className={navBtn}>
-              <i className="fa-solid fa-user-ninja text-emerald-400" /> Panel Afiliado
+              <i className="fa-solid fa-users text-emerald-600" /> Panel Afiliado
             </Link>
             <Link to="/vendedores" className={navBtn}>
-              <i className="fa-solid fa-building text-indigo-400" /> Panel Empresa
+              <i className="fa-solid fa-building text-indigo-600" /> Panel Empresa
             </Link>
+          </nav>
+
+          <div className="flex items-center gap-2.5">
             <RewardsButton />
             <button
               onClick={openCart}
-              className="relative flex items-center gap-2 transition-colors hover:text-indigo-400"
+              className="relative hidden items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 sm:flex"
             >
-              <i className="fa-solid fa-cart-shopping text-base text-orange-500" /> Carrito
-              <CartCount />
+              <i className="fa-solid fa-cart-shopping text-indigo-600" /> Carrito
+              <CartCount floating />
             </button>
-          </nav>
-
-          <div className="flex items-center space-x-3">
             <UserMenu />
           </div>
         </div>
@@ -106,23 +104,25 @@ export function Shell({
         {children}
       </main>
 
+      <SiteFooter />
+
       {/* Navegación en el celular */}
       <nav
         aria-label="Navegación principal"
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-800 bg-slate-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
       >
         {(
           [
-            { to: "/", label: "Mercado", icon: "fa-crown text-amber-400" },
-            { to: "/afiliados", label: "Afiliado", icon: "fa-user-ninja text-emerald-400" },
-            { to: "/vendedores", label: "Empresa", icon: "fa-building text-indigo-400" },
+            { to: "/", label: "Mercado", icon: "fa-shop text-indigo-600" },
+            { to: "/afiliados", label: "Afiliado", icon: "fa-users text-emerald-600" },
+            { to: "/vendedores", label: "Empresa", icon: "fa-building text-indigo-600" },
           ] as const
         ).map((n) => (
           <Link
             key={n.to}
             to={n.to}
             activeOptions={{ exact: n.to === "/" }}
-            className="flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-400 data-[status=active]:text-indigo-400"
+            className="flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-500 data-[status=active]:text-indigo-600"
           >
             <i className={cn("fa-solid text-base", n.icon)} />
             {n.label}
@@ -130,17 +130,17 @@ export function Shell({
         ))}
         <button
           onClick={rewardsUI.open}
-          className="flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-400"
+          className="flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-500"
         >
-          <i className="fa-solid fa-gift text-base text-amber-400" />
+          <i className="fa-solid fa-gift text-base text-amber-500" />
           Premio
         </button>
         <button
           onClick={openCart}
-          className="relative flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-400"
+          className="relative flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-500"
         >
           <span className="relative">
-            <i className="fa-solid fa-cart-shopping text-base text-orange-500" />
+            <i className="fa-solid fa-cart-shopping text-base text-indigo-600" />
             <CartCount floating />
           </span>
           Carrito
@@ -151,6 +151,7 @@ export function Shell({
       <CartSheet />
       <RewardsModal />
       <AuthDialog />
+      <LiveActivityToast />
     </div>
   );
 }
@@ -160,11 +161,11 @@ function RewardsButton() {
   return (
     <button
       onClick={rewardsUI.open}
-      className="relative flex animate-pulse items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 transition-colors hover:text-amber-300"
+      className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
     >
-      <i className="fa-solid fa-gift text-base text-amber-400" />
-      <span className="hidden text-xs font-bold text-amber-300 lg:inline">Premio</span>
-      <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-slate-950">
+      <i className="fa-solid fa-gift text-amber-500" />
+      <span className="hidden sm:inline">Premio</span>
+      <span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] text-amber-800">
         {Math.min(r.count, BUNDLE_MIN)}/{BUNDLE_MIN}
       </span>
     </button>
@@ -176,8 +177,8 @@ function CartCount({ floating = false }: { floating?: boolean }) {
   return (
     <span
       className={cn(
-        "flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-black text-white",
-        floating && "absolute -right-3 -top-2",
+        "flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[9px] font-black text-white",
+        floating && "absolute -top-1.5 -right-1.5",
         floating && !n && "hidden",
       )}
     >
@@ -199,7 +200,7 @@ function FavCount() {
 function DemoBanner() {
   const qc = useQueryClient();
   return (
-    <div className="border-b border-slate-800 bg-slate-950 px-4 py-1 text-center text-[11px] text-slate-400">
+    <div className="border-b border-slate-200 bg-slate-50 px-4 py-1 text-center text-[11px] text-slate-500">
       Modo demo: los datos viven en este navegador. Entra con <b>{DEMO_EMAIL}</b> /{" "}
       <b>{DEMO_PASSWORD}</b> ·{" "}
       <button
@@ -229,10 +230,10 @@ function UserMenu() {
     return (
       <button
         onClick={openAuth}
-        className="rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 sm:text-sm"
+        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-900 shadow-sm transition hover:bg-slate-200"
       >
-        <i className="fa-solid fa-user me-1" />{" "}
-        <span className="hidden sm:inline">Iniciar Sesión / Registro</span>
+        <i className="fa-solid fa-user text-slate-600" />
+        <span className="hidden sm:inline">Iniciar Sesión</span>
         <span className="sm:hidden">Entrar</span>
       </button>
     );
@@ -246,7 +247,7 @@ function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="grid size-9 place-items-center rounded-lg border border-slate-700 bg-slate-800 text-xs font-bold text-slate-200 hover:bg-slate-700"
+          className="grid size-9 place-items-center rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900 shadow-sm hover:bg-slate-200"
           aria-label="Mi cuenta"
         >
           {initials}

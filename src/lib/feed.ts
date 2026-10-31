@@ -209,7 +209,8 @@ export function buildSections(
 // ---------------------------------------------------------------------------
 // Leaderboard de la portada
 // ---------------------------------------------------------------------------
-export type BoardFilter = "all" | "news" | "new" | "deals" | "earn" | "top" | "rated" | "stores";
+export type BoardFilter =
+  "all" | "news" | "today" | "viewed" | "new" | "deals" | "earn" | "top" | "rated" | "stores";
 type ProductBoard = Exclude<BoardFilter, "all" | "stores" | "news">;
 
 type StoreInfo = Product["store"];
@@ -257,6 +258,8 @@ export function buildLeaderboard(
   now = Date.now(),
   size = 8,
   announcements: Announcement[] = [],
+  /** Ids vistos por esta persona, del más reciente al más antiguo. */
+  viewed: string[] = [],
 ): BoardItem[] {
   const live = products.filter((p) => p.active && p.stock > 0);
   const item = (
@@ -280,6 +283,19 @@ export function buildLeaderboard(
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, size)
     .map((p, i) => item("new", p, i, "Nuevo", relTime(p.createdAt, now)));
+
+  const today = [...live]
+    .filter((p) => now - Date.parse(p.createdAt) < DAY)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, size)
+    .map((p, i) => item("today", p, i, "Hoy", relTime(p.createdAt, now)));
+
+  const liveById = new Map(live.map((p) => [p.id, p]));
+  const seen = viewed
+    .map((id) => liveById.get(id))
+    .filter((p): p is Product => !!p)
+    .slice(0, size)
+    .map((p, i) => item("viewed", p, i, "Visto", "Lo viste hace poco"));
 
   const deals = live
     .filter((p) => discountPct(p) > 0)
@@ -365,6 +381,8 @@ export function buildLeaderboard(
 
   const lists: Record<Exclude<BoardFilter, "all">, BoardItem[]> = {
     news,
+    today,
+    viewed: seen,
     new: fresh,
     deals,
     earn,

@@ -106,6 +106,7 @@ export function StoreForm({
     city: store?.city ?? "",
     emoji: store?.emoji ?? "🛍️",
     whatsapp: store?.whatsapp ?? "",
+    shipsNational: store?.shipsNational ?? true,
   });
   const [slugTouched, setSlugTouched] = useState(!!store);
   const save = useMutation({
@@ -177,6 +178,36 @@ export function StoreForm({
           onChange={(e) => setF({ ...f, tagline: e.target.value })}
         />
       </div>
+      <fieldset className="space-y-1.5">
+        <legend className="text-sm font-medium">Cobertura de envíos</legend>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(
+            [
+              [true, "🚚 Envíos nacionales", "Despachas a toda Colombia con transportadora"],
+              [false, "📍 Cobertura local", "Solo entregas en tu ciudad"],
+            ] as const
+          ).map(([v, t, d]) => (
+            <label
+              key={t}
+              className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-sm transition ${
+                f.shipsNational === v ? "border-indigo-500 bg-indigo-50" : "bg-card"
+              }`}
+            >
+              <input
+                type="radio"
+                name="ships"
+                className="mt-1"
+                checked={f.shipsNational === v}
+                onChange={() => setF({ ...f, shipsNational: v })}
+              />
+              <span>
+                <b className="block">{t}</b>
+                <span className="text-xs text-muted-foreground">{d}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="sc">Ciudad</Label>
@@ -491,8 +522,8 @@ export function ProductDialog({
             <SplitPreview price={f.price || 0} rate={f.commission} />
           </div>
 
-          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 p-3">
-            <span className="flex items-center gap-1 text-xs font-bold text-purple-400">
+          <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <span className="flex items-center gap-1 text-xs font-bold text-purple-600">
               <FolderPlus className="size-3.5" /> Añadir Recursos para Afiliados
             </span>
             <Textarea
@@ -502,7 +533,7 @@ export function ProductDialog({
               placeholder="Copy o texto promocional de muestra"
               value={f.promoCopy}
               onChange={(e) => setF({ ...f, promoCopy: e.target.value })}
-              className="border-slate-800 bg-slate-900 text-xs"
+              className="border-slate-200 bg-white text-xs"
             />
             <Input
               aria-label="URL de imagen publicitaria"
@@ -511,7 +542,7 @@ export function ProductDialog({
               placeholder="URL de Imagen Publicitaria / Banner (https://…)"
               value={f.promoImage ?? ""}
               onChange={(e) => setF({ ...f, promoImage: e.target.value || null })}
-              className="border-slate-800 bg-slate-900 text-xs"
+              className="border-slate-200 bg-white text-xs"
             />
             <p className="text-[10px] text-slate-500">
               Tus afiliados los verán en “Herramientas Afiliado”, junto con las fotos del producto.
