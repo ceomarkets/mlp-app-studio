@@ -2,7 +2,7 @@ import type { Product } from "@/lib/backend";
 
 /** Filtros de la portada: aplican al leaderboard y al catálogo a la vez. */
 export type Browse = {
-  /** "all", "city:<ciudad>" o "national" (tiendas con envíos a todo el país). */
+  /** "all", "local" (cobertura local), "national" (envíos a todo el país) o "city:<ciudad>". */
   location: string;
   category: string;
   price: PriceBand;
@@ -33,6 +33,7 @@ export function applyBrowse(products: Product[], b: Browse): Product[] {
     if (band?.min !== undefined && p.price < band.min) return false;
     if (band?.max !== undefined && p.price > band.max) return false;
     if (b.location === "national" && !p.store.shipsNational) return false;
+    if (b.location === "local" && p.store.shipsNational) return false;
     if (b.location.startsWith("city:") && p.store.city !== b.location.slice(5)) return false;
     return true;
   });

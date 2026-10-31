@@ -1,5 +1,4 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ExternalLink, Megaphone } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,7 +65,7 @@ export function AnnouncementCard({
       {/* Imagen o ícono */}
       <span
         className={cn(
-          "relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-slate-50 bg-gradient-to-br text-4xl",
+          "relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 bg-gradient-to-br text-4xl",
           !a.image && TONE_TILE[a.tone],
         )}
       >
@@ -80,8 +79,8 @@ export function AnnouncementCard({
         ) : (
           <span aria-hidden>{a.emoji || "📣"}</span>
         )}
-        <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded bg-amber-500 px-1 text-[9px] font-black text-slate-950">
-          <Megaphone className="size-2.5" />
+        <span className="absolute top-1 left-1 flex items-center gap-0.5 rounded bg-amber-500 px-1 text-[9px] font-black text-white shadow-sm">
+          <i className="fa-solid fa-bullhorn text-[8px]" />
         </span>
       </span>
 
@@ -102,7 +101,8 @@ export function AnnouncementCard({
           {a.title || "Título del anuncio"}
         </span>
         <span className="mb-1 flex items-center gap-1 truncate text-[10px] text-slate-500">
-          <Megaphone className="size-3 shrink-0 text-slate-500" /> Plaza X
+          <i className="fa-solid fa-store me-1 text-slate-400" />
+          Plaza X
         </span>
 
         {/* Recuadro inferior: mensaje y llamado a la acción */}
@@ -112,14 +112,19 @@ export function AnnouncementCard({
           </span>
           <span className="flex shrink-0 items-center gap-0.5 text-[10px] font-extrabold uppercase text-indigo-600">
             {a.cta || "Ver más"}
-            {external ? <ExternalLink className="size-3" /> : <ArrowRight className="size-3" />}
+            <i
+              className={cn(
+                "fa-solid",
+                external ? "fa-arrow-up-right-from-square" : "fa-arrow-right",
+              )}
+            />
           </span>
         </span>
       </span>
     </span>
   );
   const cls =
-    "group block w-80 shrink-0 rounded-xl border border-slate-200 bg-white p-3 text-left transition-all duration-300 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10 focus-visible:border-indigo-500 focus-visible:outline-none";
+    "group block w-80 shrink-0 rounded-xl border border-slate-200 bg-white p-3 text-left transition-all duration-300 hover:border-indigo-400 hover:shadow-lg focus-visible:border-indigo-500 focus-visible:outline-none";
   if (as === "div") return <div className={cls}>{inner}</div>;
   return (
     <button

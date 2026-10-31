@@ -1,26 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  Flame,
-  Heart,
-  Home,
-  LogOut,
-  Megaphone,
-  Package,
-  ShieldCheck,
-  ShoppingBag,
-  Sparkles,
-  Star,
-  Store,
-  Store as StoreIcon,
-  User,
-  Users,
-} from "lucide-react";
+import { Flame, Heart, ShoppingBag, Sparkles, Star } from "lucide-react";
 import type { ReactNode } from "react";
 import { AuthDialog, openAuth } from "@/components/AuthDialog";
 import { BridgeLogo } from "@/components/BridgeLogo";
 import { CartSheet, openCart } from "@/components/CartSheet";
-import { RewardsBar, RewardsModal, useRaffle, useRewards } from "@/components/Rewards";
+import { RewardsBar, useRaffle, useRewards } from "@/components/Rewards";
 import { ShareButton } from "@/components/ShareSheet";
 import { FlashSaleBanner } from "@/components/FlashSaleBanner";
 import { LiveActivityToast, SiteFooter } from "@/components/SiteFooter";
@@ -58,7 +43,7 @@ export function Shell({
   bare?: boolean;
 }) {
   return (
-    <div className="flex min-h-full flex-col bg-slate-100 pb-16 font-sans text-slate-800 antialiased selection:bg-indigo-500 selection:text-white md:pb-0">
+    <div className="flex min-h-full flex-col bg-slate-100 font-sans text-slate-800 antialiased selection:bg-indigo-500 selection:text-white md:pb-0">
       {IS_DEMO && <DemoBanner />}
       {/* Cabecera */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
@@ -86,7 +71,7 @@ export function Shell({
             <RewardsButton />
             <button
               onClick={openCart}
-              className="relative hidden items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 sm:flex"
+              className="relative flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
             >
               <i className="fa-solid fa-cart-shopping text-indigo-600" /> Carrito
               <CartCount floating />
@@ -111,50 +96,8 @@ export function Shell({
 
       <SiteFooter />
 
-      {/* Navegación en el celular */}
-      <nav
-        aria-label="Navegación principal"
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
-      >
-        {(
-          [
-            { to: "/", label: "Mercado", icon: "fa-crown text-amber-400" },
-            { to: "/afiliados", label: "Afiliado", icon: "fa-users text-emerald-600" },
-            { to: "/vendedores", label: "Empresas", icon: "fa-building text-indigo-600" },
-          ] as const
-        ).map((n) => (
-          <Link
-            key={n.to}
-            to={n.to}
-            activeOptions={{ exact: n.to === "/" }}
-            className="flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-500 data-[status=active]:text-indigo-600"
-          >
-            <i className={cn("fa-solid text-base", n.icon)} />
-            {n.label}
-          </Link>
-        ))}
-        <button
-          onClick={rewardsUI.open}
-          className="flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-500"
-        >
-          <i className="fa-solid fa-gift text-base text-amber-500" />
-          Premio
-        </button>
-        <button
-          onClick={openCart}
-          className="relative flex flex-col items-center gap-1 py-2 text-[10px] font-semibold text-slate-500"
-        >
-          <span className="relative">
-            <i className="fa-solid fa-cart-shopping text-base text-indigo-600" />
-            <CartCount floating />
-          </span>
-          Carrito
-        </button>
-      </nav>
-
       {/* Ventanas globales */}
       <CartSheet />
-      <RewardsModal />
       <AuthDialog />
       <LiveActivityToast />
     </div>
@@ -171,7 +114,7 @@ function RewardsButton() {
       className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
     >
       <i className="fa-solid fa-gift text-amber-500" />
-      <span className="hidden sm:inline">Premio</span>
+      Premio
       <span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] text-amber-800">
         {Math.min(r.count, goal)}/{goal}
       </span>
@@ -186,7 +129,6 @@ function CartCount({ floating = false }: { floating?: boolean }) {
       className={cn(
         "flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[9px] font-black text-white",
         floating && "absolute -top-1.5 -right-1.5",
-        floating && !n && "hidden",
       )}
     >
       {n}
@@ -237,27 +179,16 @@ function UserMenu() {
     return (
       <button
         onClick={openAuth}
-        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-900 shadow-sm transition hover:bg-slate-200"
+        className="flex items-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800"
       >
-        <i className="fa-solid fa-user text-slate-600" />
-        <span className="hidden sm:inline">Iniciar Sesión</span>
-        <span className="sm:hidden">Entrar</span>
+        <i className="fa-solid fa-user text-slate-300" /> <span>Iniciar Sesión</span>
       </button>
     );
-  const initials = (user.fullName || user.email)
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          className="grid size-9 place-items-center rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900 shadow-sm hover:bg-slate-200"
-          aria-label="Mi cuenta"
-        >
-          {initials}
+        <button className="flex items-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800">
+          <i className="fa-solid fa-user text-slate-300" /> <span>Mi Perfil</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -267,26 +198,26 @@ function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta" })}>
-          <Package /> Mis pedidos
+          <i className="fa-solid fa-box w-4 text-slate-500" /> Mis pedidos
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/favoritos" })}>
-          <Heart /> Favoritos
+          <i className="fa-solid fa-heart w-4 text-slate-500" /> Favoritos
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "reportes" })}>
-          <ShieldCheck /> Disputas y reportes
+          <i className="fa-solid fa-shield-cat w-4 text-rose-500" /> Disputas y reportes
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "perfil" })}>
-          <User /> Perfil
+          <i className="fa-solid fa-user w-4 text-slate-500" /> Perfil
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Gana con Plaza X
         </DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
-          <StoreIcon /> Mi tienda
+          <i className="fa-solid fa-building w-4 text-indigo-600" /> Mi tienda
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
-          <Users /> Mi red
+          <i className="fa-solid fa-users w-4 text-emerald-600" /> Mi red
         </DropdownMenuItem>
         {admin.data && (
           <>
@@ -295,19 +226,19 @@ function UserMenu() {
               Administrar
             </DropdownMenuLabel>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/anuncios" })}>
-              <Megaphone /> Anuncios
+              <i className="fa-solid fa-bullhorn w-4 text-slate-500" /> Anuncios
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/disputas" })}>
-              <ShieldCheck /> Disputas
+              <i className="fa-solid fa-shield-halved w-4 text-slate-500" /> Disputas
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/promos" })}>
-              <Flame /> Ventas flash y cupones
+              <i className="fa-solid fa-bolt w-4 text-slate-500" /> Ventas flash y cupones
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/sorteo" })}>
-              <Sparkles /> Sorteo
+              <i className="fa-solid fa-gift w-4 text-amber-500" /> Sorteo
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/tiendas" })}>
-              <StoreIcon /> Tiendas
+              <i className="fa-solid fa-store w-4 text-slate-500" /> Tiendas
             </DropdownMenuItem>
           </>
         )}
@@ -318,7 +249,7 @@ function UserMenu() {
             navigate({ to: "/" });
           }}
         >
-          <LogOut /> Salir
+          <i className="fa-solid fa-right-from-bracket w-4 text-slate-500" /> Salir
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

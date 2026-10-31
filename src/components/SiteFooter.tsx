@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BridgeLogo } from "@/components/BridgeLogo";
 import { backend } from "@/lib/backend";
 import { LEGAL_SECTIONS, SUPPORT_EMAIL } from "@/lib/legal";
 import { relTime } from "@/lib/feed";
@@ -15,7 +14,9 @@ export function SiteFooter() {
       <div className="mx-auto mb-8 grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-4">
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-lg font-extrabold text-white">
-            <BridgeLogo className="size-7" />
+            <span className="flex size-7 items-center justify-center rounded-lg bg-indigo-600 text-xs text-white">
+              <i className="fa-solid fa-store" />
+            </span>
             Plaza <span className="text-indigo-400">X</span>
           </div>
           <p className="text-[11px] leading-relaxed">
@@ -114,7 +115,7 @@ export function LiveActivityToast() {
     (a) => Date.now() - new Date(a.paidAt).getTime() < 3 * 86_400_000,
   );
   const [index, setIndex] = useState(-1);
-  const [closed, setClosed] = useState(false);
+  const closed = false;
 
   useEffect(() => {
     if (!recent.length || closed) return;
@@ -139,33 +140,22 @@ export function LiveActivityToast() {
       role="status"
       aria-live="polite"
       className={cn(
-        "fixed bottom-20 left-4 z-40 flex max-w-xs items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-xs shadow-xl transition-all duration-500 md:bottom-6 md:left-6",
+        "fixed bottom-6 left-6 z-40 flex max-w-xs items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl backdrop-blur-md transition-all duration-500",
         item ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-20 opacity-0",
       )}
     >
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-sm font-bold text-indigo-600">
+        <i className="fa-solid fa-bag-shopping" />
+      </div>
       {item && (
-        <>
-          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-lg">
-            {item.productEmoji || "🛍️"}
+        <div className="overflow-hidden text-xs">
+          <p className="truncate font-medium text-slate-800">
+            Alguien de {item.city || "Colombia"} compró {item.productName}
+          </p>
+          <span className="text-[10px] font-bold text-emerald-600">
+            {relTime(item.paidAt).replace(/^h/, "H")} · Compra verificada
           </span>
-          <div className="min-w-0">
-            <p className="truncate font-medium text-slate-800">
-              {item.qty > 1 ? `${item.qty} × ` : ""}
-              {item.productName}
-            </p>
-            <p className="text-[10px] text-slate-500">
-              <i className="fa-solid fa-circle-check text-emerald-500" /> Comprado en{" "}
-              {item.city || "Colombia"} · {relTime(item.paidAt)}
-            </p>
-          </div>
-          <button
-            onClick={() => setClosed(true)}
-            aria-label="Ocultar avisos de compras"
-            className="ml-1 self-start text-slate-400 hover:text-slate-600"
-          >
-            <i className="fa-solid fa-xmark" />
-          </button>
-        </>
+        </div>
       )}
     </div>
   );

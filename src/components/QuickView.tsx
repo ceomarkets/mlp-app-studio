@@ -1,14 +1,4 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  Flame,
-  Minus,
-  Plus,
-  ShieldCheck,
-  ShoppingBag,
-  Star,
-  Timer,
-} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { openAuth } from "@/components/AuthDialog";
@@ -99,14 +89,14 @@ export function QuickView({
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
               {p.ratingCount > 0 && (
                 <span className="inline-flex items-center gap-1">
-                  <Star className="size-4 fill-sun text-sun" />
+                  <i className="fa-solid fa-star text-amber-500" />
                   <b>{p.rating.toFixed(1)}</b>
                   <span className="text-muted-foreground">({p.ratingCount})</span>
                 </span>
               )}
               {p.soldCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <Flame className="size-4 text-primary" /> {p.soldCount} ya lo compraron
+                  <i className="fa-solid fa-fire text-amber-500" /> {p.soldCount} ya lo compraron
                 </span>
               )}
             </div>
@@ -122,7 +112,7 @@ export function QuickView({
 
             {p.stock > 0 && p.stock <= LOW_STOCK && (
               <p className="inline-flex w-fit items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-sm font-bold text-destructive">
-                <Timer className="size-4" /> ¡Solo quedan {p.stock}!
+                <i className="fa-solid fa-hourglass-half" /> ¡Solo quedan {p.stock}!
               </p>
             )}
 
@@ -138,7 +128,7 @@ export function QuickView({
                     onClick={() => setQty(Math.max(1, qty - 1))}
                     aria-label="Menos"
                   >
-                    <Minus className="size-4" />
+                    <i className="fa-solid fa-minus" />
                   </button>
                   <span className="w-6 text-center font-semibold">{qty}</span>
                   <button
@@ -147,7 +137,7 @@ export function QuickView({
                     onClick={() => setQty(qty + 1)}
                     aria-label="Más"
                   >
-                    <Plus className="size-4" />
+                    <i className="fa-solid fa-plus" />
                   </button>
                 </div>
                 <Button
@@ -172,7 +162,7 @@ export function QuickView({
                   onClose();
                 }}
               >
-                <ShoppingBag /> Agregar al carrito
+                <i className="fa-solid fa-cart-shopping" /> Agregar al carrito
               </Button>
               <Button
                 variant="outline"
@@ -184,7 +174,7 @@ export function QuickView({
               </Button>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
-                  <ShieldCheck className="size-3.5 text-primary" /> Pago seguro con Wompi
+                  <i className="fa-solid fa-shield-halved text-indigo-600" /> Pago seguro con Wompi
                 </span>
                 <Link
                   to="/producto/$id"
@@ -192,7 +182,7 @@ export function QuickView({
                   onClick={onClose}
                   className="inline-flex items-center gap-0.5 font-semibold text-primary"
                 >
-                  Ver todo <ArrowRight className="size-3.5" />
+                  Ver todo <i className="fa-solid fa-arrow-right" />
                 </Link>
               </div>
             </div>

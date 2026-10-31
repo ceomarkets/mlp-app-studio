@@ -26,6 +26,7 @@ export function createToggle() {
 }
 
 export const cartUI = createToggle();
-export const rewardsUI = createToggle();
+/** El diseño une carrito y premio en una sola ventana. */
+export const rewardsUI = cartUI;
 export const authUI = createToggle();
 export const toolsUI = createToggle();
