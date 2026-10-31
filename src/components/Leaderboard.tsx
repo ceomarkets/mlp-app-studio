@@ -21,6 +21,7 @@ import {
   useOpenAnnouncement,
 } from "@/components/AnnouncementCard";
 import { QuickView } from "@/components/QuickView";
+import { platformAnnouncements } from "@/lib/announcements";
 import { ProductImage } from "@/components/Shell";
 import { backend, type Announcement, type Product } from "@/lib/backend";
 import {
@@ -104,16 +105,21 @@ export function Leaderboard({
     queryFn: () => backend.listAnnouncements(),
     refetchInterval: 60_000,
   });
-  const hasNews = (announcements.data?.length ?? 0) > 0;
+  // Sin anuncios publicados (o si la tabla aún no existe), van los de Plaza X:
+  // así la cinta nunca queda vacía.
+  const news = useMemo(
+    () => (announcements.data?.length ? announcements.data : platformAnnouncements()),
+    [announcements.data],
+  );
+  const hasNews = news.length > 0;
   const activity = useQuery({
     queryKey: ["catalog", "activity"],
     queryFn: () => backend.recentActivity(),
     refetchInterval: 60_000,
   });
   const items = useMemo(
-    () =>
-      buildLeaderboard(products, activity.data ?? [], filter, Date.now(), 8, announcements.data),
-    [products, activity.data, filter, announcements.data],
+    () => buildLeaderboard(products, activity.data ?? [], filter, Date.now(), 8, news),
+    [products, activity.data, filter, news],
   );
 
   const temps = useMemo(
@@ -231,7 +237,19 @@ export function Leaderboard({
           </div>
         </div>
       ) : (
-        <p className="px-4 py-2 text-sm text-slate-400">No hay elementos en esta categoría</p>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <div className="flex w-80 max-w-full items-center gap-3 rounded-xl border border-dashed border-slate-700 bg-slate-900 p-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-slate-950 text-2xl">
+              🛍️
+            </span>
+            <span className="text-xs text-slate-400">
+              Aún no hay productos en esta categoría.{" "}
+              <Link to="/vendedores" className="font-semibold text-indigo-400 hover:underline">
+                Publica el primero
+              </Link>
+            </span>
+          </div>
+        </div>
       )}
 
       {filter === "earn" && (

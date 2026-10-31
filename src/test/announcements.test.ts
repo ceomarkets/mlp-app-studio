@@ -119,3 +119,15 @@ describe("anuncios en el backend demo", () => {
     expect((await b.allAnnouncements()).some((x) => x.id === a.id)).toBe(false);
   });
 });
+
+describe("anuncios de Plaza X (respaldo)", () => {
+  it("la cinta nunca queda vacía aunque no haya productos ni anuncios", async () => {
+    const { platformAnnouncements } = await import("@/lib/announcements");
+    const { buildLeaderboard } = await import("@/lib/feed");
+    const own = platformAnnouncements();
+    expect(own.length).toBeGreaterThanOrEqual(3);
+    // Todos sus enlaces son internos y seguros.
+    expect(own.every((a) => a.link === null || isSafeLink(a.link))).toBe(true);
+    expect(buildLeaderboard([], [], "all", Date.now(), 8, own).length).toBe(own.length);
+  });
+});

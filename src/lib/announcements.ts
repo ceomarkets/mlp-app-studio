@@ -4,6 +4,7 @@
  * avisar antes de guardar y en el modo demo.
  */
 import type { Announcement, AnnouncementInput, AnnouncementTone } from "@/lib/backend/types";
+import { AFFILIATE_MAX, BUNDLE_MIN, BUNDLE_RATE } from "@/lib/plaza";
 
 export const TONES: { id: AnnouncementTone; label: string; badge: string }[] = [
   { id: "promo", label: "Promoción", badge: "PROMO" },
@@ -72,4 +73,69 @@ export function normalizeAnnouncement(a: AnnouncementInput): AnnouncementInput {
     image: a.image?.trim() || null,
     endsAt: a.endsAt || null,
   };
+}
+
+/**
+ * Anuncios propios de Plaza X. Se muestran en el leaderboard solo mientras la
+ * administración no haya publicado anuncios, para que la cinta nunca quede
+ * vacía (por ejemplo, con la base de datos recién creada). Todo lo que dicen
+ * es real: el descuento por volumen, la comisión máxima y los medios de pago.
+ */
+export function platformAnnouncements(): Announcement[] {
+  const base = {
+    image: null,
+    active: true,
+    startsAt: "2026-01-01T00:00:00.000Z",
+    endsAt: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+  const list: Announcement[] = [];
+  if (BUNDLE_RATE > 0)
+    list.push({
+      ...base,
+      id: "plaza-bundle",
+      title: `Desafío ${BUNDLE_MIN} = ${Math.round(BUNDLE_RATE * 100)}% OFF`,
+      body: `Lleva ${BUNDLE_MIN} productos y paga ${Math.round(BUNDLE_RATE * 100)}% menos en tu compra.`,
+      emoji: "🎁",
+      link: null,
+      cta: "Ver cómo",
+      tone: "promo",
+      priority: 100,
+    });
+  list.push(
+    {
+      ...base,
+      id: "plaza-store",
+      title: "Abre tu tienda en Plaza X",
+      body: "Publica tus productos sin pagos por adelantado y vende con afiliados.",
+      emoji: "🏪",
+      link: "/vendedores",
+      cta: "Abrir tienda",
+      tone: "news",
+      priority: 90,
+    },
+    {
+      ...base,
+      id: "plaza-affiliate",
+      title: `Gana hasta ${Math.round(AFFILIATE_MAX * 100)}% recomendando`,
+      body: "Comparte un enlace por WhatsApp y cobra en Nequi por cada venta.",
+      emoji: "💸",
+      link: "/afiliados",
+      cta: "Activar enlace",
+      tone: "event",
+      priority: 80,
+    },
+    {
+      ...base,
+      id: "plaza-pay",
+      title: "Pago seguro con Wompi",
+      body: "Tarjeta, PSE, Nequi o botón Bancolombia.",
+      emoji: "🛡️",
+      link: null,
+      cta: "Saber más",
+      tone: "info",
+      priority: 70,
+    },
+  );
+  return list;
 }

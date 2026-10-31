@@ -197,11 +197,13 @@ function Plaza() {
               </Rail>
             )}
 
-            <Rail icon={<Flame />} title="Los favoritos de todos" subtitle="Lo que más se vende">
-              {sections.best.map((p) => (
-                <ProductCard key={p.id} p={p} action={<QuickAdd p={p} />} />
-              ))}
-            </Rail>
+            {sections.best.length > 0 && (
+              <Rail icon={<Flame />} title="Los favoritos de todos" subtitle="Lo que más se vende">
+                {sections.best.map((p) => (
+                  <ProductCard key={p.id} p={p} action={<QuickAdd p={p} />} />
+                ))}
+              </Rail>
+            )}
 
             {sections.fresh.length > 0 && (
               <Rail
