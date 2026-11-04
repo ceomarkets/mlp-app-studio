@@ -5,7 +5,7 @@ export function BridgeLogo({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex size-8 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600 transition-transform group-hover:scale-105",
+        "flex size-9 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 transition group-hover:scale-105 group-hover:border-amber-400",
         className,
       )}
     >

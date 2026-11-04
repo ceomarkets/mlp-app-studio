@@ -25,11 +25,14 @@ export const reasonLabel = (r: DisputeReason) => REASONS.find((x) => x.id === r)
 export const STATUS_LABEL: Record<DisputeStatus, { text: string; tone: string }> = {
   open: {
     text: "En revisión · pago congelado",
-    tone: "border-amber-200 bg-amber-50 text-amber-700",
+    tone: "border-amber-500/30 bg-amber-500/10 text-amber-400",
   },
-  refunded: { text: "Reembolsada", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  rejected: { text: "Rechazada", tone: "border-slate-200 bg-slate-100 text-slate-600" },
-  closed: { text: "Cerrada", tone: "border-slate-200 bg-slate-100 text-slate-600" },
+  refunded: {
+    text: "Reembolsada",
+    tone: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  },
+  rejected: { text: "Rechazada", tone: "border-slate-800 bg-slate-800 text-slate-300" },
+  closed: { text: "Cerrada", tone: "border-slate-800 bg-slate-800 text-slate-300" },
 };
 
 export const KIND_LABEL: Record<DisputeKind, string> = {

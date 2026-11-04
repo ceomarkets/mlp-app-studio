@@ -20,22 +20,22 @@ const STATE: Record<
 > = {
   approved: {
     text: "Afiliado",
-    cls: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
     icon: "fa-circle-check",
   },
   open: {
     text: "Abierta",
-    cls: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
     icon: "fa-door-open",
   },
   pending: {
     text: "Solicitud enviada",
-    cls: "border-amber-200 bg-amber-50 text-amber-700",
+    cls: "border-amber-500/30 bg-amber-500/10 text-amber-400",
     icon: "fa-hourglass-half",
   },
   rejected: {
     text: "No aprobada",
-    cls: "border-slate-200 bg-slate-100 text-slate-500",
+    cls: "border-slate-800 bg-slate-800 text-slate-400",
     icon: "fa-circle-xmark",
   },
   none: { text: "", cls: "", icon: "" },
@@ -78,16 +78,16 @@ export function Companies({ username }: { username: string }) {
       .sort((a, b) => rank(a.status) - rank(b.status) || b.best - a.best);
   }, [stores.data, products.data, mine.data, myStore.data]);
 
-  if (stores.isPending) return <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />;
+  if (stores.isPending) return <div className="h-40 animate-pulse rounded-2xl bg-slate-700" />;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-            <i className="fa-solid fa-handshake text-emerald-600" /> Empresas y solicitudes
+          <h3 className="flex items-center gap-2 text-lg font-bold text-white">
+            <i className="fa-solid fa-handshake text-emerald-400" /> Empresas y solicitudes
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             Las tiendas abiertas te pagan desde el primer clic. Las demás aprueban a sus afiliados.
           </p>
         </div>
@@ -97,7 +97,10 @@ export function Companies({ username }: { username: string }) {
           const canPromote = status === "approved" || status === "open";
           const expanded = open === s.id && canPromote;
           return (
-            <li key={s.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <li
+              key={s.id}
+              className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900"
+            >
               <div className="flex flex-wrap items-center justify-between gap-3 p-3">
                 <button
                   type="button"
@@ -106,11 +109,11 @@ export function Companies({ username }: { username: string }) {
                   aria-expanded={expanded}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default"
                 >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-sm font-black text-indigo-700">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-sm font-black text-amber-400">
                     {s.emoji || initials(s.name)}
                   </span>
                   <span className="min-w-0">
-                    <span className="flex items-center gap-1 text-sm font-bold text-slate-900">
+                    <span className="flex items-center gap-1 text-sm font-bold text-white">
                       <span className="truncate">{s.name}</span>
                       {s.verified && (
                         <BadgeCheck
@@ -119,9 +122,9 @@ export function Companies({ username }: { username: string }) {
                         />
                       )}
                     </span>
-                    <span className="block text-[11px] text-slate-500">
+                    <span className="block text-[11px] text-slate-400">
                       {count} productos · comisión hasta{" "}
-                      <b className="text-emerald-600">{Math.round(best * 100)}%</b>
+                      <b className="text-emerald-400">{Math.round(best * 100)}%</b>
                     </span>
                   </span>
                 </button>
@@ -131,7 +134,7 @@ export function Companies({ username }: { username: string }) {
                     <button
                       onClick={() => setOpen(expanded ? null : s.id)}
                       aria-label={expanded ? "Ocultar herramientas" : "Ver herramientas"}
-                      className="grid size-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100"
+                      className="grid size-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-800"
                     >
                       <ChevronDown className={cn("size-4 transition", expanded && "rotate-180")} />
                     </button>
@@ -139,12 +142,12 @@ export function Companies({ username }: { username: string }) {
                 </div>
               </div>
               {expanded && (
-                <div className="border-t border-slate-200 bg-slate-50 p-3">
+                <div className="border-t border-slate-800 bg-slate-950 p-3">
                   <AffiliateTools username={username} storeSlug={s.slug} />
                   <Link
                     to="/tienda/$slug"
                     params={{ slug: s.slug }}
-                    className="mt-2 inline-block text-xs font-semibold text-indigo-600 hover:underline"
+                    className="mt-2 inline-block text-xs font-semibold text-amber-400 hover:underline"
                   >
                     Ver catálogo de {s.name} →
                   </Link>
@@ -193,7 +196,7 @@ function RequestButton({ store }: { store: Store }) {
     <button
       onClick={() => m.mutate()}
       disabled={m.isPending}
-      className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"
+      className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm transition hover:bg-amber-400 disabled:opacity-60"
     >
       {m.isPending ? (
         <Loader2 className="size-3 animate-spin" />
@@ -228,8 +231,8 @@ export function AffiliateRequests({ store }: { store: Store }) {
         className={cn(
           "rounded-xl border p-3 text-xs",
           store.requireApproval
-            ? "border-indigo-200 bg-indigo-50 text-indigo-900"
-            : "border-emerald-200 bg-emerald-50 text-emerald-900",
+            ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
+            : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
         )}
       >
         {store.requireApproval ? (
@@ -245,21 +248,21 @@ export function AffiliateRequests({ store }: { store: Store }) {
         )}
       </p>
       {list.isPending ? (
-        <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
+        <div className="h-32 animate-pulse rounded-2xl bg-slate-800" />
       ) : list.data?.length ? (
-        <ul className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <ul className="divide-y divide-slate-800 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
           {list.data.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-900">
+                <p className="text-sm font-bold text-white">
                   {r.fullName || "Afiliado"}{" "}
-                  {r.username && <span className="font-normal text-slate-500">@{r.username}</span>}
+                  {r.username && <span className="font-normal text-slate-400">@{r.username}</span>}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-400">
                   {new Date(r.createdAt).toLocaleDateString("es-CO", { dateStyle: "medium" })} ·{" "}
                   {r.sales} ventas para tu tienda
                 </p>
-                {r.message && <p className="mt-1 text-xs text-slate-700 italic">“{r.message}”</p>}
+                {r.message && <p className="mt-1 text-xs text-slate-200 italic">“{r.message}”</p>}
               </div>
               {r.status === "pending" ? (
                 <div className="flex gap-2">
@@ -273,7 +276,7 @@ export function AffiliateRequests({ store }: { store: Store }) {
                   <button
                     disabled={decide.isPending}
                     onClick={() => decide.mutate({ id: r.id, approve: false })}
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-800"
                   >
                     Rechazar
                   </button>
@@ -285,7 +288,7 @@ export function AffiliateRequests({ store }: { store: Store }) {
           ))}
         </ul>
       ) : (
-        <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+        <p className="rounded-2xl border border-dashed border-slate-700 bg-slate-900 p-6 text-center text-sm text-slate-400">
           Aún no hay solicitudes de afiliados.
         </p>
       )}
@@ -305,25 +308,25 @@ export function VerificationBar({ store }: { store: Store }) {
     onError: (e) => toast.error(e.message),
   });
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs shadow-sm">
-      <span className="font-semibold text-slate-500">Estado:</span>
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-xs shadow-sm">
+      <span className="font-semibold text-slate-400">Estado:</span>
       {store.verified ? (
-        <span className="flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-100 px-3 py-1 font-extrabold text-sky-700">
+        <span className="flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/20 px-3 py-1 font-extrabold text-sky-400">
           <BadgeCheck className="size-3.5" /> Verificada
         </span>
       ) : store.verificationRequestedAt ? (
-        <span className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-extrabold text-amber-700">
+        <span className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 font-extrabold text-amber-400">
           <i className="fa-solid fa-hourglass-half" /> Verificación en revisión
         </span>
       ) : (
         <>
-          <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 font-extrabold text-slate-600">
+          <span className="rounded-full border border-slate-800 bg-slate-800 px-3 py-1 font-extrabold text-slate-300">
             Sin verificar
           </span>
           <button
             onClick={() => m.mutate()}
             disabled={m.isPending}
-            className="font-bold text-indigo-600 hover:underline"
+            className="font-bold text-amber-400 hover:underline"
           >
             Solicitar verificación
           </button>
@@ -332,7 +335,7 @@ export function VerificationBar({ store }: { store: Store }) {
           </span>
         </>
       )}
-      <span className="ms-auto text-slate-500">
+      <span className="ms-auto text-slate-400">
         {store.shipsNational ? "🚚 Envíos nacionales" : "📍 Cobertura local"} ·{" "}
         {store.requireApproval ? "Afiliados con aprobación" : "Abierta a afiliados"}
       </span>

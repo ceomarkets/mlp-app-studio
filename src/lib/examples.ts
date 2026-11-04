@@ -31,7 +31,7 @@ const RAW = [
     rating: 4.8,
     temperature: 95,
     badge: "40% COMISIÓN",
-    badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    badgeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
     image:
       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&auto=format&fit=crop&q=80",
   },
@@ -48,7 +48,7 @@ const RAW = [
     rating: 4.7,
     temperature: 88,
     badge: "OFERTA RELÁMPAGO",
-    badgeColor: "bg-rose-100 text-rose-700 border-rose-200",
+    badgeColor: "bg-rose-500/20 text-rose-400 border-rose-500/30",
     image:
       "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300&auto=format&fit=crop&q=80",
   },
@@ -65,7 +65,7 @@ const RAW = [
     rating: 4.9,
     temperature: 150,
     badge: "80% COMISIÓN",
-    badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    badgeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
     image:
       "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&auto=format&fit=crop&q=80",
   },
@@ -82,7 +82,7 @@ const RAW = [
     rating: 5.0,
     temperature: 200,
     badge: "TOP #1 VENTAS",
-    badgeColor: "bg-amber-100 text-amber-800 border-amber-200",
+    badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
     image:
       "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=300&auto=format&fit=crop&q=80",
   },

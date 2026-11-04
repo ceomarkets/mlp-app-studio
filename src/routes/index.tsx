@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useDeferredValue, useMemo, useState } from "react";
 import { addToCart } from "@/components/CartSheet";
 import { Leaderboard } from "@/components/Leaderboard";
 import { QuickView } from "@/components/QuickView";
@@ -9,16 +9,20 @@ import { Shell } from "@/components/Shell";
 import { backend, type Product } from "@/lib/backend";
 import {
   applyBrowse,
+  citiesOf,
   companiesOf,
+  isBrowsing,
   NO_BROWSE,
+  OFFER_TYPES,
   PRICE_BANDS,
   type Browse,
+  type OfferType,
   type PriceBand,
 } from "@/lib/browse";
 import { useViewed, viewed as viewedStore } from "@/lib/client-state";
 import { EXAMPLE_META, EXAMPLE_PRODUCTS, isExample } from "@/lib/examples";
-import { discountPct, isNew, temperatures, type BoardFilter } from "@/lib/feed";
-import { AFFILIATE_MAX, clampCommission, cop } from "@/lib/plaza";
+import { discountPct, isNew, temperatures } from "@/lib/feed";
+import { AFFILIATE_MIN, clampCommission, cop } from "@/lib/plaza";
 import { keys } from "@/lib/session";
 import { plazaShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
@@ -38,92 +42,30 @@ export const Route = createFileRoute("/")({
   component: Plaza,
 });
 
-type Role = "comprador" | "afiliado" | "empresa";
-const ROLE_KEY = "plazax-role";
-
-/** Textos del selector de rol, iguales al diseño. */
-const ROLES: Record<
-  Role,
-  {
-    button: string;
-    icon: string;
-    active: string;
-    badge: string;
-    title: string;
-    subtitle: string;
-    board: BoardFilter;
-    to?: "/afiliados" | "/vendedores";
-  }
-> = {
-  comprador: {
-    button: "Comprar Productos",
-    icon: "fa-shopping-bag",
-    active: "bg-indigo-600",
-    badge: "MODO COMPRADOR: EXPLORA TIENDAS & PRODUCTOS",
-    title: "El Mercado Multitienda & Red de Afiliación",
-    subtitle:
-      "Encuentra productos verificados de múltiples empresas, gana premios por tus compras o regístrate como Afiliado/Empresa para vender y promocionar.",
-    board: "all",
-  },
-  afiliado: {
-    button: "Ganar Comisiones",
-    icon: "fa-hand-holding-dollar text-emerald-600",
-    active: "bg-emerald-600",
-    badge: `MODO AFILIADO: PROMOCIONA Y GANA HASTA ${Math.round(AFFILIATE_MAX * 100)}%`,
-    title: "Genera Ingresos Promocionando Productos",
-    subtitle:
-      "Elige productos de empresas verificadas, genera tu enlace de afiliado y recibe comisiones automáticas.",
-    board: "earn",
-    to: "/afiliados",
-  },
-  empresa: {
-    button: "Vender como Empresa",
-    icon: "fa-store text-indigo-600",
-    active: "bg-indigo-600",
-    badge: "MODO EMPRESA: SUBE TU CATÁLOGO & RECLUTA AFILIADOS",
-    title: "Vende tus Productos con una Red de Promotores",
-    subtitle:
-      "Publica tus artículos, establece las comisiones para afiliados y multiplica tus ventas nacionales y locales.",
-    board: "all",
-    to: "/vendedores",
-  },
+/** Chips de categoría del diseño (se suman las categorías reales que no estén aquí). */
+const CATEGORY_CHIPS: [string, string][] = [
+  ["Calzado", "fa-shoe-prints"],
+  ["Tecnología", "fa-laptop"],
+  ["Ropa", "fa-shirt"],
+  ["Accesorios", "fa-couch"],
+  ["Hogar", "fa-house"],
+];
+const CATEGORY_ICON: Record<string, string> = {
+  Alimentos: "fa-mug-hot",
+  Artesanías: "fa-palette",
+  Belleza: "fa-spa",
+  Campo: "fa-wheat-awn",
+  Cursos: "fa-graduation-cap",
+  Mascotas: "fa-paw",
+  Deportes: "fa-futbol",
 };
 
-function readRole(): Role {
-  try {
-    const r = localStorage.getItem(ROLE_KEY);
-    if (r === "afiliado" || r === "empresa") return r;
-  } catch {
-    /* sin almacenamiento: comprador */
-  }
-  return "comprador";
-}
-
 function Plaza() {
-  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [browse, setBrowse] = useState<Browse>(NO_BROWSE);
   const [quick, setQuick] = useState<Product | null>(null);
-  const [role, setRoleState] = useState<Role>("comprador");
-  const [board, setBoard] = useState<BoardFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const dq = useDeferredValue(q.trim());
-
-  useEffect(() => {
-    const r = readRole();
-    setRoleState(r);
-    setBoard(ROLES[r].board);
-  }, []);
-  const setRole = (r: Role) => {
-    setRoleState(r);
-    setBoard(ROLES[r].board);
-    try {
-      localStorage.setItem(ROLE_KEY, r);
-    } catch {
-      /* sin almacenamiento */
-    }
-    const to = ROLES[r].to;
-    if (to) navigate({ to });
-  };
 
   const all = useQuery({ queryKey: keys.products({}), queryFn: () => backend.listProducts() });
   const filter = { q: dq };
@@ -153,13 +95,26 @@ function Plaza() {
     [searched, browse],
   );
   const companies = useMemo(() => companiesOf(source), [source]);
-  const cats = useMemo(() => [...new Set(source.map((p) => p.category))], [source]);
+  const cities = useMemo(() => citiesOf(source), [source]);
+  const chips = useMemo(() => {
+    const extra = [...new Set(source.map((p) => p.category))].filter(
+      (c) => !CATEGORY_CHIPS.some(([k]) => k === c),
+    );
+    return [
+      ...CATEGORY_CHIPS,
+      ...extra.map((c): [string, string] => [c, CATEGORY_ICON[c] ?? "fa-tag"]),
+    ];
+  }, [source]);
   const temps = useMemo(
     () => temperatures(all.data ?? [], activity.data ?? []),
     [all.data, activity.data],
   );
-  const view = ROLES[role];
   const set = (patch: Partial<Browse>) => setBrowse((b) => ({ ...b, ...patch }));
+  const reset = () => {
+    setBrowse(NO_BROWSE);
+    setQ("");
+    setFiltersOpen(false);
+  };
   const open = (p: Product) => {
     if (!isExample(p.id)) viewedStore.add(p.id);
     setQuick(p);
@@ -167,117 +122,166 @@ function Plaza() {
 
   return (
     <Shell bare>
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-slate-300/80 bg-slate-200/60 px-4 py-12 text-center">
-        <div className="relative z-10 mx-auto max-w-4xl">
-          <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-xs font-bold text-indigo-700 shadow-sm">
-            <span className="size-2 animate-pulse rounded-full bg-emerald-500" /> {view.badge}
+      {/* Hero negro y dorado */}
+      <section className="relative overflow-hidden border-b border-amber-500/20 bg-slate-900 px-4 py-8 text-center md:py-12">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent" />
+        <div className="relative z-10 mx-auto max-w-3xl">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-slate-950 px-3.5 py-1 text-[11px] font-bold text-amber-300 shadow-md">
+            <span className="size-2 animate-ping rounded-full bg-amber-400" /> EXPLORA PRODUCTOS Y
+            TIENDAS VERIFICADAS
           </span>
-          <h1 className="mb-4 text-3xl leading-tight font-black tracking-tight text-slate-900 sm:text-5xl">
-            {view.title}
+          <h1 className="mb-3 text-2xl leading-tight font-black tracking-tight text-white sm:text-4xl md:text-5xl">
+            Red de Mercado Multitienda
           </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-sm font-normal text-slate-600 sm:text-base">
-            {view.subtitle}
+          <p className="mx-auto mb-6 max-w-xl text-xs leading-relaxed text-slate-400 sm:text-sm">
+            Compra directamente a empresas locales o únete a nuestra red de afiliados para
+            promocionar artículos y ganar comisiones.
           </p>
-
-          <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
-            {(Object.keys(ROLES) as Role[]).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRole(r)}
-                aria-pressed={role === r}
-                className={cn(
-                  "flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition",
-                  role === r
-                    ? cn(ROLES[r].active, "text-white shadow")
-                    : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-                )}
-              >
-                <i
-                  className={cn(
-                    "fa-solid",
-                    role === r ? ROLES[r].icon.split(" ")[0] : ROLES[r].icon,
-                  )}
-                />{" "}
-                {ROLES[r].button}
-              </button>
-            ))}
-          </div>
-
           <SearchBar value={q} onChange={setQ} />
         </div>
       </section>
 
-      <div className="flex flex-grow flex-col bg-slate-100">
-        {/* Cinta leaderboard en vivo y filtros unificados */}
-        <Leaderboard
-          products={boardProducts}
-          filter={board}
-          onFilter={setBoard}
-          viewed={viewed}
-          controls={
-            <>
-              <Picker
-                icon="fa-location-dot text-red-500"
-                label="Ubicación"
-                value={browse.location}
-                onChange={(location) => set({ location })}
-                options={[
-                  ["all", "Todas las ubicaciones"],
-                  ["local", "📍 Cobertura Local"],
-                  ["national", "🚚 Envíos Nacionales Colombia"],
-                ]}
-              />
-              <Picker
-                icon="fa-box-archive text-indigo-600"
-                label="Categoría"
-                value={browse.category}
-                onChange={(category) => set({ category })}
-                options={[["all", "Todos"], ...cats.map((c): [string, string] => [c, c])]}
-              />
-              <Picker
-                icon="fa-tag text-emerald-600"
-                label="Precio"
-                value={browse.price}
-                onChange={(price) => set({ price: price as PriceBand })}
-                options={PRICE_BANDS.map((b): [string, string] => [b.id, b.label])}
-              />
-            </>
-          }
-        />
+      <div className="flex flex-grow flex-col bg-slate-950">
+        {/* Barra de filtros */}
+        <div className="relative w-full border-b border-amber-500/20 bg-slate-900 py-3 font-sans text-slate-200 shadow-sm">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4">
+            <div className="relative flex flex-col items-stretch justify-between gap-3 text-xs md:flex-row md:items-center">
+              <div className="scrollbar-none rail flex w-full items-center gap-2 overflow-x-auto pb-1 md:w-auto md:pb-0">
+                <button
+                  onClick={reset}
+                  className={cn(
+                    chip,
+                    !isBrowsing(browse)
+                      ? "border-amber-400 bg-gradient-to-r from-amber-500 to-amber-600 font-black text-slate-950 shadow-sm"
+                      : chipIdle,
+                  )}
+                >
+                  <i className="fa-solid fa-border-all" /> Ver Todo
+                </button>
+                {chips.map(([c, icon]) => (
+                  <button
+                    key={c}
+                    onClick={() => set({ category: browse.category === c ? "all" : c })}
+                    aria-pressed={browse.category === c}
+                    className={cn(
+                      chip,
+                      browse.category === c
+                        ? "border-amber-400 bg-gradient-to-r from-amber-500 to-amber-600 font-black text-slate-950 shadow-sm"
+                        : chipIdle,
+                    )}
+                  >
+                    <i className={cn("fa-solid", icon)} /> {c}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative w-full md:w-auto">
+                <button
+                  onClick={() => setFiltersOpen(!filtersOpen)}
+                  aria-expanded={filtersOpen}
+                  className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 font-bold text-amber-400 shadow-sm transition hover:border-amber-400 md:w-auto"
+                >
+                  Filtros{" "}
+                  <i
+                    className={cn(
+                      "fa-solid fa-chevron-down text-[10px] text-amber-400 transition",
+                      filtersOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+                {filtersOpen && (
+                  <div className="absolute top-full right-0 z-50 mt-2 flex w-full flex-col gap-3 rounded-2xl border border-amber-500/30 bg-slate-900 p-4 text-xs shadow-2xl md:w-80">
+                    <div className="border-b border-slate-800 pb-2">
+                      <button
+                        onClick={reset}
+                        className="flex w-full items-center justify-between text-left font-bold text-amber-400 transition hover:text-amber-300"
+                      >
+                        <span>
+                          <i className="fa-solid fa-rotate-left me-1" /> Mostrar Todo el Catálogo
+                        </span>
+                        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px]">
+                          Por Defecto
+                        </span>
+                      </button>
+                    </div>
+                    <Select
+                      label="Ubicación"
+                      value={browse.location}
+                      onChange={(location) => set({ location })}
+                      options={[
+                        ["all", "Todas las Ubicaciones (Catálogo Completo)"],
+                        ...cities.map((c): [string, string] => [`city:${c}`, c]),
+                        ["local", "📍 Cobertura Local"],
+                        ["national", "🚚 Envíos Nacionales"],
+                      ]}
+                    />
+                    <Select
+                      label="Tienda"
+                      value={browse.company}
+                      onChange={(company) => set({ company })}
+                      options={[
+                        ["all", "Todas las Tiendas"],
+                        ...companies.map((c): [string, string] => [c.slug, c.name]),
+                      ]}
+                    />
+                    <Select
+                      label="Rango de Precio"
+                      value={browse.price}
+                      onChange={(price) => set({ price: price as PriceBand })}
+                      options={PRICE_BANDS.map((b): [string, string] => [b.id, b.label])}
+                    />
+                    <Select
+                      label="Tipo de Oferta"
+                      value={browse.offer}
+                      onChange={(offer) => set({ offer: offer as OfferType })}
+                      options={OFFER_TYPES.map((o): [string, string] => [o.id, o.label])}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Leaderboard más grande */}
+        <Leaderboard products={boardProducts} viewed={viewed} />
 
         {/* Catálogo */}
         <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <h3 id="catalogo" className="flex items-center gap-2 text-lg font-bold text-slate-900">
-              <i className="fa-solid fa-shop text-indigo-600" /> Catálogo de Productos
-            </h3>
-            <select
-              value={browse.company}
-              onChange={(e) => set({ company: e.target.value })}
-              aria-label="Empresa"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm transition focus:border-indigo-600 focus:outline-none"
+          <div className="mb-5 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+            <h3
+              id="catalogo"
+              className="flex items-center gap-2 text-base font-extrabold text-white"
             >
-              <option value="all">Todas las Empresas</option>
-              {companies.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              Catálogo de Productos{" "}
+              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-400">
+                {catalog?.length ?? "…"}
+              </span>
+            </h3>
+            {(isBrowsing(browse) || dq) && (
+              <button onClick={reset} className="text-xs font-bold text-amber-400 hover:underline">
+                <i className="fa-solid fa-rotate-left me-1" /> Mostrar todo
+              </button>
+            )}
           </div>
 
           {examples && (
-            <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <p className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
               Productos de ejemplo: así se verá el catálogo cuando las empresas publiquen sus
               artículos desde el Panel Empresas.
+            </p>
+          )}
+          {browse.offer === "direct" && (
+            <p className="mb-4 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-400">
+              En Plaza X todos los productos pagan comisión a quien los recomienda (desde{" "}
+              {Math.round(AFFILIATE_MIN * 100)}%), por eso no hay ventas directas sin comisión.
             </p>
           )}
 
           {!catalog ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="h-80 animate-pulse rounded-xl bg-slate-200" />
+                <div key={i} className="h-80 animate-pulse rounded-xl bg-slate-900" />
               ))}
             </div>
           ) : catalog.length ? (
@@ -299,9 +303,9 @@ function Plaza() {
           )}
 
           {/* Compartir */}
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:flex-row sm:p-8">
+          <div className="gold-border-glow mt-10 flex flex-col items-center justify-between gap-4 rounded-3xl border border-amber-500/20 bg-slate-900 p-6 shadow-sm sm:flex-row sm:p-8">
             <div>
-              <h4 className="flex items-center gap-2 text-lg font-black text-slate-900 sm:text-xl">
+              <h4 className="flex items-center gap-2 text-lg font-black text-white sm:text-xl">
                 ¿Te gustó? Cuéntale a alguien 💛
               </h4>
               <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">
@@ -310,7 +314,7 @@ function Plaza() {
             </div>
             <ShareButton
               data={plazaShare}
-              className="flex shrink-0 items-center gap-2.5 rounded-full bg-indigo-600 px-6 py-3 text-xs font-extrabold text-white shadow-md transition-transform hover:scale-105 hover:bg-indigo-700 sm:text-sm"
+              className="flex min-h-[44px] shrink-0 items-center gap-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 text-xs font-extrabold text-slate-950 shadow-md transition-transform hover:scale-105 sm:text-sm"
             >
               <i className="fa-solid fa-share-nodes text-sm" /> Compartir Plaza X
             </ShareButton>
@@ -323,30 +327,32 @@ function Plaza() {
   );
 }
 
-function Picker({
-  icon,
+const chip =
+  "flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2 transition";
+const chipIdle =
+  "border-slate-700/80 bg-slate-800/80 font-medium text-slate-300 hover:bg-slate-800 hover:text-amber-400";
+
+function Select({
   label,
   value,
   onChange,
   options,
 }: {
-  icon: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: [string, string][];
 }) {
   return (
-    <label className="flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-slate-700">
-      <i className={cn("fa-solid text-xs", icon)} />
-      <span className="sr-only">{label}</span>
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-bold text-slate-300">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="cursor-pointer bg-transparent text-xs text-slate-700 focus:outline-none"
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2 text-xs text-slate-200 focus:outline-none"
       >
         {options.map(([v, t]) => (
-          <option key={v} value={v} className="bg-white">
+          <option key={v} value={v}>
             {t}
           </option>
         ))}
@@ -363,21 +369,23 @@ function SearchBar({ value, onChange }: { value: string; onChange: (v: string) =
         e.preventDefault();
         document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth" });
       }}
-      className="relative mx-auto max-w-3xl space-y-3"
+      className="relative mx-auto max-w-xl"
     >
-      <div className="flex items-center rounded-full border border-slate-300 bg-white p-1.5 shadow-xl transition focus-within:border-indigo-600">
-        <i className="fa-solid fa-magnifying-glass ml-4 text-sm text-slate-400" />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Buscar calzado, accesorios, tecnología, tiendas..."
-          aria-label="Buscar productos"
-          className="w-full bg-transparent py-2 pr-4 pl-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none sm:text-sm"
-        />
+      <div className="flex flex-col items-stretch gap-2 rounded-2xl border border-amber-500/30 bg-slate-950 p-1.5 shadow-lg transition focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50 sm:flex-row sm:items-center sm:gap-0 sm:p-1">
+        <div className="flex w-full items-center px-2">
+          <i className="fa-solid fa-magnifying-glass text-xs text-amber-400/70" />
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Buscar productos, marcas o empresas..."
+            aria-label="Buscar productos"
+            className="min-h-[44px] w-full bg-transparent py-2.5 pr-3 pl-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none"
+          />
+        </div>
         <button
           type="submit"
-          className="shrink-0 rounded-full bg-indigo-600 px-6 py-2 text-xs font-bold text-white shadow-md transition hover:bg-indigo-700 sm:text-sm"
+          className="min-h-[44px] shrink-0 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2.5 text-xs font-black text-slate-950 shadow-md transition hover:from-amber-400 hover:to-amber-500"
         >
           Buscar
         </button>
@@ -386,7 +394,6 @@ function SearchBar({ value, onChange }: { value: string; onChange: (v: string) =
   );
 }
 
-/** Tarjeta del catálogo, igual al diseño (createGridCardHTML). */
 function GridCard({ p, temp, onOpen }: { p: Product; temp: number; onOpen: () => void }) {
   const meta = EXAMPLE_META.get(p.id);
   const off = discountPct(p);
@@ -394,22 +401,22 @@ function GridCard({ p, temp, onOpen }: { p: Product; temp: number; onOpen: () =>
   const badge = meta
     ? { t: meta.badge, c: meta.badgeColor }
     : off
-      ? { t: `OFERTA −${off}%`, c: "bg-rose-100 text-rose-700 border-rose-200" }
+      ? { t: `OFERTA −${off}%`, c: "bg-rose-500/20 text-rose-400 border-rose-500/30" }
       : isNew(p)
-        ? { t: "RECIÉN LANZADO", c: "bg-indigo-100 text-indigo-700 border-indigo-200" }
-        : { t: `${rate}% COMISIÓN`, c: "bg-emerald-100 text-emerald-700 border-emerald-200" };
+        ? { t: "RECIÉN LANZADO", c: "bg-amber-500/20 text-amber-400 border-amber-500/30" }
+        : { t: `${rate}% COMISIÓN`, c: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" };
   const img = p.images[0];
   return (
     <div
       onClick={onOpen}
-      className="group flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-indigo-400 hover:shadow-md"
+      className="group flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-sm transition hover:border-amber-400 hover:shadow-md"
     >
       <div>
-        <div className="relative grid h-48 place-items-center overflow-hidden bg-slate-100">
+        <div className="relative grid h-48 place-items-center overflow-hidden bg-slate-800">
           {img ? (
             <img
               src={img}
-              alt={p.name}
+              alt=""
               loading="lazy"
               className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
             />
@@ -429,7 +436,7 @@ function GridCard({ p, temp, onOpen }: { p: Product; temp: number; onOpen: () =>
             </span>
           )}
           {p.stock > 0 && p.stock <= 10 && (
-            <span className="absolute right-2 bottom-2 rounded-full border border-rose-200 bg-white/90 px-2 py-0.5 text-[10px] font-bold text-rose-600 shadow-sm backdrop-blur-md">
+            <span className="absolute right-2 bottom-2 rounded-full border border-rose-500/30 bg-slate-900/90 px-2 py-0.5 text-[10px] font-bold text-rose-400 shadow-sm backdrop-blur-md">
               ¡Solo quedan {p.stock}!
             </span>
           )}
@@ -443,12 +450,12 @@ function GridCard({ p, temp, onOpen }: { p: Product; temp: number; onOpen: () =>
           >
             {badge.t}
           </span>
-          <h3 className="mt-2 mb-1 text-sm font-bold text-slate-900">{p.name}</h3>
-          <p className="mb-3 text-xs text-slate-500">
+          <h3 className="mt-2 mb-1 text-sm font-bold text-white">{p.name}</h3>
+          <p className="mb-3 text-xs text-slate-400">
             <i className="fa-solid fa-store me-1" />
             {p.store.name}
           </p>
-          <div className="text-lg font-extrabold text-indigo-600">{cop(p.price)}</div>
+          <div className="text-lg font-extrabold text-amber-400">{cop(p.price)}</div>
         </div>
       </div>
       <div className="p-4 pt-0">
@@ -458,7 +465,7 @@ function GridCard({ p, temp, onOpen }: { p: Product; temp: number; onOpen: () =>
             addToCart(p);
           }}
           disabled={p.stock < 1}
-          className="w-full rounded-lg bg-indigo-600 py-2 text-xs font-bold text-white shadow transition hover:bg-indigo-700 disabled:opacity-50"
+          className="w-full rounded-lg bg-amber-500 py-2 text-xs font-bold text-slate-950 shadow transition hover:bg-amber-400 disabled:opacity-50"
         >
           {p.stock < 1 ? "Agotado" : "Añadir al Carrito"}
         </button>

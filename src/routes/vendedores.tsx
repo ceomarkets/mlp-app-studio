@@ -219,7 +219,7 @@ function Dashboard() {
           <TabsTrigger value="afiliados">
             Afiliados{" "}
             {pendingReq > 0 && (
-              <span className="ml-1.5 rounded-full bg-indigo-600 px-1.5 text-[11px] text-white">
+              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] text-slate-950">
                 {pendingReq}
               </span>
             )}
@@ -554,7 +554,7 @@ function OrderRow({ o, dispute }: { o: SellerOrderItem; dispute?: Dispute | unde
     <div
       className={cn(
         "rounded-2xl border bg-card p-4 shadow-card",
-        dispute?.status === "open" && "border-amber-300",
+        dispute?.status === "open" && "border-amber-500/30",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -595,7 +595,7 @@ function OrderRow({ o, dispute }: { o: SellerOrderItem; dispute?: Dispute | unde
       {o.fulfillment === "preparing" && (
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <label className="text-xs">
-            <span className="mb-1 block font-semibold text-slate-600">Transportadora</span>
+            <span className="mb-1 block font-semibold text-slate-300">Transportadora</span>
             <select
               value={carrier}
               onChange={(e) => setCarrier(e.target.value)}
@@ -609,7 +609,7 @@ function OrderRow({ o, dispute }: { o: SellerOrderItem; dispute?: Dispute | unde
             </select>
           </label>
           <label className="text-xs">
-            <span className="mb-1 block font-semibold text-slate-600">
+            <span className="mb-1 block font-semibold text-slate-300">
               Número de guía {local && "(opcional)"}
             </span>
             <Input

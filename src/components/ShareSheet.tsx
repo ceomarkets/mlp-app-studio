@@ -92,15 +92,15 @@ export function ShareDialog({
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-800 shadow-2xl">
-        <span className="mx-auto mb-1 grid size-12 place-items-center rounded-2xl border border-indigo-200 bg-indigo-50 text-xl text-indigo-600">
+      <DialogContent className="max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center text-slate-100 shadow-2xl">
+        <span className="mx-auto mb-1 grid size-12 place-items-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-xl text-amber-400">
           <i className="fa-solid fa-share-nodes" />
         </span>
         <DialogHeader className="items-center text-center sm:text-center">
-          <DialogTitle className="text-base font-bold text-slate-900">
+          <DialogTitle className="text-base font-bold text-white">
             Compartir {data.title}
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
+          <DialogDescription className="text-xs text-slate-400">
             Invita a tus amigos o promociona tu tienda en redes sociales
           </DialogDescription>
         </DialogHeader>
@@ -122,21 +122,21 @@ export function ShareDialog({
               >
                 <i className={cn("fa-brands", n.icon)} aria-hidden />
               </span>
-              <span className="text-[10px] font-bold text-slate-700">{n.label}</span>
+              <span className="text-[10px] font-bold text-slate-200">{n.label}</span>
             </a>
           ))}
         </div>
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950 p-2.5">
           <input
             readOnly
             value={data.url}
             aria-label="Enlace directo"
             onFocus={(e) => e.currentTarget.select()}
-            className="w-full truncate border-none bg-transparent text-xs font-medium text-slate-600 focus:outline-none"
+            className="w-full truncate border-none bg-transparent text-xs font-medium text-slate-300 focus:outline-none"
           />
           <button
             onClick={copy}
-            className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-slate-800"
+            className="flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1.5 text-[11px] font-black text-slate-950 transition hover:from-amber-400 hover:to-amber-500"
           >
             {copied ? <Check className="size-3" /> : <Copy className="size-3" />} Copiar
           </button>

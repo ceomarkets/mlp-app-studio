@@ -25,19 +25,19 @@ import { cn } from "@/lib/utils";
 const FILTERS: { id: BoardFilter; label: string; icon: string }[] = [
   { id: "all", label: "Todos", icon: "fa-border-all" },
   { id: "today", label: "Lo Nuevo de Hoy", icon: "fa-fire text-orange-500" },
-  { id: "viewed", label: "Recientes", icon: "fa-clock-rotate-left text-indigo-600" },
-  { id: "earn", label: "Altas Comisiones", icon: "fa-hand-holding-dollar text-emerald-600" },
+  { id: "viewed", label: "Recientes", icon: "fa-clock-rotate-left text-amber-400" },
+  { id: "earn", label: "Altas Comisiones", icon: "fa-hand-holding-dollar text-emerald-400" },
 ];
 
 const BADGE: Record<string, string> = {
-  earn: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  deals: "bg-rose-100 text-rose-700 border-rose-200",
-  top: "bg-amber-100 text-amber-800 border-amber-200",
-  today: "bg-orange-100 text-orange-700 border-orange-200",
-  new: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  viewed: "bg-slate-100 text-slate-700 border-slate-200",
-  rated: "bg-amber-100 text-amber-800 border-amber-200",
-  stores: "bg-sky-100 text-sky-700 border-sky-200",
+  earn: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  deals: "bg-rose-500/20 text-rose-400 border-rose-500/30",
+  top: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+  today: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  new: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+  viewed: "bg-slate-800 text-slate-200 border-slate-800",
+  rated: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+  stores: "bg-sky-500/20 text-sky-400 border-sky-500/30",
 };
 
 function badgeOf(it: BoardItem): { text: string; cls: string } {
@@ -171,12 +171,10 @@ export function Leaderboard({
   return (
     <section
       aria-label="Leaderboard en vivo"
-      className="w-full border-b border-slate-200 bg-white py-4 font-sans text-slate-800 shadow-sm"
+      className="relative z-20 w-full overflow-hidden border-b border-amber-500/20 bg-slate-900/60 py-4"
     >
-      <div className="mx-auto mb-3 flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4">
-        <div />
-        <div className="scrollbar-none flex flex-wrap items-center gap-1.5 overflow-x-auto py-1 text-xs">
-          <span className="mr-1 text-xs font-medium text-slate-500">Filtrar:</span>
+      {(controls !== undefined || onFilter) && (
+        <div className="mx-auto mb-3 flex max-w-7xl flex-wrap items-center justify-end gap-1.5 px-4 text-xs">
           {FILTERS.map((f) => (
             <button
               key={f.id}
@@ -185,21 +183,20 @@ export function Leaderboard({
               className={cn(
                 "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 font-medium transition",
                 filter === f.id
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200",
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 font-black text-slate-950"
+                  : "border border-slate-700/80 bg-slate-800/80 text-slate-300 hover:text-amber-400",
               )}
             >
-              <i className={cn("fa-solid", filter === f.id ? f.icon.split(" ")[0] : f.icon)} />{" "}
-              {f.label}
+              <i className={cn("fa-solid", f.icon.split(" ")[0])} /> {f.label}
             </button>
           ))}
           {controls}
         </div>
-      </div>
+      )}
 
       {loop.length ? (
-        <div className="marquee-container marquee-mask relative w-full overflow-hidden">
-          <div className="marquee-content flex w-max gap-4">
+        <div className="marquee-container mx-auto w-full max-w-7xl overflow-hidden px-4">
+          <div className="marquee-content flex w-max items-center gap-4">
             {loop.map((it, i) => (
               <div key={`${it.key}-${i}`} aria-hidden={i >= items.length || undefined}>
                 {it.kind === "announcement" ? (
@@ -261,14 +258,14 @@ function BoardCard({
       type="button"
       onClick={onSelect}
       tabIndex={tabbable ? 0 : -1}
-      className="group w-80 flex-shrink-0 cursor-pointer rounded-xl border border-slate-200 bg-white p-3 text-left transition-all duration-300 hover:border-indigo-400 hover:shadow-lg"
+      className="group w-80 flex-shrink-0 sm:w-96 cursor-pointer rounded-2xl border border-slate-800 bg-slate-950 p-3.5 text-left whitespace-normal transition-all duration-300 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10"
     >
       <div className="flex items-center gap-3">
-        <div className="relative grid size-20 flex-shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+        <div className="relative grid size-24 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-slate-800 bg-slate-800">
           {img ? (
             <img
               src={img}
-              alt={p!.name}
+              alt=""
               loading="lazy"
               className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -294,30 +291,30 @@ function BoardCard({
               {badge.text}
             </span>
             {rating > 0 && (
-              <span className="flex items-center gap-1 text-[10px] text-slate-500">
+              <span className="flex items-center gap-1 text-[10px] text-slate-400">
                 <i className="fa-solid fa-star text-amber-500" /> {rating}
               </span>
             )}
           </div>
-          <h4 className="truncate text-xs font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
+          <h4 className="truncate text-sm font-bold text-white transition-colors group-hover:text-amber-400">
             {p ? p.name : it.kind === "store" ? it.store.name : ""}
           </h4>
-          <p className="mb-1 truncate text-[10px] text-slate-500">
+          <p className="mb-1 truncate text-[10px] text-slate-400">
             <i className="fa-solid fa-store me-1 text-slate-400" />
             {p ? p.store.name : it.kind === "store" ? `${it.store.city} · ${it.metric}` : ""}
           </p>
           {p && (
-            <div className="mt-1 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-1.5">
+            <div className="mt-1 flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-1.5">
               <div className="flex flex-col">
-                <span className="text-[9px] font-medium text-slate-500 uppercase">Precio</span>
-                <span className="text-xs font-bold text-slate-800">{cop(p.price)}</span>
+                <span className="text-[9px] font-medium text-slate-400 uppercase">Precio</span>
+                <span className="text-xs font-bold text-slate-100">{cop(p.price)}</span>
               </div>
-              <div className="h-6 w-px bg-slate-200" />
+              <div className="h-6 w-px bg-slate-700" />
               <div className="flex flex-col text-right">
-                <span className="flex items-center justify-end gap-0.5 text-[9px] font-bold text-emerald-600 uppercase">
+                <span className="flex items-center justify-end gap-0.5 text-[9px] font-bold text-emerald-400 uppercase">
                   <i className="fa-solid fa-sack-dollar" /> Ganas
                 </span>
-                <span className="text-xs font-extrabold text-emerald-600">{cop(earnings(p))}</span>
+                <span className="text-xs font-extrabold text-emerald-400">{cop(earnings(p))}</span>
               </div>
             </div>
           )}

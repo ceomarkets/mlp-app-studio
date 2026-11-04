@@ -166,7 +166,7 @@ export function QuickView({
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-600"
+                className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-600"
                 onClick={() => affiliate(p)}
               >
                 <i className="fa-solid fa-sack-dollar" /> Afiliarse y ganar{" "}
@@ -174,7 +174,7 @@ export function QuickView({
               </Button>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
-                  <i className="fa-solid fa-shield-halved text-indigo-600" /> Pago seguro con Wompi
+                  <i className="fa-solid fa-shield-halved text-amber-400" /> Pago seguro con Wompi
                 </span>
                 <Link
                   to="/producto/$id"

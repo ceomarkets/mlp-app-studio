@@ -204,7 +204,7 @@ export function StoreForm({
             <label
               key={t}
               className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-sm transition ${
-                f.shipsNational === v ? "border-indigo-500 bg-indigo-50" : "bg-card"
+                f.shipsNational === v ? "border-amber-400 bg-amber-500/10" : "bg-card"
               }`}
             >
               <input
@@ -551,8 +551,8 @@ export function ProductDialog({
             <SplitPreview price={f.price || 0} rate={f.commission} />
           </div>
 
-          <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <span className="flex items-center gap-1 text-xs font-bold text-purple-600">
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 p-3">
+            <span className="flex items-center gap-1 text-xs font-bold text-purple-400">
               <FolderPlus className="size-3.5" /> Añadir Recursos para Afiliados
             </span>
             <Textarea
@@ -562,7 +562,7 @@ export function ProductDialog({
               placeholder="Copy o texto promocional de muestra"
               value={f.promoCopy}
               onChange={(e) => setF({ ...f, promoCopy: e.target.value })}
-              className="border-slate-200 bg-white text-xs"
+              className="border-slate-800 bg-slate-900 text-xs"
             />
             <Input
               aria-label="URL de imagen publicitaria"
@@ -571,7 +571,7 @@ export function ProductDialog({
               placeholder="URL de Imagen Publicitaria / Banner (https://…)"
               value={f.promoImage ?? ""}
               onChange={(e) => setF({ ...f, promoImage: e.target.value || null })}
-              className="border-slate-200 bg-white text-xs"
+              className="border-slate-800 bg-slate-900 text-xs"
             />
             <Input
               aria-label="URL de video promocional"
@@ -581,9 +581,9 @@ export function ProductDialog({
               placeholder="Video promocional: Reels, TikTok o YouTube (https://…)"
               value={f.promoVideo ?? ""}
               onChange={(e) => setF({ ...f, promoVideo: e.target.value || null })}
-              className="border-slate-200 bg-white text-xs"
+              className="border-slate-800 bg-slate-900 text-xs"
             />
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-slate-400">
               Tus afiliados los verán en “Herramientas Afiliado”, junto con las fotos del producto.
             </p>
           </div>

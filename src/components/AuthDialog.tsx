@@ -18,7 +18,7 @@ export const COMPANY_NAME_KEY = "plazax-company-name";
 type Mode = "login" | "signup" | "reset";
 
 const input =
-  "w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none";
+  "w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none";
 
 /**
  * Formulario "Unirse a Plaza X": elige rol (afiliado o empresa), correo y
@@ -93,15 +93,15 @@ export function AuthForm({
 
   return (
     <div>
-      <h3 className="mb-1 text-xl font-bold text-slate-900">
+      <h3 className="mb-1 text-xl font-bold text-white">
         {mode === "signup" ? "Crea tu cuenta" : "Bienvenido a Plaza X"}
       </h3>
-      <p className="mb-5 text-xs text-slate-500">¿Cómo quieres usar la plataforma?</p>
+      <p className="mb-5 text-xs text-slate-400">¿Cómo quieres usar la plataforma?</p>
 
       <div
         role="radiogroup"
         aria-label="Tipo de cuenta"
-        className="mb-6 grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-bold"
+        className="mb-6 grid grid-cols-3 gap-1 rounded-xl bg-slate-800 p-1 text-xs font-bold"
       >
         {ROLES.map((r) => (
           <button
@@ -113,8 +113,8 @@ export function AuthForm({
             className={cn(
               "flex items-center justify-center gap-1.5 rounded-lg py-2 transition",
               role === r.id
-                ? "bg-white text-indigo-600 shadow-sm"
-                : "text-slate-600 hover:text-slate-900",
+                ? "bg-slate-900 text-amber-400 shadow-sm"
+                : "text-slate-300 hover:text-amber-400",
             )}
           >
             <i className={cn("fa-solid", r.icon)} /> {r.label}
@@ -125,7 +125,7 @@ export function AuthForm({
       <form onSubmit={submit} className="space-y-4">
         {mode === "signup" && role === "afiliado" && (
           <div>
-            <label htmlFor="auth-pay" className="mb-1 block text-xs font-semibold text-slate-600">
+            <label htmlFor="auth-pay" className="mb-1 block text-xs font-semibold text-slate-300">
               Método de cobro preferido
             </label>
             <select
@@ -144,7 +144,7 @@ export function AuthForm({
         )}
         {mode === "signup" && role === "empresa" && (
           <div>
-            <label htmlFor="auth-co" className="mb-1 block text-xs font-semibold text-slate-600">
+            <label htmlFor="auth-co" className="mb-1 block text-xs font-semibold text-slate-300">
               Nombre comercial de la empresa
             </label>
             <input
@@ -159,7 +159,7 @@ export function AuthForm({
         )}
         {mode === "signup" && (
           <div>
-            <label htmlFor="auth-name" className="mb-1 block text-xs font-semibold text-slate-600">
+            <label htmlFor="auth-name" className="mb-1 block text-xs font-semibold text-slate-300">
               Nombre
             </label>
             <input
@@ -173,7 +173,7 @@ export function AuthForm({
           </div>
         )}
         <div>
-          <label htmlFor="auth-email" className="mb-1 block text-xs font-semibold text-slate-600">
+          <label htmlFor="auth-email" className="mb-1 block text-xs font-semibold text-slate-300">
             Correo Electrónico
           </label>
           <input
@@ -189,7 +189,7 @@ export function AuthForm({
         </div>
         {mode !== "reset" && (
           <div>
-            <label htmlFor="auth-pass" className="mb-1 block text-xs font-semibold text-slate-600">
+            <label htmlFor="auth-pass" className="mb-1 block text-xs font-semibold text-slate-300">
               Contraseña
             </label>
             <input
@@ -208,23 +208,23 @@ export function AuthForm({
         <button
           type="submit"
           disabled={busy}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition hover:bg-indigo-500 disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/30 transition hover:bg-amber-400 disabled:opacity-60"
         >
           {busy && <Loader2 className="size-4 animate-spin" />}
           {mode === "login" ? "Ingresar" : mode === "signup" ? "Registrarme" : "Enviar enlace"}
         </button>
       </form>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
         <button
           type="button"
-          className="font-semibold text-indigo-600 hover:text-indigo-600"
+          className="font-semibold text-amber-400 hover:text-amber-400"
           onClick={() => setMode(mode === "signup" ? "login" : "signup")}
         >
           {mode === "signup" ? "¿Ya tienes cuenta? Ingresa" : "¿Nuevo? Crea tu cuenta gratis"}
         </button>
         {mode === "login" && (
-          <button type="button" className="hover:text-slate-800" onClick={() => setMode("reset")}>
+          <button type="button" className="hover:text-white" onClick={() => setMode("reset")}>
             ¿Olvidaste tu contraseña?
           </button>
         )}
@@ -233,7 +233,7 @@ export function AuthForm({
         <button
           type="button"
           onClick={() => setF({ ...f, email: DEMO_EMAIL, password: DEMO_PASSWORD })}
-          className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 text-xs text-slate-600 hover:border-indigo-200"
+          className="mt-3 w-full rounded-lg border border-slate-800 bg-slate-950 py-2 text-xs text-slate-300 hover:border-amber-400"
         >
           Usar la cuenta demo
         </button>
@@ -248,7 +248,7 @@ export function AuthDialog() {
   const open = authUI.use();
   return (
     <Dialog open={open} onOpenChange={authUI.set}>
-      <DialogContent className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl [&>button]:text-slate-500">
+      <DialogContent className="max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 text-white shadow-2xl [&>button]:text-slate-500">
         <DialogTitle className="sr-only">Unirse a Plaza X</DialogTitle>
         <DialogDescription className="sr-only">Inicia sesión o crea tu cuenta</DialogDescription>
         <AuthForm onDone={authUI.close} />

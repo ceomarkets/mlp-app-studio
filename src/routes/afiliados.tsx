@@ -326,12 +326,12 @@ function Overview({ clicks, items }: { clicks: Click[]; items: OrderItem[] }) {
       <div className="grid gap-4 md:grid-cols-3">
         <Stat label="Total ganado (histórico)" value={cop(s.total)} hint="comisiones pagadas" />
         <Stat label="Comisión promedio" value={pct(s.avgRate)} hint="sobre lo que vendiste" />
-        <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-          <span className="text-xs font-semibold text-emerald-800 uppercase">
+        <div className="flex flex-col justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+          <span className="text-xs font-semibold text-emerald-300 uppercase">
             Proyección mensual
           </span>
-          <span className="text-2xl font-extrabold text-emerald-700">{cop(s.earned)} / mes</span>
-          <span className="text-[11px] text-emerald-800/80">
+          <span className="text-2xl font-extrabold text-emerald-400">{cop(s.earned)} / mes</span>
+          <span className="text-[11px] text-emerald-300/80">
             Si mantienes el ritmo real de tus últimos 30 días ({pct(s.conversion)} de conversión).
           </span>
         </div>

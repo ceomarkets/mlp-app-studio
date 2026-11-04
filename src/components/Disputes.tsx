@@ -31,7 +31,7 @@ export const disputeKeys = {
 };
 
 const field =
-  "w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-xs text-slate-800 focus:border-indigo-600 focus:outline-none";
+  "w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-slate-100 focus:border-amber-400 focus:outline-none";
 
 /**
  * Centro de soporte: disputa por un artículo pagado en el carrito (pago congelado y posible
@@ -129,16 +129,16 @@ export function DisputeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 text-slate-800">
-        <div className="mb-2 flex items-center gap-3 border-b border-slate-200 pb-4">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-rose-200 bg-rose-50 text-lg text-rose-600">
+      <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 text-slate-100">
+        <div className="mb-2 flex items-center gap-3 border-b border-slate-800 pb-4">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-rose-500/30 bg-rose-500/10 text-lg text-rose-400">
             <i className="fa-solid fa-shield-halved" />
           </span>
           <div>
-            <DialogTitle className="text-base font-bold text-slate-900">
+            <DialogTitle className="text-base font-bold text-white">
               Centro de soporte, disputas y fraudes
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
+            <DialogDescription className="text-xs text-slate-400">
               {item
                 ? `${item.qty} × ${item.productName}`
                 : "Reclamos de productos y denuncias preventivas"}
@@ -162,7 +162,7 @@ export function DisputeDialog({
         ) : (
           <form onSubmit={submit} className="space-y-4 text-xs">
             <div>
-              <label className="mb-1 block font-bold text-slate-700" htmlFor="d-kind">
+              <label className="mb-1 block font-bold text-slate-200" htmlFor="d-kind">
                 ¿Cómo realizaste el pago?
               </label>
               <select
@@ -186,23 +186,23 @@ export function DisputeDialog({
             </div>
 
             {kind === "plazax_pay" ? (
-              <p className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-[11px] text-indigo-900">
-                <i className="fa-solid fa-circle-check me-1 text-indigo-600" />
+              <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-200">
+                <i className="fa-solid fa-circle-check me-1 text-amber-400" />
                 <b>Protección activa:</b> tu dinero está en custodia. Congelamos el pago al vendedor
                 (y al afiliado) mientras revisamos tus evidencias. Si se confirma, te reembolsamos
                 el total.
               </p>
             ) : (
               <>
-                <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-900">
-                  <i className="fa-solid fa-triangle-exclamation me-1 text-amber-600" />
+                <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-300">
+                  <i className="fa-solid fa-triangle-exclamation me-1 text-amber-400" />
                   <b>Sin custodia:</b> Plaza X no puede devolver pagos hechos por fuera.
                   Bloquearemos la cuenta denunciada y conservaremos los registros para entregarlos a
                   la Fiscalía si hay una denuncia penal formal.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block font-bold text-slate-700" htmlFor="d-slug">
+                    <label className="mb-1 block font-bold text-slate-200" htmlFor="d-slug">
                       Tienda (dirección web)
                     </label>
                     <input
@@ -214,7 +214,7 @@ export function DisputeDialog({
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block font-bold text-slate-700" htmlFor="d-contact">
+                    <label className="mb-1 block font-bold text-slate-200" htmlFor="d-contact">
                       Contacto usado
                     </label>
                     <input
@@ -231,7 +231,7 @@ export function DisputeDialog({
             )}
 
             <div>
-              <label className="mb-1 block font-bold text-slate-700" htmlFor="d-reason">
+              <label className="mb-1 block font-bold text-slate-200" htmlFor="d-reason">
                 Motivo del reporte
               </label>
               <select
@@ -249,7 +249,7 @@ export function DisputeDialog({
             </div>
 
             <div>
-              <label className="mb-1 block font-bold text-slate-700" htmlFor="d-details">
+              <label className="mb-1 block font-bold text-slate-200" htmlFor="d-details">
                 Detalle del caso
               </label>
               <textarea
@@ -269,12 +269,12 @@ export function DisputeDialog({
             </div>
 
             <div className="space-y-2">
-              <span className="block font-bold text-slate-700">Evidencias</span>
+              <span className="block font-bold text-slate-200">Evidencias</span>
               <div className="flex flex-wrap gap-2">
                 {files.map((f, i) => (
                   <span
                     key={f}
-                    className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1"
+                    className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1"
                   >
                     <Paperclip className="size-3" /> Archivo {i + 1}
                     <button
@@ -290,7 +290,7 @@ export function DisputeDialog({
                   type="button"
                   disabled={uploading || evidence.length >= EVIDENCE_MAX}
                   onClick={() => fileRef.current?.click()}
-                  className="flex items-center gap-1 rounded-lg border border-dashed border-slate-300 px-3 py-1 font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  className="flex items-center gap-1 rounded-lg border border-dashed border-slate-700 px-3 py-1 font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-50"
                 >
                   {uploading ? (
                     <Loader2 className="size-3 animate-spin" />
@@ -316,7 +316,7 @@ export function DisputeDialog({
               />
             </div>
 
-            <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[10px] text-slate-500">
+            <p className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-[10px] text-slate-400">
               <i className="fa-solid fa-lock me-1 text-slate-400" />
               Al enviar, Plaza X guarda la IP y los registros necesarios para la investigación y,
               solo ante solicitud de una autoridad competente en Colombia, para cooperar con ella.{" "}
@@ -349,16 +349,16 @@ export function TrackingInfo({ item }: { item: Pick<OrderItem, "carrier" | "trac
   if (!item.carrier && !item.tracking) return null;
   const url = trackingUrl(item.carrier, item.tracking);
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
-      <i className="fa-solid fa-truck-fast text-indigo-600" />
-      {item.carrier && <b className="text-slate-700">{item.carrier}</b>}
+    <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-400">
+      <i className="fa-solid fa-truck-fast text-amber-400" />
+      {item.carrier && <b className="text-slate-200">{item.carrier}</b>}
       {item.tracking && <span className="font-mono">Guía {item.tracking}</span>}
       {url && (
         <a
           href={url}
           target="_blank"
           rel="noreferrer"
-          className="font-semibold text-indigo-600 hover:underline"
+          className="font-semibold text-amber-400 hover:underline"
         >
           Rastrear envío ↗
         </a>
@@ -395,7 +395,7 @@ export function BuyerItemActions({
   return (
     <div className="mt-2 space-y-2">
       {item.refundedAt && (
-        <p className="text-xs font-semibold text-emerald-700">
+        <p className="text-xs font-semibold text-emerald-400">
           <i className="fa-solid fa-rotate-left" /> Reembolsado
         </p>
       )}
@@ -414,14 +414,14 @@ export function BuyerItemActions({
         {canDispute(item) && !dispute && (
           <button
             onClick={() => setOpen(true)}
-            className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
+            className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-400 transition hover:bg-rose-500/20"
           >
             <i className="fa-solid fa-shield-halved" /> Abrir disputa / Reportar problema
           </button>
         )}
       </div>
       {autoAt && !dispute && (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[11px] text-slate-400">
           Si no confirmas ni reportas nada, la entrega se da por recibida el{" "}
           {autoAt.toLocaleDateString("es-CO", { day: "numeric", month: "long" })}.
         </p>
@@ -461,7 +461,7 @@ export function EvidenceLinks({ refs }: { refs: string[] }) {
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="block overflow-hidden rounded-lg border border-slate-200 text-xs text-indigo-600 hover:underline"
+            className="block overflow-hidden rounded-lg border border-slate-800 text-xs text-amber-400 hover:underline"
           >
             {img ? (
               <img src={url} alt={`Evidencia ${i + 1}`} className="size-16 object-cover" />
@@ -484,10 +484,10 @@ export function EvidenceLinks({ refs }: { refs: string[] }) {
 /** Tarjeta de una disputa (comprador, vendedora o administración). */
 export function DisputeCard({ d, children }: { d: Dispute; children?: React.ReactNode }) {
   return (
-    <article className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-sm">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
+          <p className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase">
             {KIND_LABEL[d.kind]} ·{" "}
             {new Date(d.createdAt).toLocaleDateString("es-CO", {
               day: "numeric",
@@ -495,22 +495,22 @@ export function DisputeCard({ d, children }: { d: Dispute; children?: React.Reac
               year: "numeric",
             })}
           </p>
-          <h3 className="text-sm font-bold text-slate-900">{reasonLabel(d.reason)}</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="text-sm font-bold text-white">{reasonLabel(d.reason)}</h3>
+          <p className="text-xs text-slate-400">
             {[d.productName, d.storeName, d.reportedContact].filter(Boolean).join(" · ")}
           </p>
         </div>
         <DisputeBadge d={d} />
       </header>
-      <p className="text-sm whitespace-pre-line text-slate-700">{d.details}</p>
+      <p className="text-sm whitespace-pre-line text-slate-200">{d.details}</p>
       <EvidenceLinks refs={d.evidence} />
       {d.sellerResponse && (
-        <blockquote className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+        <blockquote className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-slate-200">
           <b>Respuesta de la tienda:</b> {d.sellerResponse}
         </blockquote>
       )}
       {d.resolutionNote && (
-        <p className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900">
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
           <b>Resolución de Plaza X:</b> {d.resolutionNote}
         </p>
       )}
@@ -522,16 +522,16 @@ export function DisputeCard({ d, children }: { d: Dispute; children?: React.Reac
 /** Panel de la tienda: disputas sobre sus ventas, con respuesta. */
 export function SellerDisputes() {
   const list = useQuery({ queryKey: disputeKeys.store, queryFn: () => backend.storeDisputes() });
-  if (list.isPending) return <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />;
+  if (list.isPending) return <div className="h-32 animate-pulse rounded-2xl bg-slate-800" />;
   if (!list.data?.length)
     return (
-      <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+      <p className="rounded-2xl border border-dashed border-slate-700 bg-slate-900 p-6 text-center text-sm text-slate-400">
         Sin disputas. Despacha con guía y fotos del empaque: es tu mejor defensa.
       </p>
     );
   return (
     <div className="space-y-4">
-      <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+      <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
         Mientras una disputa está abierta, el pago de ese artículo queda congelado. Responde con tu
         versión y evidencias (guía, fotos del empaque); la administración decide.
       </p>

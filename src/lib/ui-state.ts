@@ -30,3 +30,4 @@ export const cartUI = createToggle();
 export const rewardsUI = cartUI;
 export const authUI = createToggle();
 export const toolsUI = createToggle();
+export const flashUI = createToggle();

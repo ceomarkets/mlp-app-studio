@@ -139,7 +139,7 @@ function MyReports() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-bold">Disputas y reportes</h2>
         <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-          <i className="fa-solid fa-triangle-exclamation text-amber-600" /> Reportar trato externo
+          <i className="fa-solid fa-triangle-exclamation text-amber-400" /> Reportar trato externo
         </Button>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">

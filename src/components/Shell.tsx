@@ -1,13 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Flame, Heart, ShoppingBag, Sparkles, Star } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { AuthDialog, openAuth } from "@/components/AuthDialog";
 import { BridgeLogo } from "@/components/BridgeLogo";
 import { CartSheet, openCart } from "@/components/CartSheet";
-import { RewardsBar, useRaffle, useRewards } from "@/components/Rewards";
 import { ShareButton } from "@/components/ShareSheet";
-import { FlashSaleBanner } from "@/components/FlashSaleBanner";
+import { AnnouncementStrip, FlashDealsModal } from "@/components/TopStrip";
 import { LiveActivityToast, SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,14 +22,13 @@ import { resetDemo } from "@/lib/backend/demo";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
 import { favorites, useCart, useFavorites } from "@/lib/client-state";
 import { discountPct, isNew } from "@/lib/feed";
-import { BUNDLE_MIN, compact, cop } from "@/lib/plaza";
-import { rewardsUI } from "@/lib/ui-state";
+import { compact, cop } from "@/lib/plaza";
 import { keys, useUser } from "@/lib/session";
 import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 
 const navBtn =
-  "flex items-center gap-2 rounded-lg border border-transparent px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 data-[status=active]:border-slate-200 data-[status=active]:bg-slate-100 data-[status=active]:font-bold data-[status=active]:text-slate-900 data-[status=active]:shadow-sm";
+  "flex min-h-[44px] items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800/80 hover:text-amber-400 data-[status=active]:border-amber-500/30 data-[status=active]:bg-amber-500/10 data-[status=active]:font-bold data-[status=active]:text-amber-400 data-[status=active]:shadow-sm";
 
 export function Shell({
   children,
@@ -42,47 +40,78 @@ export function Shell({
   /** Sin contenedor: la página maneja su propio ancho (portada). */
   bare?: boolean;
 }) {
+  const [menu, setMenu] = useState(false);
   return (
-    <div className="flex min-h-full flex-col bg-slate-100 font-sans text-slate-800 antialiased selection:bg-indigo-500 selection:text-white md:pb-0">
+    <div className="flex min-h-full flex-col bg-slate-950 font-sans text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
       {IS_DEMO && <DemoBanner />}
-      {/* Cabecera */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
+      <AnnouncementStrip />
+
+      {/* Navegación principal */}
+      <header className="sticky top-0 z-50 border-b border-amber-500/20 bg-slate-900/95 shadow-lg backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="group flex items-center gap-2">
             <BridgeLogo />
-            <span className="flex items-center text-xl font-extrabold tracking-tight text-slate-900">
-              Plaza&nbsp;<span className="text-indigo-600">X</span>
+            <span className="flex items-center text-xl font-black tracking-tight text-white">
+              Plaza&nbsp;<span className="gold-gradient-text">X</span>
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-2 md:flex">
+          <nav className="hidden items-center gap-1 md:flex">
             <Link to="/" activeOptions={{ exact: true }} className={navBtn}>
               <i className="fa-solid fa-crown text-amber-400" /> Mercado
             </Link>
             <Link to="/afiliados" className={navBtn}>
-              <i className="fa-solid fa-users text-emerald-600" /> Panel Afiliado
+              <i className="fa-solid fa-users text-emerald-400" /> Panel Afiliados
             </Link>
             <Link to="/vendedores" className={navBtn}>
-              <i className="fa-solid fa-building text-indigo-600" /> Panel Empresas
+              <i className="fa-solid fa-building text-amber-400" /> Panel Empresas
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2.5">
-            <RewardsButton />
+          <div className="flex items-center gap-2">
             <button
               onClick={openCart}
-              className="relative flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
+              className="relative flex min-h-[44px] items-center gap-2 rounded-xl border border-amber-500/30 bg-slate-800/90 px-3 py-1.5 text-xs font-bold text-amber-400 shadow-sm transition hover:border-amber-400"
             >
-              <i className="fa-solid fa-cart-shopping text-indigo-600" /> Carrito
-              <CartCount floating />
+              <i className="fa-solid fa-cart-shopping text-amber-400" />{" "}
+              <span className="hidden sm:inline">Carrito</span>
+              <CartCount />
             </button>
             <UserMenu />
+            <button
+              onClick={() => setMenu(!menu)}
+              aria-expanded={menu}
+              aria-label="Menú"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-700 bg-slate-800 p-2.5 text-slate-200 md:hidden"
+            >
+              <i className={cn("fa-solid text-base", menu ? "fa-xmark" : "fa-bars")} />
+            </button>
           </div>
         </div>
-      </header>
 
-      <RewardsBar />
-      <FlashSaleBanner />
+        {/* Menú desplegable en el celular */}
+        {menu && (
+          <div className="flex flex-col gap-2 border-b border-amber-500/20 bg-slate-900 px-4 py-3 md:hidden">
+            {(
+              [
+                ["/", "fa-crown text-amber-400", "Mercado"],
+                ["/afiliados", "fa-users text-emerald-400", "Panel Afiliados"],
+                ["/vendedores", "fa-building text-amber-400", "Panel Empresas"],
+              ] as const
+            ).map(([to, icon, label]) => (
+              <Link
+                key={to}
+                to={to}
+                activeOptions={{ exact: to === "/" }}
+                onClick={() => setMenu(false)}
+                className="flex min-h-[44px] w-full items-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-left text-xs font-semibold text-slate-300 hover:bg-slate-800 data-[status=active]:border-amber-500/30 data-[status=active]:bg-amber-500/10 data-[status=active]:font-bold data-[status=active]:text-amber-400"
+              >
+                <i className={cn("fa-solid", icon)} /> {label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </header>
 
       <main
         className={cn(
@@ -99,38 +128,16 @@ export function Shell({
       {/* Ventanas globales */}
       <CartSheet />
       <AuthDialog />
+      <FlashDealsModal />
       <LiveActivityToast />
     </div>
   );
 }
 
-function RewardsButton() {
-  const r = useRewards();
-  const { raffle, open } = useRaffle();
-  const goal = open && raffle ? raffle.minUnits : BUNDLE_MIN;
-  return (
-    <button
-      onClick={rewardsUI.open}
-      className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
-    >
-      <i className="fa-solid fa-gift text-amber-500" />
-      Premio
-      <span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] text-amber-800">
-        {Math.min(r.count, goal)}/{goal}
-      </span>
-    </button>
-  );
-}
-
-function CartCount({ floating = false }: { floating?: boolean }) {
+function CartCount() {
   const n = useCart().reduce((t, l) => t + l.qty, 0);
   return (
-    <span
-      className={cn(
-        "flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[9px] font-black text-white",
-        floating && "absolute -top-1.5 -right-1.5",
-      )}
-    >
+    <span className="ml-1 rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-slate-950">
       {n}
     </span>
   );
@@ -149,7 +156,7 @@ function FavCount() {
 function DemoBanner() {
   const qc = useQueryClient();
   return (
-    <div className="border-b border-slate-200 bg-slate-50 px-4 py-1 text-center text-[11px] text-slate-500">
+    <div className="border-b border-slate-800 bg-slate-950 px-4 py-1 text-center text-[11px] text-slate-400">
       Modo demo: los datos viven en este navegador. Entra con <b>{DEMO_EMAIL}</b> /{" "}
       <b>{DEMO_PASSWORD}</b> ·{" "}
       <button
@@ -179,16 +186,18 @@ function UserMenu() {
     return (
       <button
         onClick={openAuth}
-        className="flex items-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800"
+        className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 shadow-md transition hover:from-amber-400 hover:to-amber-500"
       >
-        <i className="fa-solid fa-user text-slate-300" /> <span>Iniciar Sesión</span>
+        <i className="fa-solid fa-user text-slate-950" />{" "}
+        <span className="hidden sm:inline">Ingresar</span>
       </button>
     );
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800">
-          <i className="fa-solid fa-user text-slate-300" /> <span>Mi Perfil</span>
+        <button className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 shadow-md transition hover:from-amber-400 hover:to-amber-500">
+          <i className="fa-solid fa-user text-slate-950" />{" "}
+          <span className="hidden sm:inline">Mi Perfil</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -198,26 +207,26 @@ function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta" })}>
-          <i className="fa-solid fa-box w-4 text-slate-500" /> Mis pedidos
+          <i className="fa-solid fa-box w-4 text-slate-400" /> Mis pedidos
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/favoritos" })}>
-          <i className="fa-solid fa-heart w-4 text-slate-500" /> Favoritos
+          <i className="fa-solid fa-heart w-4 text-slate-400" /> Favoritos
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "reportes" })}>
           <i className="fa-solid fa-shield-cat w-4 text-rose-500" /> Disputas y reportes
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "perfil" })}>
-          <i className="fa-solid fa-user w-4 text-slate-500" /> Perfil
+          <i className="fa-solid fa-user w-4 text-slate-400" /> Perfil
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Gana con Plaza X
         </DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
-          <i className="fa-solid fa-building w-4 text-indigo-600" /> Mi tienda
+          <i className="fa-solid fa-building w-4 text-amber-400" /> Mi tienda
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
-          <i className="fa-solid fa-users w-4 text-emerald-600" /> Mi red
+          <i className="fa-solid fa-users w-4 text-emerald-400" /> Mi red
         </DropdownMenuItem>
         {admin.data && (
           <>
@@ -226,19 +235,19 @@ function UserMenu() {
               Administrar
             </DropdownMenuLabel>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/anuncios" })}>
-              <i className="fa-solid fa-bullhorn w-4 text-slate-500" /> Anuncios
+              <i className="fa-solid fa-bullhorn w-4 text-slate-400" /> Anuncios
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/disputas" })}>
-              <i className="fa-solid fa-shield-halved w-4 text-slate-500" /> Disputas
+              <i className="fa-solid fa-shield-halved w-4 text-slate-400" /> Disputas
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/promos" })}>
-              <i className="fa-solid fa-bolt w-4 text-slate-500" /> Ventas flash y cupones
+              <i className="fa-solid fa-bolt w-4 text-slate-400" /> Ventas flash y cupones
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/sorteo" })}>
               <i className="fa-solid fa-gift w-4 text-amber-500" /> Sorteo
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/tiendas" })}>
-              <i className="fa-solid fa-store w-4 text-slate-500" /> Tiendas
+              <i className="fa-solid fa-store w-4 text-slate-400" /> Tiendas
             </DropdownMenuItem>
           </>
         )}
@@ -249,7 +258,7 @@ function UserMenu() {
             navigate({ to: "/" });
           }}
         >
-          <i className="fa-solid fa-right-from-bracket w-4 text-slate-500" /> Salir
+          <i className="fa-solid fa-right-from-bracket w-4 text-slate-400" /> Salir
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -27,7 +27,7 @@ function Legal() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="block rounded-lg px-3 py-1.5 text-slate-600 transition hover:bg-white hover:text-slate-900"
+                className="block rounded-lg px-3 py-1.5 text-slate-300 transition hover:bg-slate-800 hover:text-amber-400"
               >
                 {i + 1}. {s.title}
               </a>
@@ -35,35 +35,33 @@ function Legal() {
           </nav>
         </aside>
 
-        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <header className="mb-6 flex items-center gap-3 border-b border-slate-200 pb-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-amber-200 bg-amber-50 text-lg text-amber-600">
+        <article className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-sm sm:p-8">
+          <header className="mb-6 flex items-center gap-3 border-b border-slate-800 pb-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-lg text-amber-400">
               <i className="fa-solid fa-scale-balanced" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">
-                Términos, condiciones y centro legal
-              </h1>
-              <p className="text-xs text-slate-500">
+              <h1 className="text-xl font-bold text-white">Términos, condiciones y centro legal</h1>
+              <p className="text-xs text-slate-400">
                 Ley 1480 de 2011 (Estatuto del Consumidor), Decreto 587 de 2016, Ley 1581 de 2012 y
                 normas de comercio electrónico en Colombia
               </p>
             </div>
           </header>
 
-          <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[13px] font-medium text-amber-800">
-            <i className="fa-solid fa-circle-info me-1 text-amber-600" /> {LEGAL_NOTICE}
+          <p className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[13px] font-medium text-amber-300">
+            <i className="fa-solid fa-circle-info me-1 text-amber-400" /> {LEGAL_NOTICE}
           </p>
 
-          <div className="space-y-6 text-sm leading-relaxed text-slate-600">
+          <div className="space-y-6 text-sm leading-relaxed text-slate-300">
             {LEGAL_SECTIONS.map((s, i) => (
               <section
                 key={s.id}
                 id={s.id}
-                className="scroll-mt-32 space-y-2 border-t border-slate-100 pt-5 first:border-0 first:pt-0"
+                className="scroll-mt-32 space-y-2 border-t border-slate-800 pt-5 first:border-0 first:pt-0"
               >
-                <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                  <span className="inline-grid size-6 shrink-0 place-items-center rounded-full bg-indigo-100 text-[11px] text-indigo-700">
+                <h2 className="flex items-center gap-2 text-base font-bold text-white">
+                  <span className="inline-grid size-6 shrink-0 place-items-center rounded-full bg-amber-500/20 text-[11px] text-amber-400">
                     {i + 1}
                   </span>
                   {s.title}
@@ -75,10 +73,10 @@ function Legal() {
             ))}
           </div>
 
-          <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 text-xs text-slate-500">
+          <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4 text-xs text-slate-400">
             <span>
               Dudas o reclamos:{" "}
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold text-indigo-600">
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold text-amber-400">
                 {SUPPORT_EMAIL}
               </a>
             </span>
@@ -100,7 +98,7 @@ function Items({ items }: { items: { title?: string; text: string }[] }) {
     <ul className="list-disc space-y-1.5 pl-5 text-[13px]">
       {items.map((it, i) => (
         <li key={i}>
-          {it.title && <b className="text-slate-800">{it.title}: </b>}
+          {it.title && <b className="text-slate-100">{it.title}: </b>}
           {it.text}
         </li>
       ))}
@@ -115,26 +113,28 @@ function Block({ block }: { block: LegalBlock }) {
     <div
       className={cn(
         "space-y-1.5 rounded-xl border p-3",
-        block.tone === "indigo" ? "border-indigo-200 bg-indigo-50" : "border-amber-200 bg-amber-50",
+        block.tone === "indigo"
+          ? "border-amber-500/30 bg-amber-500/10"
+          : "border-amber-500/30 bg-amber-500/10",
       )}
     >
       <span
         className={cn(
           "block font-bold",
-          block.tone === "indigo" ? "text-indigo-900" : "text-amber-900",
+          block.tone === "indigo" ? "text-amber-200" : "text-amber-300",
         )}
       >
         <i
           className={cn(
             "fa-solid me-1",
             block.icon,
-            block.tone === "indigo" ? "text-indigo-600" : "text-amber-600",
+            block.tone === "indigo" ? "text-amber-400" : "text-amber-400",
           )}
         />{" "}
         {block.title}
       </span>
-      {block.intro && <p className="text-[13px] text-slate-700">{block.intro}</p>}
-      <div className="text-slate-700">
+      {block.intro && <p className="text-[13px] text-slate-200">{block.intro}</p>}
+      <div className="text-slate-200">
         <Items items={block.items} />
       </div>
     </div>

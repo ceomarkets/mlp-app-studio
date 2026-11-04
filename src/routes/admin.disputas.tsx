@@ -37,8 +37,8 @@ function Disputes() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-extrabold text-slate-900">Disputas y reportes de fraude</h1>
-        <p className="max-w-3xl text-sm text-slate-500">
+        <h1 className="text-2xl font-extrabold text-white">Disputas y reportes de fraude</h1>
+        <p className="max-w-3xl text-sm text-slate-400">
           Mientras una disputa del carrito está abierta, el pago al vendedor y al afiliado queda
           congelado. <b>Reembolsar</b> cancela el artículo y devuelve el stock: luego haz la
           devolución del dinero desde el panel de la pasarela de pagos. Los tratos externos no se
@@ -55,7 +55,7 @@ function Disputes() {
               "rounded-xl border px-3 py-1.5 font-semibold transition",
               tab === t.id
                 ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                : "border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800",
             )}
           >
             {t.label}
@@ -67,7 +67,7 @@ function Disputes() {
       </div>
 
       {list.isPending ? (
-        <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />
+        <div className="h-40 animate-pulse rounded-2xl bg-slate-700" />
       ) : shown.length ? (
         <div className="grid gap-4 lg:grid-cols-2">
           {shown.map((d) => (
@@ -78,7 +78,7 @@ function Disputes() {
           ))}
         </div>
       ) : (
-        <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+        <p className="rounded-2xl border border-dashed border-slate-700 bg-slate-900 p-8 text-center text-sm text-slate-400">
           Nada por revisar aquí.
         </p>
       )}
@@ -97,14 +97,14 @@ function Audit({ id }: { id: string }) {
     return (
       <button
         onClick={() => setShow(true)}
-        className="text-[11px] font-semibold text-slate-500 underline"
+        className="text-[11px] font-semibold text-slate-400 underline"
       >
         Ver registro para autoridades
       </button>
     );
   const a = audit.data;
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-600">
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-xl border border-slate-800 bg-slate-950 p-3 text-[11px] text-slate-300">
       {audit.isPending ? (
         <dd>Cargando…</dd>
       ) : a ? (
@@ -154,17 +154,17 @@ function Resolve({ d }: { d: Dispute }) {
     onError: (e) => toast.error(e.message),
   });
   return (
-    <div className="space-y-2 border-t border-slate-100 pt-3">
+    <div className="space-y-2 border-t border-slate-800 pt-3">
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={2}
         maxLength={1000}
         placeholder="Decisión y motivo (lo verán el comprador y la tienda)"
-        className="w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-xs focus:border-indigo-600 focus:outline-none"
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs focus:border-amber-400 focus:outline-none"
       />
       {d.storeId && (
-        <label className="flex items-center gap-2 text-xs text-rose-700">
+        <label className="flex items-center gap-2 text-xs text-rose-400">
           <input type="checkbox" checked={ban} onChange={(e) => setBan(e.target.checked)} />
           Suspender al vendedor (desactiva su tienda y bloquea retiros)
         </label>
@@ -183,7 +183,7 @@ function Resolve({ d }: { d: Dispute }) {
         <button
           disabled={m.isPending}
           onClick={() => m.mutate(d.kind === "plazax_pay" ? "reject" : "close")}
-          className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:opacity-60"
         >
           {d.kind === "plazax_pay" ? "Rechazar (liberar pago)" : "Cerrar reporte"}
         </button>

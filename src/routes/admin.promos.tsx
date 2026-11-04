@@ -23,7 +23,7 @@ export const Route = createFileRoute("/admin/promos")({
 
 const K = { coupons: ["user", "coupons"] as const, flash: ["user", "flash"] as const };
 const field =
-  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-600 focus:outline-none";
+  "w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none";
 const pad = (n: number) => String(n).padStart(2, "0");
 function toLocal(iso: string | null) {
   if (!iso) return "";
@@ -38,8 +38,8 @@ function Promos() {
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="text-2xl font-extrabold text-slate-900">Ventas flash y cupones</h1>
-        <p className="max-w-3xl text-sm text-slate-500">
+        <h1 className="text-2xl font-extrabold text-white">Ventas flash y cupones</h1>
+        <p className="max-w-3xl text-sm text-slate-400">
           Todo es real: la cuenta regresiva usa la fecha de fin que pongas y solo se muestra
           mientras la venta está vigente; los cupones existen solo si los creas aquí. El descuento
           de un cupón lo asume Plaza X y nunca supera su comisión ({Math.round(PLATFORM_RATE * 100)}
@@ -93,9 +93,9 @@ function FlashSales() {
     <section className="grid gap-6 lg:grid-cols-[380px_1fr]">
       <form
         onSubmit={submit}
-        className="h-fit space-y-3 rounded-2xl border border-slate-200 bg-white p-5"
+        className="h-fit space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-5"
       >
-        <h2 className="flex items-center gap-2 font-bold text-slate-900">
+        <h2 className="flex items-center gap-2 font-bold text-white">
           <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white">
             <i className="fa-solid fa-bolt" /> FLASH
           </span>
@@ -164,7 +164,7 @@ function FlashSales() {
         <div className="flex gap-2">
           <button
             disabled={save.isPending}
-            className="flex-1 rounded-xl bg-indigo-600 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="flex-1 rounded-xl bg-amber-500 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-60"
           >
             {save.isPending && <Loader2 className="inline size-4 animate-spin" />} Guardar
           </button>
@@ -193,22 +193,22 @@ function FlashSales() {
             return (
               <div
                 key={x.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-4"
               >
                 <div>
-                  <p className="font-bold text-slate-900">
+                  <p className="font-bold text-white">
                     {x.title}{" "}
                     <span
                       className={cn(
                         "ms-1 rounded-full px-2 py-0.5 text-[10px] font-bold",
-                        live ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-600",
+                        live ? "bg-rose-500/20 text-rose-400" : "bg-slate-800 text-slate-300",
                       )}
                     >
                       {state}
                       {live && ` · ${countdown(Date.parse(x.endsAt) - now)}`}
                     </span>
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-400">
                     {fmt(x.startsAt)} → {fmt(x.endsAt)}
                     {x.couponCode && ` · cupón ${x.couponCode}`}
                   </p>
@@ -216,14 +216,14 @@ function FlashSales() {
                 <div className="flex gap-2 text-xs font-bold">
                   <button
                     onClick={() => setF({ ...x })}
-                    className="rounded-lg border border-slate-300 px-3 py-1.5"
+                    className="rounded-lg border border-slate-700 px-3 py-1.5"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => del.mutate(x.id)}
                     aria-label="Eliminar"
-                    className="rounded-lg border border-slate-300 px-2 py-1.5 text-rose-600"
+                    className="rounded-lg border border-slate-700 px-2 py-1.5 text-rose-400"
                   >
                     <Trash2 className="size-3.5" />
                   </button>
@@ -232,7 +232,7 @@ function FlashSales() {
             );
           })
         ) : (
-          <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+          <p className="rounded-2xl border border-dashed border-slate-700 bg-slate-900 p-6 text-center text-sm text-slate-400">
             Sin ventas flash. El banner con cuenta regresiva solo aparece cuando programes una.
           </p>
         )}
@@ -275,9 +275,9 @@ function Coupons() {
           e.preventDefault();
           save.mutate(c);
         }}
-        className="h-fit space-y-3 rounded-2xl border border-slate-200 bg-white p-5"
+        className="h-fit space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-5"
       >
-        <h2 className="font-bold text-slate-900">
+        <h2 className="font-bold text-white">
           <i className="fa-solid fa-ticket text-amber-500" />{" "}
           {c.id ? "Editar cupón" : "Nuevo cupón"}
         </h2>
@@ -364,7 +364,7 @@ function Coupons() {
             />
           </label>
         </div>
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[11px] text-slate-400">
           Una vez por persona. Si el descuento supera lo que Plaza X puede asumir en un pedido, el
           carrito muestra el valor real aplicado antes de pagar.
         </p>
@@ -379,7 +379,7 @@ function Coupons() {
         <div className="flex gap-2">
           <button
             disabled={save.isPending}
-            className="flex-1 rounded-xl bg-indigo-600 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="flex-1 rounded-xl bg-amber-500 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-60"
           >
             Guardar cupón
           </button>
@@ -394,9 +394,9 @@ function Coupons() {
           )}
         </div>
       </form>
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900">
         <table className="w-full min-w-[560px] text-sm">
-          <thead className="bg-slate-50 text-left text-xs text-slate-500">
+          <thead className="bg-slate-950 text-left text-xs text-slate-400">
             <tr>
               <th className="p-3">Código</th>
               <th>Descuento</th>
@@ -420,7 +420,7 @@ function Coupons() {
                   {!x.active ? "Pausado" : x.endsAt ? `hasta ${fmt(x.endsAt)}` : "Sin vencimiento"}
                 </td>
                 <td className="pr-3 text-right text-xs font-bold">
-                  <button onClick={() => edit(x)} className="me-2 text-indigo-600">
+                  <button onClick={() => edit(x)} className="me-2 text-amber-400">
                     Editar
                   </button>
                   <button
@@ -428,7 +428,7 @@ function Coupons() {
                       const { id, uses: _u, createdAt: _c, ...rest } = x;
                       save.mutate({ ...rest, id, active: !x.active });
                     }}
-                    className="text-slate-600"
+                    className="text-slate-300"
                   >
                     {x.active ? "Pausar" : "Activar"}
                   </button>
@@ -437,7 +437,7 @@ function Coupons() {
             ))}
             {!list.data?.length && (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-slate-500">
+                <td colSpan={6} className="p-6 text-center text-slate-400">
                   Sin cupones. Los compradores solo pueden usar los que crees aquí.
                 </td>
               </tr>

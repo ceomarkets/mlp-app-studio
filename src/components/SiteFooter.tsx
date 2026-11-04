@@ -14,10 +14,10 @@ export function SiteFooter() {
       <div className="mx-auto mb-8 grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-4">
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-lg font-extrabold text-white">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-indigo-600 text-xs text-white">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-500 text-xs text-slate-950">
               <i className="fa-solid fa-store" />
             </span>
-            Plaza <span className="text-indigo-400">X</span>
+            Plaza <span className="text-amber-400">X</span>
           </div>
           <p className="text-[11px] leading-relaxed">
             Plataforma multitienda y red de afiliación comercial en Colombia. Conectamos
@@ -45,17 +45,17 @@ export function SiteFooter() {
           </h4>
           <ul className="space-y-2 text-[11px]">
             <li className="flex items-center gap-2">
-              <i className="fa-solid fa-headset text-indigo-400" /> Soporte:{" "}
+              <i className="fa-solid fa-headset text-amber-400" /> Soporte:{" "}
               <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-white">
                 {SUPPORT_EMAIL}
               </a>
             </li>
             <li className="flex items-center gap-2">
-              <i className="fa-solid fa-location-dot text-indigo-400" /> Cobertura: todo el
+              <i className="fa-solid fa-location-dot text-amber-400" /> Cobertura: todo el
               territorio nacional (Colombia)
             </li>
             <li className="flex items-center gap-2">
-              <i className="fa-solid fa-building-columns text-indigo-400" /> Vigilado por la
+              <i className="fa-solid fa-building-columns text-amber-400" /> Vigilado por la
               Superintendencia de Industria y Comercio (SIC)
             </li>
           </ul>
@@ -140,19 +140,19 @@ export function LiveActivityToast() {
       role="status"
       aria-live="polite"
       className={cn(
-        "fixed bottom-6 left-6 z-40 flex max-w-xs items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl backdrop-blur-md transition-all duration-500",
+        "fixed bottom-6 left-6 z-40 flex max-w-xs items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-xl backdrop-blur-md transition-all duration-500",
         item ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-20 opacity-0",
       )}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-sm font-bold text-indigo-600">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-sm font-bold text-amber-400">
         <i className="fa-solid fa-bag-shopping" />
       </div>
       {item && (
         <div className="overflow-hidden text-xs">
-          <p className="truncate font-medium text-slate-800">
+          <p className="truncate font-medium text-slate-100">
             Alguien de {item.city || "Colombia"} compró {item.productName}
           </p>
-          <span className="text-[10px] font-bold text-emerald-600">
+          <span className="text-[10px] font-bold text-emerald-400">
             {relTime(item.paidAt).replace(/^h/, "H")} · Compra verificada
           </span>
         </div>

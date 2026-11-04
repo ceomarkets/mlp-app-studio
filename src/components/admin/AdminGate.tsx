@@ -24,7 +24,7 @@ export function AdminGate({ path, children }: { path: string; children: ReactNod
     enabled: !!user,
   });
   if (!user || admin.isPending)
-    return <Shell>{<div className="h-64 animate-pulse rounded-3xl bg-slate-200" />}</Shell>;
+    return <Shell>{<div className="h-64 animate-pulse rounded-3xl bg-slate-700" />}</Shell>;
   if (!admin.data)
     return (
       <Shell>
@@ -44,8 +44,8 @@ export function AdminGate({ path, children }: { path: string; children: ReactNod
             key={s.to}
             to={s.to}
             className={cn(
-              "flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50",
-              "data-[status=active]:border-indigo-600 data-[status=active]:bg-indigo-600 data-[status=active]:text-white",
+              "flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 font-semibold text-slate-200 transition hover:bg-slate-800",
+              "data-[status=active]:border-amber-400 data-[status=active]:bg-amber-500 data-[status=active]:text-slate-950",
             )}
           >
             <i className={cn("fa-solid", s.icon)} /> {s.label}

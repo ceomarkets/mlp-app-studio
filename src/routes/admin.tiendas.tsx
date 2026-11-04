@@ -33,12 +33,12 @@ function Stores() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Tiendas y verificación</h1>
-          <p className="max-w-2xl text-sm text-slate-500">
+          <h1 className="text-2xl font-extrabold text-white">Tiendas y verificación</h1>
+          <p className="max-w-2xl text-sm text-slate-400">
             Verifica solo empresas cuya identidad y datos comerciales (RUT, cámara de comercio o
             cédula) hayas validado. La insignia azul aparece en el catálogo y el leaderboard.
             {requested > 0 && (
-              <b className="ms-1 text-amber-700">{requested} solicitudes pendientes.</b>
+              <b className="ms-1 text-amber-400">{requested} solicitudes pendientes.</b>
             )}
           </p>
         </div>
@@ -47,15 +47,15 @@ function Stores() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar tienda, ciudad o correo"
           aria-label="Buscar"
-          className="w-64 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-indigo-600 focus:outline-none"
+          className="w-64 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs focus:border-amber-400 focus:outline-none"
         />
       </header>
       {list.isPending ? (
-        <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />
+        <div className="h-40 animate-pulse rounded-2xl bg-slate-700" />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900">
           <table className="w-full min-w-[760px] text-sm">
-            <thead className="bg-slate-50 text-left text-xs text-slate-500">
+            <thead className="bg-slate-950 text-left text-xs text-slate-400">
               <tr>
                 <th className="p-3">Tienda</th>
                 <th>Dueño</th>
@@ -101,33 +101,33 @@ function Row({ s }: { s: AdminStore }) {
   });
   const busy = verify.isPending || active.isPending || ban.isPending;
   return (
-    <tr className={cn("border-t border-slate-100", !s.active && "bg-slate-50 text-slate-500")}>
+    <tr className={cn("border-t border-slate-800", !s.active && "bg-slate-950 text-slate-400")}>
       <td className="p-3">
         <Link
           to="/tienda/$slug"
           params={{ slug: s.slug }}
-          className="flex items-center gap-2 font-semibold text-slate-900 hover:text-indigo-600"
+          className="flex items-center gap-2 font-semibold text-white hover:text-amber-400"
         >
           <span className="text-xl">{s.emoji}</span> {s.name}
           {s.verified && <BadgeCheck className="size-4 text-sky-500" aria-label="Verificada" />}
         </Link>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-slate-400">
           {s.city}
           {!s.active && " · inactiva"}
           {s.verificationRequestedAt && !s.verified && (
-            <b className="ms-1 text-amber-700">· pidió verificación</b>
+            <b className="ms-1 text-amber-400">· pidió verificación</b>
           )}
         </span>
       </td>
       <td className="text-xs">
         {s.ownerEmail}
-        {s.ownerBanned && <b className="block text-rose-600">Suspendido</b>}
+        {s.ownerBanned && <b className="block text-rose-400">Suspendido</b>}
       </td>
       <td>{s.products}</td>
       <td>{s.sold}</td>
       <td>
         {s.openDisputes > 0 ? (
-          <Link to="/admin/disputas" className="font-bold text-amber-700">
+          <Link to="/admin/disputas" className="font-bold text-amber-400">
             {s.openDisputes} abiertas
           </Link>
         ) : (
@@ -142,7 +142,7 @@ function Row({ s }: { s: AdminStore }) {
             className={cn(
               "rounded-lg px-2.5 py-1",
               s.verified
-                ? "border border-slate-300 bg-white text-slate-700"
+                ? "border border-slate-700 bg-slate-900 text-slate-200"
                 : "bg-sky-600 text-white hover:bg-sky-700",
             )}
           >
@@ -152,7 +152,7 @@ function Row({ s }: { s: AdminStore }) {
             <button
               disabled={busy}
               onClick={() => active.mutate(!s.active)}
-              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-slate-700"
+              className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-slate-200"
             >
               {s.active ? "Pausar" : "Activar"}
             </button>
@@ -166,8 +166,8 @@ function Row({ s }: { s: AdminStore }) {
             className={cn(
               "rounded-lg px-2.5 py-1",
               s.ownerBanned
-                ? "border border-slate-300 bg-white text-slate-700"
-                : "bg-rose-50 text-rose-700 hover:bg-rose-100",
+                ? "border border-slate-700 bg-slate-900 text-slate-200"
+                : "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
             )}
           >
             {s.ownerBanned ? "Levantar suspensión" : "Suspender"}
