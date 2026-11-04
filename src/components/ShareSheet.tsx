@@ -40,21 +40,21 @@ const NETWORKS: {
   {
     id: "whatsapp",
     label: "WhatsApp",
-    bg: "bg-emerald-500 hover:bg-emerald-600",
+    bg: "bg-emerald-500",
     icon: "fa-whatsapp text-xl",
     href: (d) => `https://api.whatsapp.com/send?text=${enc(`${d.text} ${d.url}`)}`,
   },
   {
     id: "facebook",
     label: "Facebook",
-    bg: "bg-blue-600 hover:bg-blue-700",
+    bg: "bg-blue-600",
     icon: "fa-facebook-f text-xl",
     href: (d) => `https://www.facebook.com/sharer/sharer.php?u=${enc(d.url)}`,
   },
   {
     id: "messenger",
     label: "Messenger",
-    bg: "bg-gradient-to-tr from-blue-500 via-indigo-500 to-purple-500 hover:opacity-90",
+    bg: "bg-indigo-500",
     icon: "fa-facebook-messenger text-xl",
     href: (d) =>
       isMobile()
@@ -63,8 +63,8 @@ const NETWORKS: {
   },
   {
     id: "x",
-    label: "X (Twitter)",
-    bg: "bg-slate-900 hover:bg-black",
+    label: "X",
+    bg: "border border-slate-700 bg-slate-950",
     icon: "fa-x-twitter text-lg",
     href: (d) => `https://twitter.com/intent/tweet?url=${enc(d.url)}&text=${enc(d.text)}`,
   },
@@ -93,15 +93,12 @@ export function ShareDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center text-slate-100 shadow-2xl">
-        <span className="mx-auto mb-1 grid size-12 place-items-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-xl text-amber-400">
-          <i className="fa-solid fa-share-nodes" />
-        </span>
         <DialogHeader className="items-center text-center sm:text-center">
           <DialogTitle className="text-base font-bold text-white">
             Compartir {data.title}
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-400">
-            Invita a tus amigos o promociona tu tienda en redes sociales
+            Promociona este catálogo o envía a tus contactos
           </DialogDescription>
         </DialogHeader>
         <div className="my-2 grid grid-cols-4 gap-3">
@@ -116,7 +113,7 @@ export function ShareDialog({
             >
               <span
                 className={cn(
-                  "grid size-12 place-items-center rounded-2xl text-white shadow-md transition-transform group-hover:scale-105",
+                  "grid size-10 place-items-center rounded-xl text-lg text-white shadow-sm transition group-hover:scale-105",
                   n.bg,
                 )}
               >

@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useDeferredValue, useMemo, useState } from "react";
 import { addToCart } from "@/components/CartSheet";
 import { Leaderboard } from "@/components/Leaderboard";
@@ -20,7 +20,9 @@ import {
   type PriceBand,
 } from "@/lib/browse";
 import { useViewed, viewed as viewedStore } from "@/lib/client-state";
-import { EXAMPLE_META, EXAMPLE_PRODUCTS, isExample } from "@/lib/examples";
+import { StockBadge } from "@/components/StockBadge";
+import { copShort, EXAMPLE_FEED, EXAMPLE_META, EXAMPLE_PRODUCTS, isExample } from "@/lib/examples";
+import { isWearable } from "@/lib/vestidor";
 import { discountPct, isNew, temperatures } from "@/lib/feed";
 import { AFFILIATE_MIN, clampCommission, cop } from "@/lib/plaza";
 import { keys } from "@/lib/session";
@@ -175,11 +177,17 @@ function Plaza() {
                 ))}
               </div>
 
-              <div className="relative w-full md:w-auto">
+              <div className="relative flex w-full gap-2 md:w-auto">
+                <Link
+                  to="/vestidor"
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-slate-800/80 px-3.5 py-2 font-bold text-amber-300 shadow-sm transition hover:border-amber-400 md:flex-none"
+                >
+                  <i className="fa-solid fa-person-dress" /> Vestidor Virtual
+                </Link>
                 <button
                   onClick={() => setFiltersOpen(!filtersOpen)}
                   aria-expanded={filtersOpen}
-                  className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 font-bold text-amber-400 shadow-sm transition hover:border-amber-400 md:w-auto"
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 font-bold text-amber-400 shadow-sm transition hover:border-amber-400 md:flex-none"
                 >
                   Filtros{" "}
                   <i
@@ -244,7 +252,7 @@ function Plaza() {
         </div>
 
         {/* Leaderboard más grande */}
-        <Leaderboard products={boardProducts} viewed={viewed} />
+        <Leaderboard products={examples ? EXAMPLE_FEED : boardProducts} viewed={viewed} />
 
         {/* Catálogo */}
         <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -253,16 +261,20 @@ function Plaza() {
               id="catalogo"
               className="flex items-center gap-2 text-base font-extrabold text-white"
             >
-              Catálogo de Productos{" "}
-              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-400">
-                {catalog?.length ?? "…"}
-              </span>
+              Catálogo de Productos <span className="text-amber-400">Verificados</span>
             </h3>
-            {(isBrowsing(browse) || dq) && (
-              <button onClick={reset} className="text-xs font-bold text-amber-400 hover:underline">
-                <i className="fa-solid fa-rotate-left me-1" /> Mostrar todo
-              </button>
-            )}
+            <span className="text-xs font-medium text-slate-400">
+              {!catalog
+                ? "Cargando…"
+                : isBrowsing(browse) || dq
+                  ? `Mostrando ${catalog.length} de ${source.length} productos`
+                  : "Mostrando productos verificados"}
+              {(isBrowsing(browse) || dq) && (
+                <button onClick={reset} className="ms-2 font-bold text-amber-400 hover:underline">
+                  Ver todo
+                </button>
+              )}
+            </span>
           </div>
 
           {examples && (
@@ -285,7 +297,7 @@ function Plaza() {
               ))}
             </div>
           ) : catalog.length ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {catalog.map((p) => (
                 <GridCard
                   key={p.id}
@@ -303,20 +315,20 @@ function Plaza() {
           )}
 
           {/* Compartir */}
-          <div className="gold-border-glow mt-10 flex flex-col items-center justify-between gap-4 rounded-3xl border border-amber-500/20 bg-slate-900 p-6 shadow-sm sm:flex-row sm:p-8">
-            <div>
-              <h4 className="flex items-center gap-2 text-lg font-black text-white sm:text-xl">
+          <div className="gold-border-glow mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border border-amber-500/30 bg-slate-900 p-6 shadow-xl sm:flex-row">
+            <div className="text-center sm:text-left">
+              <h4 className="flex items-center justify-center gap-2 text-base font-bold text-white sm:justify-start">
                 ¿Te gustó? Cuéntale a alguien 💛
               </h4>
-              <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">
+              <p className="mt-0.5 text-xs font-medium text-slate-400">
                 Un mensaje ayuda a una tienda local.
               </p>
             </div>
             <ShareButton
               data={plazaShare}
-              className="flex min-h-[44px] shrink-0 items-center gap-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 text-xs font-extrabold text-slate-950 shadow-md transition-transform hover:scale-105 sm:text-sm"
+              className="flex min-h-[44px] w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 text-xs font-black text-slate-950 shadow-lg transition hover:from-amber-400 hover:to-amber-500 sm:w-auto"
             >
-              <i className="fa-solid fa-share-nodes text-sm" /> Compartir Plaza X
+              <i className="fa-solid fa-share-nodes text-xs" /> Compartir Plaza X
             </ShareButton>
           </div>
         </div>
@@ -394,80 +406,99 @@ function SearchBar({ value, onChange }: { value: string; onChange: (v: string) =
   );
 }
 
-function GridCard({ p, temp, onOpen }: { p: Product; temp: number; onOpen: () => void }) {
+/** Tarjeta del catálogo, igual al diseño (renderProducts). */
+function GridCard({ p, onOpen }: { p: Product; temp?: number; onOpen: () => void }) {
   const meta = EXAMPLE_META.get(p.id);
-  const off = discountPct(p);
-  const rate = Math.round(clampCommission(p.commission) * 100);
-  const badge = meta
-    ? { t: meta.badge, c: meta.badgeColor }
-    : off
-      ? { t: `OFERTA −${off}%`, c: "bg-rose-500/20 text-rose-400 border-rose-500/30" }
-      : isNew(p)
-        ? { t: "RECIÉN LANZADO", c: "bg-amber-500/20 text-amber-400 border-amber-500/30" }
-        : { t: `${rate}% COMISIÓN`, c: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" };
+  const rate = meta?.commissionRate ?? Math.round(clampCommission(p.commission) * 100);
+  const sold = p.stock <= 0;
+  const before = p.compareAtPrice && p.compareAtPrice > p.price ? p.compareAtPrice : null;
   const img = p.images[0];
   return (
     <div
       onClick={onOpen}
-      className="group flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-sm transition hover:border-amber-400 hover:shadow-md"
+      className={cn(
+        "flex cursor-pointer flex-col justify-between rounded-2xl border border-amber-500/20 bg-slate-900 p-4 shadow-lg transition hover:border-amber-400",
+        sold && "opacity-70",
+      )}
     >
       <div>
-        <div className="relative grid h-48 place-items-center overflow-hidden bg-slate-800">
+        <div className="relative mb-3.5 grid h-44 w-full place-items-center overflow-hidden rounded-xl bg-slate-950">
           {img ? (
-            <img
-              src={img}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-            />
+            <img src={img} alt="" loading="lazy" className="h-full w-full object-cover" />
           ) : (
             <span aria-hidden className="text-7xl">
               {p.emoji}
             </span>
           )}
-          {temp > 0 && (
-            <span className="absolute top-2 left-2 rounded bg-amber-500 px-2 py-0.5 text-xs font-black text-white shadow">
-              <i className="fa-solid fa-fire" /> {temp}°
-            </span>
-          )}
+          <span className="absolute top-2 left-2 rounded-md border border-amber-500/30 bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-amber-400 backdrop-blur-md">
+            {p.category}
+          </span>
           {meta && (
-            <span className="absolute top-2 right-2 rounded-full bg-slate-900/80 px-2 py-0.5 text-[10px] font-bold text-white">
+            <span className="absolute top-2 right-2 rounded-md bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-slate-300">
               Ejemplo
             </span>
           )}
-          {p.stock > 0 && p.stock <= 10 && (
-            <span className="absolute right-2 bottom-2 rounded-full border border-rose-500/30 bg-slate-900/90 px-2 py-0.5 text-[10px] font-bold text-rose-400 shadow-sm backdrop-blur-md">
-              ¡Solo quedan {p.stock}!
+          {isWearable(p) && (
+            <Link
+              to="/vestidor"
+              search={{ probar: p.id }}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border border-amber-500/40 bg-slate-950/85 px-2 py-1 text-[10px] font-bold text-amber-300 backdrop-blur-md hover:border-amber-400"
+            >
+              <i className="fa-solid fa-person-dress" /> Probar
+            </Link>
+          )}
+        </div>
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex flex-col">
+            {p.store.verified && (
+              <span className="flex items-center gap-1 text-[9px] font-bold tracking-wider text-emerald-400 uppercase">
+                <i className="fa-solid fa-circle-check text-[9px]" /> Verificado
+              </span>
+            )}
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+              <i className="fa-solid fa-store text-[10px] text-amber-400" /> {p.store.name}
+            </span>
+          </div>
+          {rate > 0 && (
+            <span className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+              {rate}% COMISIÓN
             </span>
           )}
         </div>
-        <div className="p-4">
-          <span
-            className={cn(
-              "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase",
-              badge.c,
-            )}
-          >
-            {badge.t}
-          </span>
-          <h3 className="mt-2 mb-1 text-sm font-bold text-white">{p.name}</h3>
-          <p className="mb-3 text-xs text-slate-400">
-            <i className="fa-solid fa-store me-1" />
-            {p.store.name}
-          </p>
-          <div className="text-lg font-extrabold text-amber-400">{cop(p.price)}</div>
-        </div>
+        <h4 className="mb-2 line-clamp-2 text-sm font-bold tracking-tight text-white">{p.name}</h4>
       </div>
-      <div className="p-4 pt-0">
+      <div className="mt-4">
+        <div className="mb-3.5 flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3">
+          <div className="w-full text-center">
+            <StockBadge stock={p.stock} />
+          </div>
+          <div className="flex shrink-0 flex-col items-end text-right">
+            {before && (
+              <span className="mb-0.5 text-[10px] leading-none font-medium text-slate-400 line-through">
+                Antes {copShort(before)}
+              </span>
+            )}
+            <span className="text-xs leading-none font-black text-amber-400 sm:text-sm">
+              {copShort(p.price)}
+            </span>
+          </div>
+        </div>
         <button
           onClick={(e) => {
             e.stopPropagation();
             addToCart(p);
           }}
-          disabled={p.stock < 1}
-          className="w-full rounded-lg bg-amber-500 py-2 text-xs font-bold text-slate-950 shadow transition hover:bg-amber-400 disabled:opacity-50"
+          disabled={sold}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black shadow-md transition",
+            sold
+              ? "cursor-not-allowed bg-slate-800 text-slate-500"
+              : "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:from-amber-400 hover:to-amber-500",
+          )}
         >
-          {p.stock < 1 ? "Agotado" : "Añadir al Carrito"}
+          <i className={cn("fa-solid", sold ? "fa-ban" : "fa-cart-plus")} />
+          {sold ? "Agotado" : "Añadir al carrito"}
         </button>
       </div>
     </div>

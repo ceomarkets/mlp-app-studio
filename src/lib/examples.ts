@@ -15,7 +15,13 @@ export type ExampleMeta = {
   commissionRate: number;
   type: "hoy" | "descuento" | "comision" | "top";
   isNearby: boolean;
+  /** Aparece en el catálogo (los demás solo en la cinta en vivo). */
+  inCatalog: boolean;
+  /** Aparece en la cinta en vivo. */
+  inFeed: boolean;
 };
+
+const BADGE = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
 
 const RAW = [
   {
@@ -23,15 +29,16 @@ const RAW = [
     title: "Zapatillas Deportivas Pro Runner",
     store: "CyberGear Store",
     category: "Calzado",
+    originalPrice: 160000,
     price: 120000,
     commissionRate: 40,
-    stockLeft: 4,
     isNearby: true,
-    type: "hoy",
+    badge: "Envío Gratis",
+    stock: 4,
     rating: 4.8,
     temperature: 95,
-    badge: "40% COMISIÓN",
-    badgeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    inCatalog: true,
+    inFeed: true,
     image:
       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&auto=format&fit=crop&q=80",
   },
@@ -40,51 +47,72 @@ const RAW = [
     title: "Teclado Mecánico RGB Wireless",
     store: "CyberGear Store",
     category: "Tecnología",
-    price: 89990,
+    originalPrice: 130000,
+    price: 90000,
     commissionRate: 35,
-    stockLeft: 2,
     isNearby: false,
-    type: "descuento",
+    badge: "Destacado",
+    stock: 8,
     rating: 4.7,
-    temperature: 88,
-    badge: "OFERTA RELÁMPAGO",
-    badgeColor: "bg-rose-500/20 text-rose-400 border-rose-500/30",
+    temperature: 0,
+    inCatalog: true,
+    inFeed: false,
     image:
       "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300&auto=format&fit=crop&q=80",
   },
   {
     id: 3,
-    title: "Masterclass Ecommerce Pro",
-    store: "Academia Digital",
-    category: "Cursos",
-    price: 49000,
-    commissionRate: 80,
-    stockLeft: 10,
+    title: "Chaqueta Térmica Impermeable Unisex",
+    store: "Moda Urbana NIT",
+    category: "Ropa",
+    originalPrice: 180000,
+    price: 135000,
+    commissionRate: 30,
     isNearby: true,
-    type: "comision",
-    rating: 4.9,
-    temperature: 150,
-    badge: "80% COMISIÓN",
-    badgeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    badge: "Popular",
+    stock: 2,
+    rating: 4.6,
+    temperature: 0,
+    inCatalog: true,
+    inFeed: false,
     image:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&auto=format&fit=crop&q=80",
   },
   {
     id: 4,
     title: "Silla Gamer Ergonómica Premium",
     store: "ComfortZone",
     category: "Accesorios",
-    price: 249990,
+    originalPrice: 320000,
+    price: 250000,
     commissionRate: 50,
-    stockLeft: 3,
     isNearby: false,
-    type: "top",
+    badge: "Premium",
+    stock: 0,
     rating: 5.0,
-    temperature: 200,
-    badge: "TOP #1 VENTAS",
-    badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    temperature: 0,
+    inCatalog: true,
+    inFeed: false,
     image:
-      "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=300&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=300&auto=format&fit=crop&q=80",
+  },
+  {
+    id: 5,
+    title: "Proteína Whey Isolate 2kg",
+    store: "NutriFit Colombia",
+    category: "Alimentos",
+    originalPrice: 180000,
+    price: 145000,
+    commissionRate: 25,
+    isNearby: false,
+    badge: "Destacado",
+    stock: 5,
+    rating: 4.9,
+    temperature: 88,
+    inCatalog: false,
+    inFeed: true,
+    image:
+      "https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=300&auto=format&fit=crop&q=80",
   },
 ] as const;
 
@@ -95,17 +123,20 @@ export const isExample = (id: string) => id.startsWith(EXAMPLE_PREFIX);
 
 export const EXAMPLE_META = new Map<string, ExampleMeta>();
 
-export const EXAMPLE_PRODUCTS: Product[] = RAW.map((r) => {
+/** Todos los productos de ejemplo (catálogo y cinta en vivo). */
+export const EXAMPLE_ALL: Product[] = RAW.map((r) => {
   const id = `${EXAMPLE_PREFIX}${r.id}`;
   EXAMPLE_META.set(id, {
     temperature: r.temperature,
-    badge: r.badge,
-    badgeColor: r.badgeColor,
-    stockLeft: r.stockLeft,
+    badge: `${r.commissionRate}% COMISIÓN`,
+    badgeColor: BADGE,
+    stockLeft: r.stock,
     rating: r.rating,
     commissionRate: r.commissionRate,
-    type: r.type,
+    type: r.originalPrice > r.price ? "descuento" : "hoy",
     isNearby: r.isNearby,
+    inCatalog: r.inCatalog,
+    inFeed: r.inFeed,
   });
   return {
     id,
@@ -113,10 +144,10 @@ export const EXAMPLE_PRODUCTS: Product[] = RAW.map((r) => {
     name: r.title,
     description: "Producto de ejemplo del diseño de Plaza X.",
     price: r.price,
-    compareAtPrice: null,
+    compareAtPrice: r.originalPrice,
     category: r.category as Category,
     commission: r.commissionRate / 100,
-    stock: r.stockLeft,
+    stock: r.stock,
     images: [r.image],
     emoji: "🛍️",
     active: true,
@@ -130,11 +161,19 @@ export const EXAMPLE_PRODUCTS: Product[] = RAW.map((r) => {
     store: {
       slug: slug(r.store),
       name: r.store,
-      city: r.isNearby ? "Pasto" : "Bogotá",
+      city: r.isNearby ? "Pasto" : "Bogotá D.C.",
       emoji: "🏬",
       shipsNational: !r.isNearby,
-      verified: false,
+      verified: true,
       requireApproval: false,
     },
   };
 });
+
+/** Catálogo de ejemplo. */
+export const EXAMPLE_PRODUCTS = EXAMPLE_ALL.filter((p) => EXAMPLE_META.get(p.id)?.inCatalog);
+/** Cinta en vivo de ejemplo. */
+export const EXAMPLE_FEED = EXAMPLE_ALL.filter((p) => EXAMPLE_META.get(p.id)?.inFeed);
+
+/** "120.000 COP", como en el diseño. */
+export const copShort = (n: number) => `${n.toLocaleString("es-CO")} COP`;

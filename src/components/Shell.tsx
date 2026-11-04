@@ -97,6 +97,7 @@ export function Shell({
                 ["/", "fa-crown text-amber-400", "Mercado"],
                 ["/afiliados", "fa-users text-emerald-400", "Panel Afiliados"],
                 ["/vendedores", "fa-building text-amber-400", "Panel Empresas"],
+                ["/vestidor", "fa-person-dress text-amber-300", "Vestidor Virtual"],
               ] as const
             ).map(([to, icon, label]) => (
               <Link

@@ -2,97 +2,67 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { backend } from "@/lib/backend";
-import { LEGAL_SECTIONS, SUPPORT_EMAIL } from "@/lib/legal";
+import { SUPPORT_EMAIL } from "@/lib/legal";
 import { relTime } from "@/lib/feed";
 import { cn } from "@/lib/utils";
 
-/** Pie de página con el marco legal colombiano. */
+/** Pie de página negro y dorado con el marco legal colombiano. */
 export function SiteFooter() {
-  const footerLinks = LEGAL_SECTIONS.filter((s) => s.footer);
+  const link = "transition hover:text-amber-400";
   return (
-    <footer className="mt-auto border-t border-slate-800 bg-slate-900 px-4 pt-12 pb-8 text-xs text-slate-400">
-      <div className="mx-auto mb-8 grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-4">
+    <footer className="mt-auto border-t border-amber-500/20 bg-slate-950 px-4 pt-10 pb-6 text-xs text-slate-400">
+      <div className="mx-auto mb-8 grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-3">
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-lg font-extrabold text-white">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-500 text-xs text-slate-950">
-              <i className="fa-solid fa-store" />
-            </span>
-            Plaza <span className="text-amber-400">X</span>
+          <div className="flex items-center gap-2 text-lg font-black tracking-tight text-white">
+            Plaza <span className="gold-gradient-text">X</span>
           </div>
-          <p className="text-[11px] leading-relaxed">
-            Plataforma multitienda y red de afiliación comercial en Colombia. Conectamos
-            compradores, tiendas verificadas y afiliados independientes con transparencia y
-            cumplimiento normativo.
+          <p className="text-[11px] leading-relaxed text-slate-400">
+            Mercado multitienda y red de afiliación comercial en Colombia. Recaudos y dispersiones
+            automatizadas procesados mediante pasarela de pagos.
           </p>
         </div>
         <div>
-          <h4 className="mb-3 text-xs font-bold tracking-wider text-white uppercase">
-            Marco Legal Colombia
+          <h4 className="mb-3 text-xs font-extrabold tracking-wider text-amber-400 uppercase">
+            Marco Legal & SIC
           </h4>
           <ul className="space-y-2 text-[11px]">
-            {footerLinks.map((s) => (
-              <li key={s.id}>
-                <Link to="/legal" hash={s.id} className="transition hover:text-white">
-                  {s.footer}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="mb-3 text-xs font-bold tracking-wider text-white uppercase">
-            Atención al Consumidor
-          </h4>
-          <ul className="space-y-2 text-[11px]">
-            <li className="flex items-center gap-2">
-              <i className="fa-solid fa-headset text-amber-400" /> Soporte:{" "}
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-white">
-                {SUPPORT_EMAIL}
-              </a>
+            <li>
+              <Link to="/legal" hash="retracto" className={link}>
+                Derecho de Retracto (Ley 1480 de 2011)
+              </Link>
             </li>
-            <li className="flex items-center gap-2">
-              <i className="fa-solid fa-location-dot text-amber-400" /> Cobertura: todo el
-              territorio nacional (Colombia)
+            <li>
+              <Link to="/legal" hash="habeas" className={link}>
+                Habeas Data (Ley 1581 de 2012)
+              </Link>
             </li>
-            <li className="flex items-center gap-2">
-              <i className="fa-solid fa-building-columns text-amber-400" /> Vigilado por la
-              Superintendencia de Industria y Comercio (SIC)
+            <li>
+              <Link to="/cuenta" hash="reportes" className={link}>
+                Reportar Problema / Novedad
+              </Link>
             </li>
           </ul>
         </div>
         <div>
-          <h4 className="mb-3 text-xs font-bold tracking-wider text-white uppercase">
-            ¿Un problema con tu compra?
+          <h4 className="mb-3 text-xs font-extrabold tracking-wider text-amber-400 uppercase">
+            Contacto & Soporte
           </h4>
-          <p className="mb-2 text-[11px]">
-            Si pagaste en el carrito de Plaza X, tu dinero queda en custodia hasta que confirmes la
-            entrega.
+          <p className="mb-1 text-[11px] text-slate-400">
+            Correo:{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className={link}>
+              {SUPPORT_EMAIL}
+            </a>
           </p>
-          <div className="flex flex-col gap-2">
-            <Link
-              to="/cuenta"
-              className="flex items-center gap-2 rounded-xl border border-slate-700/60 bg-slate-800/80 px-3 py-2 font-bold text-white transition hover:bg-slate-800"
-            >
-              <i className="fa-solid fa-shield-halved text-amber-400" /> Abrir disputa / Reportar
-              problema
-            </Link>
-          </div>
+          <p className="text-[11px] text-slate-400">
+            Cobertura: Todo el territorio nacional en Colombia
+          </p>
         </div>
       </div>
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-6 text-[11px]">
-        <p>
-          © {new Date().getFullYear()} Plaza X Colombia. Cumplimiento de la Ley 1480 de 2011 y la
-          normativa de comercio electrónico.
-        </p>
-        <div className="flex items-center gap-4">
-          <Link to="/legal" className="font-semibold transition hover:text-white">
-            Términos y Condiciones
-          </Link>
-          <span>·</span>
-          <Link to="/legal" hash="habeas" className="font-semibold transition hover:text-white">
-            Política de Privacidad
-          </Link>
-        </div>
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 border-t border-slate-900 pt-5 text-[10px]">
+        <p>© {new Date().getFullYear()} Plaza X Colombia. Todos los derechos reservados.</p>
+        <Link to="/legal" className={link}>
+          Términos y Condiciones Generales
+        </Link>
       </div>
     </footer>
   );

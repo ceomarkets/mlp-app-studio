@@ -3,10 +3,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { addToCart } from "@/components/CartSheet";
 import { useRaffle } from "@/components/Rewards";
-import { isExternal, isSafeLink, platformAnnouncements } from "@/lib/announcements";
+import { isExternal, isSafeLink } from "@/lib/announcements";
 import { backend, type Product } from "@/lib/backend";
 import { rememberCoupon } from "@/lib/coupon";
-import { EXAMPLE_META, EXAMPLE_PRODUCTS } from "@/lib/examples";
+import { copShort, EXAMPLE_PRODUCTS } from "@/lib/examples";
 import { discountPct } from "@/lib/feed";
 import { BUNDLE_MIN, BUNDLE_RATE, cop } from "@/lib/plaza";
 import { keys } from "@/lib/session";
@@ -84,8 +84,14 @@ export function AnnouncementStrip() {
         text: `Compra ${BUNDLE_MIN} productos y llévate ${Math.round(BUNDLE_RATE * 100)}% OFF en tu pedido`,
         go: cartUI.open,
       });
-    const news = announcements.data?.length ? announcements.data : platformAnnouncements();
-    for (const a of news.slice(0, 6)) {
+    // Mensajes de la plataforma del diseño (siempre verdaderos en Plaza X).
+    for (const [k, text] of [
+      ["envios", "⚡ Envíos directos garantizados a toda Colombia con número de guía"],
+      ["custodia", "🛡️ Pago protegido: custodia de fondos hasta que recibes tu pedido"],
+      ["afiliados", "🚀 Gana comisiones como afiliado recomendando productos verificados"],
+    ] as const)
+      out.push({ key: k, icon: "", text, go: () => {} });
+    for (const a of (announcements.data ?? []).slice(0, 6)) {
       const link = a.link && isSafeLink(a.link) ? a.link : null;
       out.push({
         key: a.id,
@@ -105,7 +111,7 @@ export function AnnouncementStrip() {
   const [i, setI] = useState(0);
   useEffect(() => {
     if (items.length < 2) return;
-    const t = setInterval(() => setI((x) => (x + 1) % items.length), 4000);
+    const t = setInterval(() => setI((x) => (x + 1) % items.length), 5000);
     return () => clearInterval(t);
   }, [items.length]);
   const it = items[i % Math.max(1, items.length)];
@@ -118,7 +124,7 @@ export function AnnouncementStrip() {
         onClick={it.go}
         className="animate-fade-in-out flex min-h-0 items-center justify-center gap-2 px-4 text-center"
       >
-        <i className={cn("fa-solid text-amber-400", it.icon)} />
+        {it.icon && <i className={cn("fa-solid text-amber-400", it.icon)} />}
         <span className="line-clamp-1">{it.text}</span>
         {it.cta && <span className="shrink-0 font-bold text-amber-400 underline">{it.cta}</span>}
       </button>
@@ -139,7 +145,7 @@ export function FlashDealsModal() {
   const list = products.data ?? [];
   const deals = list.length
     ? list.filter((p) => discountPct(p) > 0).sort((a, b) => discountPct(b) - discountPct(a))
-    : EXAMPLE_PRODUCTS.filter((p) => EXAMPLE_META.get(p.id)?.type === "descuento");
+    : EXAMPLE_PRODUCTS;
   const left = flash ? Date.parse(flash.endsAt) - now : 0;
   const [h, m, s] = parts(left);
 
@@ -229,39 +235,29 @@ export function FlashDealsModal() {
 }
 
 function DealCard({ p }: { p: Product }) {
-  const off = discountPct(p);
-  const meta = EXAMPLE_META.get(p.id);
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 transition hover:border-amber-400">
-      <div className="relative grid h-36 place-items-center overflow-hidden bg-slate-800">
-        {p.images[0] ? (
-          <img src={p.images[0]} alt="" loading="lazy" className="size-full object-cover" />
-        ) : (
-          <span aria-hidden className="text-6xl">
-            {p.emoji}
-          </span>
-        )}
-        <span className="absolute top-2 left-2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black text-slate-950">
-          {meta ? meta.badge : `−${off}%`}
+    <div className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-950 p-3">
+      {p.images[0] ? (
+        <img
+          src={p.images[0]}
+          alt=""
+          loading="lazy"
+          className="mb-2 h-28 w-full rounded-xl object-cover"
+        />
+      ) : (
+        <span className="mb-2 grid h-28 place-items-center rounded-xl bg-slate-800 text-5xl">
+          {p.emoji}
         </span>
-      </div>
-      <div className="flex flex-grow flex-col p-3">
-        <h3 className="line-clamp-2 text-xs font-bold text-white">{p.name}</h3>
-        <p className="mb-2 text-[10px] text-slate-400">
-          <i className="fa-solid fa-store me-1 text-slate-500" />
-          {p.store.name}
-        </p>
-        <div className="mt-auto flex items-end gap-2">
-          <span className="text-base font-extrabold text-amber-400">{cop(p.price)}</span>
-          {p.compareAtPrice && off > 0 && (
-            <span className="text-[11px] text-slate-500 line-through">{cop(p.compareAtPrice)}</span>
-          )}
-        </div>
+      )}
+      <h5 className="truncate text-xs font-bold text-white">{p.name}</h5>
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-xs font-extrabold text-amber-400">{copShort(p.price)}</span>
         <button
           onClick={() => addToCart(p)}
-          className="mt-2 w-full rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 py-2 text-xs font-black text-slate-950 transition hover:from-amber-400 hover:to-amber-500"
+          disabled={p.stock < 1}
+          className="min-h-0 rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-black text-slate-950 disabled:opacity-50"
         >
-          Añadir al Carrito
+          {p.stock < 1 ? "Agotado" : "Añadir"}
         </button>
       </div>
     </div>

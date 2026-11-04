@@ -9,7 +9,8 @@ import {
 import { QuickView } from "@/components/QuickView";
 import { platformAnnouncements } from "@/lib/announcements";
 import { backend, type Announcement, type Product } from "@/lib/backend";
-import { EXAMPLE_META, isExample } from "@/lib/examples";
+import { StockBadge } from "@/components/StockBadge";
+import { copShort, EXAMPLE_META, isExample } from "@/lib/examples";
 import {
   buildLeaderboard,
   discountPct,
@@ -196,7 +197,7 @@ export function Leaderboard({
 
       {loop.length ? (
         <div className="marquee-container mx-auto w-full max-w-7xl overflow-hidden px-4">
-          <div className="marquee-content flex w-max items-center gap-4">
+          <div className="marquee-content flex w-max items-center gap-4 whitespace-nowrap">
             {loop.map((it, i) => (
               <div key={`${it.key}-${i}`} aria-hidden={i >= items.length || undefined}>
                 {it.kind === "announcement" ? (
@@ -237,88 +238,85 @@ export function Leaderboard({
   );
 }
 
-/** Tarjeta de la cinta, igual al diseño (createCardHTML). */
+/** Tarjeta de la cinta, igual al diseño (renderLargeLeaderboard). */
 function BoardCard({
   it,
-  temp,
   tabbable,
   onSelect,
 }: {
   it: BoardItem;
-  temp: number;
+  temp?: number;
   tabbable: boolean;
   onSelect: () => void;
 }) {
   const p = it.kind === "product" ? it.product : null;
-  const badge = badgeOf(it);
   const img = p?.images[0];
-  const rating = p ? (EXAMPLE_META.get(p.id)?.rating ?? (p.ratingCount ? p.rating : 0)) : 0;
+  const rate = p
+    ? (EXAMPLE_META.get(p.id)?.commissionRate ?? Math.round(clampCommission(p.commission) * 100))
+    : 0;
+  const verified = p ? p.store.verified : it.kind === "store" && it.store.verified;
+  const before = p?.compareAtPrice && p.compareAtPrice > p.price ? p.compareAtPrice : null;
   return (
     <button
       type="button"
       onClick={onSelect}
       tabIndex={tabbable ? 0 : -1}
-      className="group w-80 flex-shrink-0 sm:w-96 cursor-pointer rounded-2xl border border-slate-800 bg-slate-950 p-3.5 text-left whitespace-normal transition-all duration-300 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10"
+      className="inline-flex shrink-0 items-center gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-3.5 px-4 text-left whitespace-normal shadow-md transition-all hover:border-amber-500/40"
     >
-      <div className="flex items-center gap-3">
-        <div className="relative grid size-24 flex-shrink-0 place-items-center overflow-hidden rounded-xl border border-slate-800 bg-slate-800">
-          {img ? (
-            <img
-              src={img}
-              alt=""
-              loading="lazy"
-              className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <span aria-hidden className="text-4xl">
-              {p ? p.emoji : it.kind === "store" ? it.store.emoji : ""}
-            </span>
-          )}
-          {temp > 0 && (
-            <span className="absolute top-1 left-1 flex items-center gap-0.5 rounded bg-amber-500 px-1 text-[9px] font-black text-white shadow-sm">
-              <i className="fa-solid fa-fire text-[8px]" /> {temp}°
-            </span>
-          )}
-        </div>
-        <div className="min-w-0 flex-grow">
-          <div className="mb-1 flex items-center justify-between gap-1">
-            <span
-              className={cn(
-                "truncate rounded-full border px-1.5 py-0.5 text-[9px] font-semibold",
-                badge.cls,
-              )}
-            >
-              {badge.text}
-            </span>
-            {rating > 0 && (
-              <span className="flex items-center gap-1 text-[10px] text-slate-400">
-                <i className="fa-solid fa-star text-amber-500" /> {rating}
+      <div className="relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-slate-800 bg-slate-950 sm:size-20">
+        {img ? (
+          <img src={img} alt="" loading="lazy" className="size-full object-cover" />
+        ) : (
+          <span aria-hidden className="text-4xl">
+            {p ? p.emoji : it.kind === "store" ? it.store.emoji : ""}
+          </span>
+        )}
+      </div>
+      <div className="flex min-w-[220px] flex-col justify-between gap-1.5 py-0.5 text-xs">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-col">
+            {verified && (
+              <span className="flex items-center gap-1 text-[9px] font-bold tracking-wider text-emerald-400 uppercase">
+                <i className="fa-solid fa-circle-check text-[9px]" /> Verificado
               </span>
             )}
+            <span className="flex items-center gap-1 truncate text-[11px] font-semibold text-slate-300">
+              <i className="fa-solid fa-store text-[9px] text-amber-400" />{" "}
+              {p ? p.store.name : it.kind === "store" ? it.store.name : ""}
+            </span>
           </div>
-          <h4 className="truncate text-sm font-bold text-white transition-colors group-hover:text-amber-400">
-            {p ? p.name : it.kind === "store" ? it.store.name : ""}
-          </h4>
-          <p className="mb-1 truncate text-[10px] text-slate-400">
-            <i className="fa-solid fa-store me-1 text-slate-400" />
-            {p ? p.store.name : it.kind === "store" ? `${it.store.city} · ${it.metric}` : ""}
-          </p>
-          {p && (
-            <div className="mt-1 flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-1.5">
-              <div className="flex flex-col">
-                <span className="text-[9px] font-medium text-slate-400 uppercase">Precio</span>
-                <span className="text-xs font-bold text-slate-100">{cop(p.price)}</span>
-              </div>
-              <div className="h-6 w-px bg-slate-700" />
-              <div className="flex flex-col text-right">
-                <span className="flex items-center justify-end gap-0.5 text-[9px] font-bold text-emerald-400 uppercase">
-                  <i className="fa-solid fa-sack-dollar" /> Ganas
-                </span>
-                <span className="text-xs font-extrabold text-emerald-400">{cop(earnings(p))}</span>
-              </div>
-            </div>
+          {p && rate > 0 && (
+            <span className="shrink-0 self-start rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+              {rate}% COMISIÓN
+            </span>
           )}
         </div>
+        <span className="my-0.5 block max-w-[220px] truncate text-sm font-bold tracking-tight text-white">
+          {p ? p.name : it.kind === "store" ? `Tienda top #${it.rank}` : ""}
+        </span>
+        {p ? (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800/80 bg-slate-950 px-3 py-1.5 text-xs">
+            <div className="text-center font-medium">
+              <StockBadge stock={p.stock} />
+            </div>
+            <div className="flex shrink-0 flex-col items-end text-right">
+              {before && (
+                <span className="mb-0.5 text-[10px] leading-none font-medium text-slate-400 line-through">
+                  Antes {copShort(before)}
+                </span>
+              )}
+              <span className="text-xs leading-none font-black text-amber-400 sm:text-sm">
+                {copShort(p.price)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          it.kind === "store" && (
+            <span className="text-[11px] text-slate-400">
+              {it.store.city} · {it.metric}
+            </span>
+          )
+        )}
       </div>
     </button>
   );
