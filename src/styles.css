@@ -273,9 +273,8 @@ html {
   svg {
     max-width: 100%;
   }
-  button,
-  input,
-  select {
+  /* Los puntitos de color (min-h-0) se quedan pequeños a propósito. */
+  :is(button, input, select):not(.min-h-0) {
     min-height: 44px;
   }
 }

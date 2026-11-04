@@ -64,6 +64,20 @@
       "when": 1793392154767,
       "tag": "0008_raffle",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793840400000,
+      "tag": "0009_wear_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793844000000,
+      "tag": "0010_try_on",
+      "breakpoints": true
     }
   ]
 }

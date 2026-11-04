@@ -60,6 +60,10 @@ function upgrade(s: DemoState) {
     st.verificationRequestedAt ??= null;
   }
   for (const p of s.products) p.promoVideo ??= null;
+  // Prendas del vestidor virtual añadidas después: se suman a los datos ya guardados.
+  const known = new Set(s.products.map((p) => p.id));
+  for (const p of buildSeed().products)
+    if (/^p(9|1[0-5])$/.test(p.id) && !known.has(p.id)) s.products.push(p);
   s.affiliations ??= [];
   s.coupons ??= [];
   s.raffles ??= [];

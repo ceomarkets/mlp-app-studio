@@ -11,7 +11,7 @@ describe("backend demo: flujo completo", () => {
   });
 
   it("catálogo, búsqueda y orden", async () => {
-    expect((await b.listProducts()).length).toBe(8);
+    expect((await b.listProducts()).length).toBe(15);
     expect((await b.listProducts({ q: "café" })).map((p) => p.id)).toContain("p3");
     const byPrice = await b.listProducts({ sort: "price-asc" });
     expect(byPrice[0]!.price).toBeLessThanOrEqual(byPrice[1]!.price);

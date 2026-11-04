@@ -65,6 +65,7 @@ const toProduct = (r: Row): Product => ({
   promoCopy: r.promo_copy ?? "",
   promoImage: r.promo_image ?? null,
   promoVideo: r.promo_video ?? null,
+  tryOn: r.try_on ?? null,
   category: r.category as Category,
   commission: Number(r.commission),
   stock: r.stock,
@@ -657,7 +658,7 @@ export const supabaseBackend: Backend = {
   async saveProduct({ id, ...p }) {
     const store = await this.myStore();
     if (!store) throw new Error("Primero crea tu tienda");
-    const { compareAtPrice, promoCopy, promoImage, promoVideo, ...rest } = p;
+    const { compareAtPrice, promoCopy, promoImage, promoVideo, tryOn, ...rest } = p;
     const row: Row = {
       ...rest,
       compare_at_price: compareAtPrice,
@@ -667,6 +668,8 @@ export const supabaseBackend: Backend = {
     };
     if (promoVideo) row.promo_video = promoVideo;
     else if (id) row.promo_video = null;
+    if (tryOn?.kind || tryOn?.color) row.try_on = tryOn;
+    else if (id) row.try_on = null;
     const send = (data: Row) =>
       id
         ? untyped.from("products").update(data).eq("id", id).select(PRODUCT_COLS).single()
@@ -675,6 +678,11 @@ export const supabaseBackend: Backend = {
     // Base de datos sin la migración de afiliaciones: se guarda sin el video.
     if (res.error?.message.includes("promo_video") && !promoVideo) {
       const { promo_video: _v, ...legacy } = row;
+      res = await send(legacy);
+    }
+    // Base de datos sin la migración del vestidor: se guarda sin el ajuste de prenda.
+    if (res.error?.message.includes("try_on")) {
+      const { try_on: _t, ...legacy } = row;
       res = await send(legacy);
     }
     return toProduct(ok(res));

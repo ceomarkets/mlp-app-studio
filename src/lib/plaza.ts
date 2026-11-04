@@ -78,6 +78,8 @@ export const REF_WINDOW_DAYS = 30;
 
 export const CATEGORIES = [
   "Ropa",
+  "Calzado",
+  "Accesorios",
   "Alimentos",
   "Artesanías",
   "Campo",

@@ -157,11 +157,15 @@ export type Product = {
   promoImage: string | null;
   /** Video promocional (https: Reels, TikTok, YouTube) para afiliados. */
   promoVideo: string | null;
+  /** Vestidor virtual: tipo de prenda y color que eligió la tienda (si no, se deducen). */
+  tryOn?: TryOn | null | undefined;
   store: Pick<
     Store,
     "slug" | "name" | "city" | "emoji" | "shipsNational" | "verified" | "requireApproval"
   >;
 };
+
+export type TryOn = { kind: string | null; color: string | null };
 
 export type ProductInput = Pick<
   Product,
@@ -178,6 +182,7 @@ export type ProductInput = Pick<
   | "promoCopy"
   | "promoImage"
   | "promoVideo"
+  | "tryOn"
 > & { id?: string };
 
 export type Shipping = {

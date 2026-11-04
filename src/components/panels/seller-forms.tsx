@@ -1,3 +1,4 @@
+import { colorFromName, KIND_LABEL, kindOf, type Kind } from "@/lib/vestidor";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FolderPlus, ImagePlus, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -295,6 +296,7 @@ const empty: ProductInput = {
   promoCopy: "",
   promoImage: null,
   promoVideo: null,
+  tryOn: null,
 };
 
 export function ProductDialog({
@@ -325,6 +327,7 @@ export function ProductDialog({
             promoCopy: product.promoCopy,
             promoImage: product.promoImage,
             promoVideo: product.promoVideo,
+            tryOn: product.tryOn ?? null,
             category: product.category,
             commission: product.commission,
             stock: product.stock,
@@ -534,6 +537,8 @@ export function ProductDialog({
             </div>
           </div>
 
+          <TryOnFields f={f} setF={setF} />
+
           <div className="space-y-3 rounded-2xl bg-muted p-4">
             <Label htmlFor="pk" className="flex justify-between">
               <span>Comisión para afiliados</span>
@@ -606,5 +611,74 @@ export function ProductDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Ajuste de la prenda en el Vestidor Virtual (solo ropa, calzado y accesorios de vestir). */
+function TryOnFields({ f, setF }: { f: ProductInput; setF: (f: ProductInput) => void }) {
+  const auto = kindOf({ name: f.name, category: f.category });
+  const kind = (f.tryOn?.kind as Kind | null | undefined) ?? null;
+  const wearCat = ["Ropa", "Calzado", "Accesorios"].includes(f.category);
+  if (!wearCat && !auto && !kind) return null;
+  const set = (patch: Partial<NonNullable<ProductInput["tryOn"]>>) => {
+    const next = { kind: f.tryOn?.kind ?? null, color: f.tryOn?.color ?? null, ...patch };
+    setF({ ...f, tryOn: next.kind || next.color ? next : null });
+  };
+  const color = f.tryOn?.color ?? colorFromName(f) ?? "#5b6476";
+  return (
+    <div className="space-y-2 rounded-xl border border-amber-500/30 bg-slate-950 p-3">
+      <span className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+        <i className="fa-solid fa-person-dress" /> Vestidor Virtual
+      </span>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+        <div className="space-y-1">
+          <Label htmlFor="tk" className="text-[11px]">
+            Tipo de prenda
+          </Label>
+          <select
+            id="tk"
+            value={kind ?? ""}
+            onChange={(e) => set({ kind: e.target.value || null })}
+            className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+          >
+            <option value="">
+              Automático{auto ? ` (${KIND_LABEL[auto]})` : " (no se puede probar)"}
+            </option>
+            {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
+              <option key={k} value={k}>
+                {KIND_LABEL[k]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="tc" className="text-[11px]">
+            Color
+          </Label>
+          <div className="flex items-center gap-1">
+            <input
+              id="tc"
+              type="color"
+              value={color}
+              onChange={(e) => set({ color: e.target.value })}
+              className="h-9 w-12 cursor-pointer rounded-md border bg-background p-1"
+            />
+            {f.tryOn?.color && (
+              <button
+                type="button"
+                onClick={() => set({ color: null })}
+                className="text-[10px] font-bold text-slate-400 hover:text-amber-400"
+              >
+                Auto
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+      <p className="text-[10px] text-slate-400">
+        Así se verá la prenda ajustada al cuerpo del modelo. Si no eliges color, se toma del nombre
+        o de la foto.
+      </p>
+    </div>
   );
 }
