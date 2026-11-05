@@ -132,29 +132,15 @@ export function Shell({
 
 type NavLink = readonly ["/" | "/vendedores" | "/afiliados" | "/cuenta", string, string];
 
-/**
- * Menú según el registro de cada persona:
- * 1. Compra y venta → Mis compras y Vender (o Mi tienda cuando ya la abrió).
- * 2. Afiliados → Panel Afiliados.  3. Empresas → Panel Empresa.
- * Sin sesión se muestran las puertas de entrada: vender y ganar como afiliado.
- */
+/** Menú principal: Mercado y los paneles de Afiliados y Empresas siempre; con sesión, Mis compras. */
 function useNavLinks(): NavLink[] {
-  const { user, sells, canSell, promotes, sellerLabel, hasStore } = useSpaces();
-  const links: NavLink[] = [["/", "fa-crown text-amber-400", "Mercado"]];
-  if (!user) {
-    links.push(["/vendedores", "fa-store text-amber-400", "Vender"]);
-    links.push(["/afiliados", "fa-users text-emerald-400", "Gana como afiliado"]);
-    return links;
-  }
-  if (user.accountType !== "empresa")
-    links.push(["/cuenta", "fa-box text-amber-400", "Mis compras"]);
-  if (sells || canSell)
-    links.push([
-      "/vendedores",
-      sellerLabel === "Mi tienda" ? "fa-store text-amber-400" : "fa-building text-amber-400",
-      hasStore || user.accountType === "empresa" ? sellerLabel : "Vender",
-    ]);
-  if (promotes) links.push(["/afiliados", "fa-users text-emerald-400", "Panel Afiliados"]);
+  const { user } = useSpaces();
+  const links: NavLink[] = [
+    ["/", "fa-crown text-amber-400", "Mercado"],
+    ["/afiliados", "fa-users text-emerald-400", "Panel Afiliados"],
+    ["/vendedores", "fa-building text-amber-400", "Panel Empresas"],
+  ];
+  if (user) links.push(["/cuenta", "fa-box text-amber-400", "Mis compras"]);
   return links;
 }
 
@@ -334,17 +320,13 @@ function UserMenu() {
         <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Tus espacios
         </DropdownMenuLabel>
-        {(sp.sells || sp.canSell) && (
-          <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
-            <i className="fa-solid fa-store w-4 text-amber-400" />{" "}
-            {sp.hasStore || user.accountType === "empresa" ? sp.sellerLabel : "Vender algo"}
-          </DropdownMenuItem>
-        )}
-        {sp.promotes && (
-          <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
-            <i className="fa-solid fa-users w-4 text-emerald-400" /> Panel Afiliados
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
+          <i className="fa-solid fa-users w-4 text-emerald-400" /> Panel Afiliados
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
+          <i className="fa-solid fa-building w-4 text-amber-400" />{" "}
+          {sp.hasStore ? sp.sellerLabel : "Panel Empresas"}
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "tipo" })}>
           <i className="fa-solid fa-id-card w-4 text-amber-400" /> Tipo de cuenta
         </DropdownMenuItem>
