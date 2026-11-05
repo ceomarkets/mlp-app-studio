@@ -293,9 +293,14 @@ html {
     vertical-align: -0.125em;
   }
   .pxi > i {
-    font-size: 86cqh;
+    /* Tope por si la caja no puede medirse (p. ej. si alguien le pone "inline"). */
+    font-size: min(86cqh, 4rem);
     line-height: 1;
   }
+}
+/* La caja del ícono siempre mide su tamaño: "inline"/"block" no la desarman. */
+.pxi:is(.inline, .block, .inline-block) {
+  display: inline-grid;
 }
 
 /* ---------- Íconos minimalistas ----------
@@ -312,7 +317,7 @@ html {
   }
 }
 
-:is(button, a, [role="button"], [role="tab"], input, select, textarea):focus-visible {
+:is(button, a, [role="button"], [role="tab"]):focus-visible {
   outline: 2px solid #94a3b8;
   outline-offset: 2px;
 }

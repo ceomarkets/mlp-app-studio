@@ -39,6 +39,7 @@ import {
   dailySeries,
   FULFILLMENT_LABEL,
   pct,
+  waNumber,
 } from "@/lib/plaza";
 import { keys, useUser } from "@/lib/session";
 import { StoreKindBadge } from "@/components/StoreKindBadge";
@@ -622,8 +623,23 @@ function OrderRow({ o, dispute }: { o: SellerOrderItem; dispute?: Dispute | unde
         </div>
       </div>
       <div className="mt-3 rounded-xl bg-muted p-3 text-xs">
-        <b>{o.shipping.name}</b> · {o.shipping.phone}
-        <br />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span>
+            <b>{o.shipping.name}</b> · {o.shipping.phone}
+          </span>
+          {waNumber(o.shipping.phone) && (
+            <a
+              href={`https://wa.me/${waNumber(o.shipping.phone)}?text=${encodeURIComponent(
+                `Hola ${o.shipping.name.split(" ")[0]}, te escribimos de Plaza X por tu pedido ${o.reference} (${o.productName}).`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2 py-1 font-semibold text-slate-300 hover:text-white"
+            >
+              <i className="fa-brands fa-whatsapp" aria-hidden /> Escribir
+            </a>
+          )}
+        </div>
         {o.shipping.address}, {o.shipping.city}
         {o.shipping.notes && <div className="mt-1 italic">“{o.shipping.notes}”</div>}
       </div>

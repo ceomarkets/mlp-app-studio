@@ -39,3 +39,13 @@ describe("registro general", () => {
     expect(splitSale(100000, 0)).toEqual({ seller: 91000, affiliate: 0, platform: 9000 });
   });
 });
+
+describe("contacto por WhatsApp", () => {
+  it("acepta celulares colombianos", async () => {
+    const { waNumber } = await import("@/lib/plaza");
+    expect(waNumber("300 123 4567")).toBe("573001234567");
+    expect(waNumber("+57 300-123-4567")).toBe("573001234567");
+    expect(waNumber("6027201234")).toBeNull();
+    expect(waNumber(null)).toBeNull();
+  });
+});

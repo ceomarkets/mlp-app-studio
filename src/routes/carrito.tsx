@@ -164,7 +164,7 @@ function Checkout() {
             <h2 className="text-xl font-bold">
               Productos{" "}
               <span className="text-sm font-normal text-muted-foreground">
-                · {stores.length} tiendas
+                · {stores.length} {stores.length === 1 ? "tienda" : "tiendas"}
               </span>
             </h2>
             {rows.map((r) => (
@@ -202,7 +202,7 @@ function Checkout() {
           </section>
         </div>
 
-        <aside className="h-fit space-y-4 rounded-3xl bg-ink p-6 text-ink-foreground md:sticky md:top-24">
+        <aside className="h-fit space-y-4 rounded-3xl border border-slate-800 bg-slate-900 p-6 text-slate-100 md:sticky md:top-24">
           <h2 className="text-xl font-bold">Resumen</h2>
           <div className="space-y-2 text-sm">
             {rows.map((r) => (
@@ -238,7 +238,7 @@ function Checkout() {
                 placeholder="¿Tienes un cupón?"
                 aria-label="Código de cupón"
                 maxLength={20}
-                className="h-9 min-w-0 flex-1 rounded-lg border border-ink-foreground/20 bg-ink-foreground/10 px-3 font-mono text-sm uppercase placeholder:normal-case placeholder:opacity-60 focus:outline-none"
+                className="h-9 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 font-mono text-sm uppercase placeholder:normal-case placeholder:opacity-60 focus:outline-none"
               />
               {coupon ? (
                 <button
@@ -257,7 +257,7 @@ function Checkout() {
                   type="button"
                   disabled={!code.trim() || apply.isPending || !user}
                   onClick={() => apply.mutate(code.trim())}
-                  className="rounded-lg bg-ink-foreground px-3 text-xs font-bold text-ink disabled:opacity-50"
+                  className="rounded-lg bg-slate-700 px-3 text-xs font-bold text-white disabled:opacity-50"
                 >
                   {apply.isPending ? <Loader2 className="size-3 animate-spin" /> : "Aplicar"}
                 </button>
@@ -274,12 +274,12 @@ function Checkout() {
             )}
             {!user && <p className="text-[11px] opacity-70">Entra para usar un cupón.</p>}
           </div>
-          <div className="flex items-center justify-between border-t border-ink-foreground/20 pt-4 text-lg">
+          <div className="flex items-center justify-between border-t border-slate-800 pt-4 text-lg">
             <span>Total</span>
-            <span className="font-display text-2xl font-bold">{cop(total)}</span>
+            <span className="font-display text-2xl font-bold text-amber-400">{cop(total)}</span>
           </div>
           {ref && (
-            <p className="rounded-xl bg-ink-foreground/10 px-3 py-2 text-xs">
+            <p className="rounded-xl bg-slate-800 px-3 py-2 text-xs">
               Compra recomendada por @{ref}. ¡Gracias por apoyar a tu red!
             </p>
           )}
@@ -295,7 +295,6 @@ function Checkout() {
               user ? undefined : () => navigate({ to: "/entrar", search: { to: "/carrito" } })
             }
             size="lg"
-            variant="secondary"
             className="w-full"
             disabled={pay.isPending || loading || !rows.length || problems.length > 0}
           >

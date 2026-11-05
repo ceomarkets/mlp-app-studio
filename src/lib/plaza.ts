@@ -226,3 +226,11 @@ export function affiliateLevel(sales: number) {
   const progress = next ? (sales - level.min) / (next.min - level.min) : 1;
   return { name: level.name, sales, next, missing: next ? next.min - sales : 0, progress };
 }
+
+/** Celular colombiano en formato de WhatsApp (57 + 10 dígitos), o null si no lo es. */
+export function waNumber(phone: string | null | undefined): string | null {
+  const d = (phone ?? "").replace(/\D/g, "");
+  if (/^3\d{9}$/.test(d)) return `57${d}`;
+  if (/^573\d{9}$/.test(d)) return d;
+  return null;
+}

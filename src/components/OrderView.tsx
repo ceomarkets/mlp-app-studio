@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check } from "@/components/icons";
 import { BuyerItemActions, disputeKeys, TrackingInfo } from "@/components/Disputes";
 import { backend, type Order, type OrderItem } from "@/lib/backend";
-import { cop, FULFILLMENT_LABEL } from "@/lib/plaza";
+import { cop, FULFILLMENT_LABEL, waNumber } from "@/lib/plaza";
+import { keys } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 export const ORDER_STATUS: Record<Order["status"], { label: string; cls: string }> = {
@@ -21,31 +21,36 @@ export function StatusPill({ status }: { status: Order["status"] }) {
 
 const STEPS: OrderItem["fulfillment"][] = ["pending", "preparing", "shipped", "delivered"];
 
+/** Progreso del envío: barra de 4 pasos y el paso actual en palabras (cabe en el celular). */
 export function FulfillmentSteps({ value }: { value: OrderItem["fulfillment"] }) {
   if (value === "cancelled")
-    return <span className="text-xs font-semibold text-destructive">Cancelado</span>;
+    return <span className="text-xs font-semibold text-slate-400">Cancelado</span>;
   const at = STEPS.indexOf(value);
+  const next = STEPS[at + 1];
   return (
-    <ol className="flex items-center gap-1 text-[11px] font-semibold">
-      {STEPS.map((s, i) => (
-        <li key={s} className="flex items-center gap-1">
+    <div
+      className="mt-1.5 max-w-xs"
+      aria-label={`Paso ${at + 1} de 4: ${FULFILLMENT_LABEL[value]}`}
+    >
+      <div className="flex gap-1" aria-hidden>
+        {STEPS.map((s, i) => (
           <span
-            className={cn(
-              "grid size-4 place-items-center rounded-full",
-              i <= at ? "bg-ink text-ink-foreground" : "bg-muted text-muted-foreground",
-            )}
-          >
-            {i < at ? <Check className="size-2.5" /> : i + 1}
-          </span>
-          <span className={i <= at ? "" : "text-muted-foreground"}>{FULFILLMENT_LABEL[s]}</span>
-          {i < STEPS.length - 1 && <span className="mx-0.5 h-px w-3 bg-border" />}
-        </li>
-      ))}
-    </ol>
+            key={s}
+            className={cn("h-1 flex-1 rounded-full", i <= at ? "bg-amber-400" : "bg-slate-700")}
+          />
+        ))}
+      </div>
+      <p className="mt-1 text-[11px] text-slate-400">
+        <b className="font-semibold text-slate-200">{FULFILLMENT_LABEL[value]}</b>
+        {next ? ` · sigue: ${FULFILLMENT_LABEL[next].toLowerCase()}` : " · ¡listo!"}
+      </p>
+    </div>
   );
 }
 
 export function OrderCard({ order }: { order: Order }) {
+  // WhatsApp de cada tienda, para escribirle sobre el pedido.
+  const stores = useQuery({ queryKey: keys.stores, queryFn: () => backend.listStores() });
   const disputes = useQuery({
     queryKey: disputeKeys.mine,
     queryFn: () => backend.myDisputes(),
@@ -84,6 +89,12 @@ export function OrderCard({ order }: { order: Order }) {
               </div>
               {order.status === "paid" && <FulfillmentSteps value={i.fulfillment} />}
               <TrackingInfo item={i} />
+              {order.status === "paid" && (
+                <StoreContact
+                  phone={stores.data?.find((s) => s.id === i.storeId)?.whatsapp}
+                  text={`Hola, les escribo por mi pedido ${order.reference} (${i.productName}) en Plaza X.`}
+                />
+              )}
             </div>
             <span className="text-sm">{cop(i.subtotal)}</span>
             {order.status === "paid" && (
@@ -98,5 +109,20 @@ export function OrderCard({ order }: { order: Order }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+function StoreContact({ phone, text }: { phone: string | null | undefined; text: string }) {
+  const n = waNumber(phone);
+  if (!n) return null;
+  return (
+    <a
+      href={`https://wa.me/${n}?text=${encodeURIComponent(text)}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-white"
+    >
+      <i className="fa-brands fa-whatsapp" aria-hidden /> Escribir a la tienda
+    </a>
   );
 }

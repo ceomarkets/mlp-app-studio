@@ -407,17 +407,17 @@ export function BuyerItemActions({
             <button
               onClick={() => confirm.mutate()}
               disabled={confirm.isPending}
-              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-slate-950 transition hover:bg-amber-400 disabled:opacity-60"
             >
-              <i className="fa-solid fa-box-open" /> Confirmar recepción
+              <i className="fa-solid fa-box-open" /> Ya lo recibí
             </button>
           )}
         {canDispute(item) && !dispute && (
           <button
             onClick={() => setOpen(true)}
-            className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-400 transition hover:bg-rose-500/20"
+            className="rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-400 underline-offset-2 transition hover:text-white hover:underline"
           >
-            <i className="fa-solid fa-shield-halved" /> Abrir disputa / Reportar problema
+            <i className="fa-solid fa-shield-halved" /> ¿Algún problema? Repórtalo
           </button>
         )}
       </div>
