@@ -5,7 +5,6 @@ import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { backend, IS_DEMO, type AccountType } from "@/lib/backend";
-import { ROLES, roleOf } from "@/lib/roles";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
 import { PAYOUT_METHODS, type PayoutMethod } from "@/lib/plaza";
 import { keys } from "@/lib/session";
@@ -21,24 +20,43 @@ export type Mode = "login" | "signup" | "reset";
 const input =
   "w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none";
 
+/** Textos de cada puerta de entrada: el rol lo decide dónde entra la persona. */
+const COPY: Record<Role, { signup: [string, string]; login: [string, string] }> = {
+  comprador: {
+    signup: [
+      "Crea tu cuenta para pagar",
+      "Tu carrito queda intacto. Solo te pedimos lo necesario.",
+    ],
+    login: ["Ingresa para pagar", "Tu carrito queda intacto y sigues al pago."],
+  },
+  afiliado: {
+    signup: ["Únete como afiliado", "Recomienda productos y gana comisión por cada venta."],
+    login: ["Panel de afiliados", "Ingresa para ver tus enlaces, clics y comisiones."],
+  },
+  empresa: {
+    signup: ["Abre tu tienda", "Para empresas y emprendimientos. Sin pagos por adelantado."],
+    login: ["Panel de empresas", "Ingresa para gestionar tu tienda, pedidos y saldo."],
+  },
+};
+
 /**
- * Formulario "Unirse a Plaza X": elige rol (afiliado o empresa), correo y
- * contraseña. Al entrar lleva al panel del rol elegido (o a `redirectTo`).
+ * Formulario de registro e ingreso. No hay selector de rol: el rol lo fija la puerta
+ * de entrada (pago → comprador, Panel Afiliados → afiliado, Panel Empresas → empresa).
  */
 export function AuthForm({
+  role,
   redirectTo,
   onDone,
   initialMode = "login",
-  initialRole = "comprador",
 }: {
+  role: Role;
   redirectTo?: string | undefined;
+  /** Se llama con la sesión ya abierta (por ejemplo, para seguir al pago). */
   onDone?: () => void;
   initialMode?: Mode;
-  initialRole?: Role;
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [role, setRole] = useState<Role>(initialRole);
   const [mode, setMode] = useState<Mode>(initialMode);
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({ email: "", password: "", name: "", company: "" });
@@ -79,16 +97,9 @@ export function AuthForm({
         await backend.signIn({ email: f.email, password: f.password });
       }
       await qc.invalidateQueries({ queryKey: keys.me });
-      // Al entrar se va al panel de su tipo de cuenta (el elegido al registrarse).
-      const me = await backend.getUser();
-      const home = roleOf(mode === "signup" ? role : me?.accountType).home;
-      toast.success(
-        mode === "signup"
-          ? `¡Bienvenido! Cuenta de ${roleOf(role).label.toLowerCase()} lista`
-          : "¡Sesión iniciada con éxito!",
-      );
+      toast.success(mode === "signup" ? "¡Listo! Cuenta creada" : "¡Hola de nuevo!");
       onDone?.();
-      if (redirectTo ?? home) navigate({ to: redirectTo ?? home! });
+      if (redirectTo) navigate({ to: redirectTo });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -99,49 +110,13 @@ export function AuthForm({
   return (
     <div>
       <h3 className="mb-1 text-xl font-bold text-white">
-        {mode === "signup" ? "Crea tu cuenta" : "Bienvenido a Plaza X"}
+        {(mode === "signup" ? COPY[role].signup : COPY[role].login)[0]}
       </h3>
       <p className="mb-5 text-xs text-slate-400">
-        {mode === "signup"
-          ? "Registro general: elige cómo usarás Plaza X. Puedes cambiarlo desde Mi cuenta."
-          : "Entra y te llevamos a tu espacio."}
+        {mode === "reset"
+          ? "Te enviaremos un enlace a tu correo."
+          : (mode === "signup" ? COPY[role].signup : COPY[role].login)[1]}
       </p>
-
-      {mode === "signup" && (
-        <div role="radiogroup" aria-label="Tipo de cuenta" className="mb-6 grid gap-2 text-xs">
-          {ROLES.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              role="radio"
-              aria-checked={role === r.id}
-              onClick={() => setRole(r.id)}
-              className={cn(
-                "flex min-h-0 items-center gap-3 rounded-xl border p-3 text-left transition",
-                role === r.id
-                  ? "border-amber-400/70 bg-slate-900 text-white"
-                  : "border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-600",
-              )}
-            >
-              <span
-                className={cn(
-                  "grid size-7 shrink-0 place-items-center rounded-full border text-[12px] font-black",
-                  role === r.id
-                    ? "border-amber-400 text-amber-400"
-                    : "border-slate-700 text-slate-500",
-                )}
-              >
-                {r.n}
-              </span>
-              <span className="flex-1">
-                <b className="block text-[13px]">{r.label}</b>
-                <span className="text-[11px] text-slate-400">{r.short}</span>
-              </span>
-              <i className={cn("fa-solid text-slate-500", r.icon)} aria-hidden />
-            </button>
-          ))}
-        </div>
-      )}
 
       <form onSubmit={submit} className="space-y-4">
         {mode === "signup" && role === "afiliado" && (
@@ -263,8 +238,8 @@ export function AuthForm({
   );
 }
 
-/* Con qué se abre la ventana: ingresar, o registrarse ya con el tipo de cuenta elegido. */
-let intent: { mode: Mode; role: Role; n: number } = { mode: "login", role: "comprador", n: 0 };
+/* La ventana se abre solo para pagar: comprador, en el modo que se pida. */
+let intent: { mode: Mode; n: number; onDone?: (() => void) | undefined } = { mode: "signup", n: 0 };
 const intentSubs = new Set<() => void>();
 const useIntent = () =>
   useSyncExternalStore(
@@ -276,13 +251,9 @@ const useIntent = () =>
     () => intent,
   );
 
-/** Abre la ventana para ingresar (o, con un tipo de cuenta, para registrarse con él). */
-export function openAuth(opts?: { mode?: Mode; role?: Role }) {
-  intent = {
-    mode: opts?.mode ?? (opts?.role ? "signup" : "login"),
-    role: opts?.role ?? "comprador",
-    n: intent.n + 1,
-  };
+/** Pide cuenta para pagar; `onDone` corre con la sesión abierta (p. ej. seguir al pago). */
+export function openAuth(opts?: { mode?: Mode; onDone?: () => void }) {
+  intent = { mode: opts?.mode ?? "signup", n: intent.n + 1, onDone: opts?.onDone };
   intentSubs.forEach((f) => f());
   authUI.open();
 }
@@ -295,7 +266,15 @@ export function AuthDialog() {
       <DialogContent className="max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 text-white shadow-2xl [&>button]:text-slate-500">
         <DialogTitle className="sr-only">Unirse a Plaza X</DialogTitle>
         <DialogDescription className="sr-only">Inicia sesión o crea tu cuenta</DialogDescription>
-        <AuthForm key={it.n} onDone={authUI.close} initialMode={it.mode} initialRole={it.role} />
+        <AuthForm
+          key={it.n}
+          role="comprador"
+          initialMode={it.mode}
+          onDone={() => {
+            authUI.close();
+            it.onDone?.();
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

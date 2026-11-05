@@ -8,6 +8,7 @@ import { keys, useRequireUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const SECTIONS = [
+  { to: "/admin", label: "Resumen", icon: "fa-gauge-high" },
   { to: "/admin/anuncios", label: "Anuncios", icon: "fa-bullhorn" },
   { to: "/admin/disputas", label: "Disputas", icon: "fa-shield-halved" },
   { to: "/admin/tiendas", label: "Tiendas", icon: "fa-store" },
@@ -43,6 +44,7 @@ export function AdminGate({ path, children }: { path: string; children: ReactNod
           <Link
             key={s.to}
             to={s.to}
+            activeOptions={{ exact: s.to === "/admin" }}
             className={cn(
               "flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 font-semibold text-slate-200 transition hover:bg-slate-800",
               "data-[status=active]:border-amber-400 data-[status=active]:bg-amber-500 data-[status=active]:text-slate-950",

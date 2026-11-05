@@ -115,6 +115,70 @@ export type AdminStore = {
   createdAt: string;
 };
 
+/** Cifras del panel de administración (últimos 30 días + pendientes). */
+export type AdminOverview = {
+  gmv30: number;
+  orders30: number;
+  platform30: number;
+  affiliate30: number;
+  pendingWithdrawals: number;
+  pendingWithdrawalsAmount: number;
+  toShip: number;
+  openDisputes: number;
+  storesToVerify: number;
+  stores: number;
+  products: number;
+  users: number;
+  affiliates: number;
+};
+export type AdminOrder = {
+  id: string;
+  reference: string;
+  status: OrderStatus;
+  total: number;
+  createdAt: string;
+  paidAt: string | null;
+  buyerEmail: string;
+  items: {
+    name: string;
+    qty: number;
+    store: string;
+    fulfillment: Fulfillment;
+    subtotal: number;
+    seller: number;
+    affiliate: number;
+    platform: number;
+    refunded: boolean;
+  }[];
+};
+export type AdminWithdrawal = Withdrawal & { userId: string; email: string; fullName: string };
+export type AdminProduct = {
+  id: string;
+  name: string;
+  emoji: string;
+  image: string | null;
+  price: number;
+  stock: number;
+  active: boolean;
+  soldCount: number;
+  commission: number;
+  category: string;
+  storeName: string;
+  storeSlug: string;
+  createdAt: string;
+};
+export type AdminUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  username: string | null;
+  accountType: AccountType;
+  banned: boolean;
+  hasStore: boolean;
+  isAdmin: boolean;
+  createdAt: string;
+};
+
 export type Store = {
   id: string;
   ownerId: string;
@@ -216,6 +280,8 @@ export type OrderItem = {
   /** Descuento por volumen aplicado a esta línea (sale de la parte de Plaza X). */
   discountAmount: number;
   affiliateId: string | null;
+  /** Canal del enlace con que llegó la venta del afiliado (instagram, whatsapp…). */
+  refSource?: string | null | undefined;
   paidAt: string | null;
   fulfillment: Fulfillment;
   tracking: string | null;
@@ -248,7 +314,13 @@ export type SellerOrderItem = OrderItem & {
   shipping: Shipping;
 };
 
-export type Click = { id: string; productId: string | null; createdAt: string };
+/** Clic en un enlace de afiliado; `source` = canal (src / utm_source), si vino. */
+export type Click = {
+  id: string;
+  productId: string | null;
+  createdAt: string;
+  source?: string | null | undefined;
+};
 
 export type Withdrawal = {
   id: string;
@@ -385,6 +457,14 @@ export interface Backend {
   saveAnnouncement(input: AnnouncementInput): Promise<Announcement>;
   deleteAnnouncement(id: string): Promise<void>;
   adminStores(): Promise<AdminStore[]>;
+  adminOverview(): Promise<AdminOverview>;
+  adminOrders(): Promise<AdminOrder[]>;
+  adminWithdrawals(): Promise<AdminWithdrawal[]>;
+  /** Marca un retiro solicitado como pagado (ya transferido) o rechazado (vuelve al saldo). */
+  adminSetWithdrawal(id: string, status: "paid" | "rejected"): Promise<void>;
+  adminProducts(): Promise<AdminProduct[]>;
+  adminSetProductActive(id: string, active: boolean): Promise<void>;
+  adminUsers(): Promise<AdminUser[]>;
   listRaffles(): Promise<Raffle[]>;
   saveRaffle(input: RaffleInput): Promise<void>;
   drawRaffle(id: string): Promise<RaffleWinner>;
@@ -430,6 +510,8 @@ export interface Backend {
     ref: string | null,
     shipping: Shipping,
     coupon?: string | null,
+    /** Canal del enlace de afiliado (src / utm_source) para medir ventas por fuente. */
+    refSource?: string | null,
   ): Promise<{ orderId: string; reference: string; total: number }>;
   /** Valida un cupón para quien compra (error con el motivo si no aplica). */
   checkCoupon(code: string): Promise<CouponRule>;
@@ -459,7 +541,7 @@ export interface Backend {
   myAffiliations(): Promise<Affiliation[]>;
   /** Devuelve "approved" (tienda abierta) o "pending" (requiere aprobación). */
   requestAffiliation(storeSlug: string, message?: string): Promise<AffiliateStatus>;
-  trackClick(username: string, productId: string): Promise<void>;
+  trackClick(username: string, productId: string | null, source?: string | null): Promise<void>;
   myClicks(): Promise<Click[]>;
   myAffiliateItems(): Promise<OrderItem[]>;
 

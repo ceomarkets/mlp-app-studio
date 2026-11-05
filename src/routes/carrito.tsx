@@ -1,3 +1,4 @@
+import { openAuth } from "@/components/AuthDialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2, Lock, ShoppingBag } from "@/components/icons";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { backend, IS_DEMO, type Shipping } from "@/lib/backend";
-import { cart, useReferral } from "@/lib/client-state";
+import { cart, referral, useReferral } from "@/lib/client-state";
 import { rememberCoupon, savedCoupon } from "@/lib/coupon";
 import { BUNDLE_RATE, cop, priceOrder, type CouponRule } from "@/lib/plaza";
 import { keys, useUser } from "@/lib/session";
@@ -94,6 +95,7 @@ function Checkout() {
         ref,
         ship,
         coupon && !priced.missing ? coupon.code : null,
+        referral.source(),
       );
       rememberCoupon(null);
       try {
@@ -124,10 +126,15 @@ function Checkout() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (!user) {
-      navigate({ to: "/entrar", search: { to: "/carrito" } });
-      return;
-    }
+    // Registro justo a tiempo: la cuenta se pide aquí, el carrito y el envío quedan como
+    // están y, con la sesión abierta, el pago sigue solo.
+    if (!user)
+      return openAuth({
+        mode: "signup",
+        // Con un cupón escrito, primero se aplica (ya con cuenta) y luego se paga.
+        onDone: () =>
+          code.trim() && !coupon ? toast.info("¡Listo! Aplica tu cupón y paga") : pay.mutate(),
+      });
     pay.mutate();
   }
 
@@ -272,7 +279,11 @@ function Checkout() {
                     : coupon.description || "Cupón aplicado."}
               </p>
             )}
-            {!user && <p className="text-[11px] opacity-70">Entra para usar un cupón.</p>}
+            {!user && (
+              <p className="text-[11px] opacity-70">
+                Al pagar creas tu cuenta y podrás aplicar tu cupón.
+              </p>
+            )}
           </div>
           <div className="flex items-center justify-between border-t border-slate-800 pt-4 text-lg">
             <span>Total</span>
@@ -289,17 +300,13 @@ function Checkout() {
             </p>
           )}
           <Button
-            // Sin sesión no se valida el formulario: primero se entra y se vuelve aquí.
-            type={user ? "submit" : "button"}
-            onClick={
-              user ? undefined : () => navigate({ to: "/entrar", search: { to: "/carrito" } })
-            }
+            type="submit"
             size="lg"
             className="w-full"
             disabled={pay.isPending || loading || !rows.length || problems.length > 0}
           >
             {pay.isPending ? <Loader2 className="animate-spin" /> : <Lock />}
-            {user ? `Pagar ${cop(total)}` : "Entrar para pagar"}
+            {`Pagar ${cop(total)}`}
           </Button>
           <p className="text-center text-xs opacity-70">
             {IS_DEMO

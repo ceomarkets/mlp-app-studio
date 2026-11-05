@@ -11,8 +11,8 @@ export function SiteFooter() {
   const link = "transition hover:text-white";
   return (
     <footer className="mt-auto border-t border-amber-500/20 bg-slate-950 px-4 pt-10 pb-6 text-xs text-slate-400">
-      <div className="mx-auto mb-8 grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-3">
-        <div className="space-y-3">
+      <div className="mx-auto mb-8 grid max-w-7xl grid-cols-2 gap-8 md:grid-cols-4">
+        <div className="col-span-2 space-y-3 md:col-span-1">
           <div className="flex items-center gap-2 text-lg font-black tracking-tight text-white">
             Plaza <span className="gold-gradient-text">X</span>
           </div>
@@ -20,6 +20,33 @@ export function SiteFooter() {
             Mercado multitienda y red de afiliación comercial en Colombia. Recaudos y dispersiones
             automatizadas procesados mediante pasarela de pagos.
           </p>
+        </div>
+        <div>
+          <h4 className="mb-3 text-xs font-extrabold tracking-wider text-amber-400 uppercase">
+            Gana con Plaza X
+          </h4>
+          <ul className="space-y-2 text-[11px]">
+            <li>
+              <Link to="/vendedores" className={link}>
+                <i className="fa-solid fa-building me-1.5" aria-hidden />
+                Panel Empresas
+              </Link>
+              <span className="block text-[10px] text-slate-500">Vende en tu tienda</span>
+            </li>
+            <li>
+              <Link to="/afiliados" className={link}>
+                <i className="fa-solid fa-users me-1.5" aria-hidden />
+                Panel Afiliados
+              </Link>
+              <span className="block text-[10px] text-slate-500">Recomienda y gana comisión</span>
+            </li>
+            <li>
+              <Link to="/cuenta" className={link}>
+                <i className="fa-solid fa-box me-1.5" aria-hidden />
+                Mis pedidos
+              </Link>
+            </li>
+          </ul>
         </div>
         <div>
           <h4 className="mb-3 text-xs font-extrabold tracking-wider text-amber-400 uppercase">

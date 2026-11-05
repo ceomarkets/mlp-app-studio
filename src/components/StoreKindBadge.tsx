@@ -1,7 +1,7 @@
 import type { StoreKind } from "@/lib/backend";
 import { cn } from "@/lib/utils";
 
-/** "Vendedor independiente" o "Empresa": el comprador sabe a quién le compra. */
+/** "Emprendimiento" o "Empresa": el comprador sabe a quién le compra. */
 export function StoreKindBadge({ kind, className }: { kind: StoreKind; className?: string }) {
   const persona = kind === "persona";
   return (
@@ -15,7 +15,7 @@ export function StoreKindBadge({ kind, className }: { kind: StoreKind; className
       )}
     >
       <i className={cn("fa-solid", persona ? "fa-user-tag" : "fa-building")} aria-hidden />
-      {persona ? "Vendedor independiente" : "Empresa"}
+      {persona ? "Emprendimiento" : "Empresa"}
     </span>
   );
 }

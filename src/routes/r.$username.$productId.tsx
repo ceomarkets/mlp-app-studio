@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { backend } from "@/lib/backend";
-import { referral } from "@/lib/client-state";
+import { cleanSource, referral } from "@/lib/client-state";
 
 /**
- * Enlace de afiliado: /r/<usuario>/<producto>
- * Registra el clic, guarda la atribución por 30 días y lleva al producto.
+ * Enlace corto de afiliado: /r/<usuario>/<producto>?src=<canal>
+ * Registra el clic con su canal, guarda la atribución 30 días (último clic) y lleva al producto.
  */
 export const Route = createFileRoute("/r/$username/$productId")({
   ssr: false,
@@ -18,9 +18,11 @@ function Redirect() {
   const navigate = useNavigate();
   useEffect(() => {
     const clean = username.toLowerCase().replace(/[^a-z0-9-]/g, "");
-    referral.set(clean);
+    const q = new URLSearchParams(window.location.search);
+    const source = cleanSource(q.get("src") ?? q.get("utm_source"));
+    referral.set(clean, source);
     backend
-      .trackClick(clean, productId)
+      .trackClick(clean, productId, source)
       .catch(() => undefined)
       .finally(() => navigate({ to: "/producto/$id", params: { id: productId }, replace: true }));
   }, [username, productId, navigate]);

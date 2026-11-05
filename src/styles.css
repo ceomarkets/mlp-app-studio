@@ -372,3 +372,24 @@ header [data-tip]::after {
   width: 1.25em;
   text-align: center;
 }
+
+/* Micro-interacción: el contador del carrito y el check de "añadido" laten una vez. */
+@keyframes px-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.animate-pop {
+  animation: px-pop 0.32s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop {
+    animation: none;
+  }
+}

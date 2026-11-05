@@ -6,7 +6,12 @@ import type {
   Announcement,
   Backend,
   AccountType,
+  AdminOrder,
+  AdminOverview,
+  AdminProduct,
   AdminStore,
+  AdminUser,
+  AdminWithdrawal,
   AffiliateRequest,
   Click,
   Coupon,
@@ -120,6 +125,7 @@ const toItem = (r: Row): OrderItem => ({
   platformAmount: r.platform_amount,
   discountAmount: r.discount_amount ?? 0,
   affiliateId: r.affiliate_id,
+  refSource: r.ref_source ?? null,
   paidAt: r.paid_at,
   fulfillment: r.fulfillment,
   tracking: r.tracking,
@@ -468,6 +474,107 @@ export const supabaseBackend: Backend = {
       products: Number(r.products),
       sold: Number(r.sold),
       openDisputes: Number(r.open_disputes),
+      createdAt: r.created_at,
+    }));
+  },
+
+  async adminOverview() {
+    const d = ok(await untyped.rpc("admin_overview")) as Record<string, unknown>;
+    const n = (k: keyof AdminOverview) => Number(d?.[k] ?? 0);
+    return {
+      gmv30: n("gmv30"),
+      orders30: n("orders30"),
+      platform30: n("platform30"),
+      affiliate30: n("affiliate30"),
+      pendingWithdrawals: n("pendingWithdrawals"),
+      pendingWithdrawalsAmount: n("pendingWithdrawalsAmount"),
+      toShip: n("toShip"),
+      openDisputes: n("openDisputes"),
+      storesToVerify: n("storesToVerify"),
+      stores: n("stores"),
+      products: n("products"),
+      users: n("users"),
+      affiliates: n("affiliates"),
+    };
+  },
+
+  async adminOrders() {
+    const rows = ok(await untyped.rpc("admin_orders", { p_limit: 300 })) as Row[];
+    return rows.map((r): AdminOrder => ({
+      id: r.id,
+      reference: r.reference,
+      status: r.status,
+      total: Number(r.total),
+      createdAt: r.created_at,
+      paidAt: r.paid_at,
+      buyerEmail: r.buyer_email,
+      items: ((r.items ?? []) as Row[]).map((i) => ({
+        name: i.name,
+        qty: Number(i.qty),
+        store: i.store,
+        fulfillment: i.fulfillment,
+        subtotal: Number(i.subtotal),
+        seller: Number(i.seller),
+        affiliate: Number(i.affiliate),
+        platform: Number(i.platform),
+        refunded: !!i.refunded,
+      })),
+    }));
+  },
+
+  async adminWithdrawals() {
+    const rows = ok(await untyped.rpc("admin_withdrawals")) as Row[];
+    return rows.map((r): AdminWithdrawal => ({
+      id: r.id,
+      userId: r.user_id,
+      email: r.email,
+      fullName: r.full_name,
+      amount: Number(r.amount),
+      method: r.method,
+      account: r.account,
+      status: r.status,
+      createdAt: r.created_at,
+    }));
+  },
+
+  async adminSetWithdrawal(id, status) {
+    ok(await untyped.rpc("admin_set_withdrawal", { p_id: id, p_status: status }));
+  },
+
+  async adminProducts() {
+    const rows = ok(await untyped.rpc("admin_products", { p_limit: 1000 })) as Row[];
+    return rows.map((r): AdminProduct => ({
+      id: r.id,
+      name: r.name,
+      emoji: r.emoji,
+      image: r.image,
+      price: Number(r.price),
+      stock: Number(r.stock),
+      active: r.active,
+      soldCount: Number(r.sold_count),
+      commission: Number(r.commission),
+      category: r.category,
+      storeName: r.store_name,
+      storeSlug: r.store_slug,
+      createdAt: r.created_at,
+    }));
+  },
+
+  async adminSetProductActive(id, active) {
+    ok(await untyped.rpc("admin_set_product_active", { p_id: id, p_active: active }));
+  },
+
+  async adminUsers() {
+    const rows = ok(await untyped.rpc("admin_users", { p_limit: 1000 })) as Row[];
+    return rows.map((r): AdminUser => ({
+      id: r.id,
+      email: r.email,
+      fullName: r.full_name,
+      username: r.username,
+      accountType: r.account_type,
+      banned: r.banned,
+      hasStore: r.has_store,
+      isAdmin: r.is_admin,
       createdAt: r.created_at,
     }));
   },
@@ -851,15 +958,21 @@ export const supabaseBackend: Backend = {
     return data?.signedUrl ?? null;
   },
 
-  async createOrder(lines, ref, shipping, coupon) {
-    const data = ok(
-      await untyped.rpc("create_order", {
-        p_items: lines.map((l) => ({ product_id: l.productId, qty: l.qty })),
-        p_ref: ref ?? "",
-        p_shipping: shipping,
-        ...(coupon ? { p_coupon: coupon } : {}),
-      }),
-    ) as Row[];
+  async createOrder(lines, ref, shipping, coupon, refSource) {
+    const args: Row = {
+      p_items: lines.map((l) => ({ product_id: l.productId, qty: l.qty })),
+      p_ref: ref ?? "",
+      p_shipping: shipping,
+      ...(coupon ? { p_coupon: coupon } : {}),
+    };
+    let res = await untyped.rpc(
+      "create_order",
+      ref && refSource ? { ...args, p_src: refSource } : args,
+    );
+    // Base de datos sin la migración de fuentes de afiliado: se crea sin la fuente.
+    if (res.error && ref && refSource && /p_src|function/.test(res.error.message))
+      res = await untyped.rpc("create_order", args);
+    const data = ok(res) as Row[];
     const r = data[0];
     return { orderId: r.order_id, reference: r.reference, total: r.total };
   },
@@ -1025,8 +1138,11 @@ export const supabaseBackend: Backend = {
     ) as "pending" | "approved";
   },
 
-  async trackClick(username, productId) {
-    await supabase.rpc("track_click", { p_username: username, p_product_id: productId });
+  async trackClick(username, productId, source) {
+    const args = { p_username: username, p_product_id: productId };
+    const res = await untyped.rpc("track_click", source ? { ...args, p_source: source } : args);
+    // Base de datos sin la migración de fuentes: se registra el clic sin la fuente.
+    if (res.error && source) await untyped.rpc("track_click", args);
   },
 
   async myClicks() {
@@ -1036,7 +1152,7 @@ export const supabaseBackend: Backend = {
     const rows = ok(
       await supabase
         .from("referral_clicks")
-        .select("id, product_id, created_at")
+        .select("*")
         .eq("affiliate_id", u.id)
         .gte("created_at", since)
         .order("created_at", { ascending: false })
@@ -1046,6 +1162,7 @@ export const supabaseBackend: Backend = {
       id: String(r.id),
       productId: r.product_id,
       createdAt: r.created_at,
+      source: r.source ?? null,
     }));
   },
 

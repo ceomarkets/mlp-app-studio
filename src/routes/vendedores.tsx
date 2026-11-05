@@ -1,3 +1,4 @@
+import { AuthForm } from "@/components/AuthDialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -96,14 +97,17 @@ function Pitch() {
     <Shell>
       <section className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
         <div>
-          <h1 className="text-4xl font-extrabold md:text-6xl">
-            Vende lo tuyo.
+          <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+            Panel Empresas
+          </p>
+          <h1 className="mt-2 text-4xl font-extrabold md:text-6xl">
+            Tu tienda en Plaza X.
             <br />
-            <span className="text-primary">Como persona o empresa.</span>
+            <span className="text-primary">Para empresas y emprendimientos.</span>
           </h1>
           <p className="mt-4 max-w-lg text-lg text-muted-foreground">
-            No necesitas ser empresa ni afiliado: publica y vende directo. Si quieres, abre tus
-            productos a afiliados y que otros los compartan por ti. Solo pagas cuando vendes.
+            Publica tus productos y véndelos a toda Colombia. Si quieres, ábrelos a afiliados que
+            los recomiendan por ti. Solo pagas cuando vendes.
           </p>
           <ul className="mt-6 space-y-3 text-sm">
             <li className="flex items-center gap-3">
@@ -125,19 +129,12 @@ function Pitch() {
               Panel con ventas, pedidos, stock y retiros a tu cuenta
             </li>
           </ul>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button asChild size="lg">
-              <Link to="/entrar" search={{ registro: 3, to: "/vendedores" }}>
-                Registrar mi empresa
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link to="/entrar" search={{ registro: 1, to: "/vendedores" }}>
-                Vender como persona
-              </Link>
-            </Button>
-          </div>
         </div>
+        <div id="acceso" className="rounded-3xl border border-slate-800 bg-slate-900 p-6 md:p-8">
+          <AuthForm role="empresa" initialMode="signup" />
+        </div>
+      </section>
+      <section className="mx-auto mt-10 max-w-2xl">
         <div className="space-y-5 rounded-3xl border bg-card p-6 shadow-card md:p-8">
           <h2 className="text-xl font-bold">¿Cuánto recibes por venta?</h2>
           <label className="block text-sm font-semibold">

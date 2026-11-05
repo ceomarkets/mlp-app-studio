@@ -124,7 +124,7 @@ export function StoreForm({
       whatsapp: store?.whatsapp ?? "",
       shipsNational: store?.shipsNational ?? true,
       requireApproval: store?.requireApproval ?? false,
-      kind: store?.kind ?? (user?.accountType === "empresa" ? "empresa" : "persona"),
+      kind: store?.kind ?? "empresa",
     };
   });
   const [slugTouched, setSlugTouched] = useState(!!store);
@@ -162,7 +162,7 @@ export function StoreForm({
         <div className="grid gap-2 sm:grid-cols-2">
           {(
             [
-              ["persona", "fa-user-tag", "Yo, como persona", "Vendes lo tuyo, sin ser empresa"],
+              ["persona", "fa-seedling", "Emprendimiento", "Vendes lo tuyo, sin ser empresa"],
               ["empresa", "fa-building", "Una empresa", "Negocio con nombre comercial"],
             ] as const
           ).map(([v, icon, t, d]) => (
@@ -191,7 +191,7 @@ export function StoreForm({
       </fieldset>
       <div className="space-y-1.5">
         <Label htmlFor="sn">
-          {f.kind === "persona" ? "Nombre de tu tienda" : "Nombre comercial"}
+          {f.kind === "persona" ? "Nombre de tu emprendimiento" : "Nombre comercial"}
         </Label>
         <Input
           id="sn"
@@ -355,7 +355,7 @@ export function ProductDialog({
   const discount = discountPct({ price: f.price, compareAtPrice: f.compareAtPrice });
   const fileRef = useRef<HTMLInputElement>(null);
   const myStore = useQuery({ queryKey: keys.myStore, queryFn: () => backend.myStore() });
-  // Quien vende como persona empieza en venta directa; una empresa, abierta a afiliados.
+  // Un emprendimiento empieza en venta directa; una empresa, abierta a afiliados.
   const defaultRate = myStore.data?.kind === "persona" ? 0 : empty.commission;
 
   useEffect(() => {

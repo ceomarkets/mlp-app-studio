@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { openAuth } from "@/components/AuthDialog";
 import { addToCart } from "@/components/CartSheet";
 import { FavoriteButton, Price, ProductImage } from "@/components/Shell";
 import { ShareButton } from "@/components/ShareSheet";
@@ -16,14 +15,14 @@ import { productShare } from "@/lib/share";
 
 /**
  * "Afiliarse": con usuario de afiliado copia su enlace al instante; si aún no
- * lo tiene, lo lleva a activarlo; sin sesión, abre el inicio de sesión.
+ * lo tiene (o no tiene sesión), lo lleva al Panel Afiliados.
  */
 export function useAffiliate() {
   const { user } = useUser();
   const navigate = useNavigate();
   return async (p: Product) => {
-    if (!user) return openAuth();
-    if (!user.username) return navigate({ to: "/afiliados" });
+    // Afiliarse se hace solo desde el Panel Afiliados.
+    if (!user || !user.username) return navigate({ to: "/afiliados" });
     const link = `${window.location.origin}/r/${user.username}/${p.id}`;
     try {
       await navigator.clipboard.writeText(link);

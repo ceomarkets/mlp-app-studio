@@ -2,7 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Flame, Heart, ShoppingBag, Sparkles, Star } from "@/components/icons";
 import { useState, type ReactNode } from "react";
-import { AuthDialog, openAuth } from "@/components/AuthDialog";
+import { AuthDialog } from "@/components/AuthDialog";
+import { ReferralCapture } from "@/components/ReferralCapture";
 import { BridgeLogo } from "@/components/BridgeLogo";
 import { CartSheet, openCart } from "@/components/CartSheet";
 import { ShareButton } from "@/components/ShareSheet";
@@ -27,7 +28,7 @@ import { keys, useUser } from "@/lib/session";
 import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 import { useSpaces } from "@/lib/use-spaces";
-import { ROLES } from "@/lib/roles";
+import { flashUI } from "@/lib/ui-state";
 
 const navBtn =
   "flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-400 transition hover:text-white data-[status=active]:bg-slate-800 data-[status=active]:text-amber-400";
@@ -119,6 +120,7 @@ export function Shell({
         {children}
       </main>
 
+      <ReferralCapture />
       <SiteFooter />
       <MobileTabBar />
 
@@ -136,25 +138,10 @@ type NavLink = readonly ["/" | "/vendedores" | "/afiliados" | "/cuenta", string,
 /** Menú principal: Mercado y los paneles de Afiliados y Empresas siempre; con sesión, Mis compras. */
 function useNavLinks(): NavLink[] {
   const { user } = useSpaces();
-  const links: NavLink[] = [
-    ["/", "fa-crown", "Mercado"],
-    ["/afiliados", "fa-users", "Panel Afiliados"],
-    ["/vendedores", "fa-building", "Panel Empresas"],
-  ];
+  // Los paneles de afiliados y empresas viven en el pie de página.
+  const links: NavLink[] = [["/", "fa-crown", "Mercado"]];
   if (user) links.push(["/cuenta", "fa-box", "Mis compras"]);
   return links;
-}
-
-/** Segunda pestaña del celular: el espacio principal de cada tipo de cuenta. */
-function useMainTab(): { to: "/vendedores" | "/afiliados"; icon: string; label: string } {
-  const { user, promotes, sellerLabel, hasStore } = useSpaces();
-  if (user?.accountType === "afiliado" || (promotes && !hasStore))
-    return { to: "/afiliados", icon: "fa-users", label: "Mi red" };
-  return {
-    to: "/vendedores",
-    icon: hasStore || user?.accountType === "empresa" ? "fa-shop" : "fa-tag",
-    label: hasStore || user?.accountType === "empresa" ? sellerLabel : "Vender",
-  };
 }
 
 /** Barra de pestañas del celular: lo más usado a un toque, con ícono y nombre. */
@@ -162,14 +149,16 @@ function MobileTabBar() {
   const { user } = useUser();
   const cart = useCart().reduce((t, l) => t + l.qty, 0);
   const favs = useFavorites().length;
-  const main = useMainTab();
   const tab =
     "group relative flex min-h-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-slate-400 transition active:scale-95 data-[status=active]:text-amber-400";
   const bubble =
     "grid h-7 w-12 place-items-center rounded-full text-[17px] transition group-hover:text-white group-data-[status=active]:bg-slate-800";
   const badge = (n: number) =>
     n > 0 && (
-      <span className="absolute -top-1 left-1/2 ml-2 grid min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[9px] leading-4 font-black text-slate-950">
+      <span
+        key={n}
+        className="animate-pop absolute -top-1 left-1/2 ml-2 grid min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[9px] leading-4 font-black text-slate-950"
+      >
         {n > 99 ? "99+" : n}
       </span>
     );
@@ -185,12 +174,12 @@ function MobileTabBar() {
           </span>
           Mercado
         </Link>
-        <Link to={main.to} className={tab}>
+        <button onClick={flashUI.open} className={tab}>
           <span className={bubble}>
-            <i className={cn("fa-solid", main.icon)} />
+            <i className="fa-solid fa-bolt" />
           </span>
-          {main.label}
-        </Link>
+          Ofertas
+        </button>
         <button onClick={openCart} className={tab} aria-label={`Carrito, ${cart} productos`}>
           <span className={cn(bubble, "relative")}>
             <i className="fa-solid fa-cart-shopping" />
@@ -205,20 +194,13 @@ function MobileTabBar() {
           </span>
           Favoritos
         </Link>
-        {user ? (
+        {user && (
           <Link to="/cuenta" className={tab}>
             <span className={bubble}>
               <i className="fa-solid fa-circle-user" />
             </span>
             Mi cuenta
           </Link>
-        ) : (
-          <button onClick={() => openAuth()} className={tab}>
-            <span className={bubble}>
-              <i className="fa-solid fa-right-to-bracket" />
-            </span>
-            Ingresar
-          </button>
         )}
       </div>
     </nav>
@@ -228,7 +210,10 @@ function MobileTabBar() {
 function CartCount() {
   const n = useCart().reduce((t, l) => t + l.qty, 0);
   return (
-    <span className="ml-1 rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-slate-950">
+    <span
+      key={n}
+      className="animate-pop ml-1 inline-block rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-slate-950"
+    >
       {n}
     </span>
   );
@@ -264,43 +249,6 @@ function DemoBanner() {
   );
 }
 
-/** Registro general: 1 Compra y venta · 2 Afiliados · 3 Empresas. */
-function RegisterMenu() {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          aria-label="Registrarse"
-          className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 transition hover:bg-amber-400"
-        >
-          <i className="fa-solid fa-user-plus" />{" "}
-          <span className="hidden sm:inline">Registrarse</span>
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Registro general
-        </DropdownMenuLabel>
-        {ROLES.map((r) => (
-          <DropdownMenuItem
-            key={r.id}
-            onSelect={() => openAuth({ role: r.id })}
-            className="items-start gap-3 py-2.5"
-          >
-            <span className="grid size-6 shrink-0 place-items-center rounded-full border border-slate-600 text-[11px] font-black text-slate-300">
-              {r.n}
-            </span>
-            <span>
-              <b className="block text-sm">{r.label}</b>
-              <span className="text-xs text-muted-foreground">{r.short}</span>
-            </span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 function UserMenu() {
   const { user, loading } = useUser();
   const sp = useSpaces();
@@ -311,20 +259,8 @@ function UserMenu() {
     enabled: !!user,
   });
   if (loading) return <div className="size-9" />;
-  if (!user)
-    return (
-      <>
-        <button
-          onClick={() => openAuth()}
-          aria-label="Ingresar"
-          className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-700 px-3.5 py-1.5 text-xs font-bold text-slate-200 transition hover:border-slate-500 hover:text-white"
-        >
-          <i className="fa-solid fa-right-to-bracket" />{" "}
-          <span className="hidden sm:inline">Ingresar</span>
-        </button>
-        <RegisterMenu />
-      </>
-    );
+  // Sin sesión no hay botones de cuenta: se pide al pagar o en los paneles del pie de página.
+  if (!user) return null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -351,40 +287,32 @@ function UserMenu() {
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "perfil" })}>
           <i className="fa-solid fa-user w-4 text-slate-400" /> Perfil
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Tus espacios
-        </DropdownMenuLabel>
-        <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
-          <i className="fa-solid fa-users w-4" /> Panel Afiliados
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
-          <i className="fa-solid fa-building w-4" />{" "}
-          {sp.hasStore ? sp.sellerLabel : "Panel Empresas"}
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "tipo" })}>
-          <i className="fa-solid fa-id-card w-4" /> Tipo de cuenta
-        </DropdownMenuItem>
+        {(sp.promotes || sp.sells) && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Tus espacios
+            </DropdownMenuLabel>
+          </>
+        )}
+        {sp.promotes && (
+          <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
+            <i className="fa-solid fa-users w-4" /> Panel Afiliados
+          </DropdownMenuItem>
+        )}
+        {sp.sells && (
+          <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
+            <i className="fa-solid fa-building w-4" /> {sp.sellerLabel}
+          </DropdownMenuItem>
+        )}
         {admin.data && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Administrar
             </DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/anuncios" })}>
-              <i className="fa-solid fa-bullhorn w-4 text-slate-400" /> Anuncios
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/disputas" })}>
-              <i className="fa-solid fa-shield-halved w-4 text-slate-400" /> Disputas
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/promos" })}>
-              <i className="fa-solid fa-bolt w-4 text-slate-400" /> Ventas flash y cupones
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/sorteo" })}>
-              <i className="fa-solid fa-gift w-4" /> Sorteo
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/admin/tiendas" })}>
-              <i className="fa-solid fa-store w-4 text-slate-400" /> Tiendas
+            <DropdownMenuItem onSelect={() => navigate({ to: "/admin" })}>
+              <i className="fa-solid fa-gauge-high w-4" /> Panel de administración
             </DropdownMenuItem>
           </>
         )}

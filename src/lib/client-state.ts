@@ -92,26 +92,72 @@ export function useCart() {
 // ---------------------------------------------------------------------------
 // Referido (atribución de afiliado por 30 días)
 // ---------------------------------------------------------------------------
-type Ref = { username: string; at: number } | null;
+type Ref = { username: string; at: number; source?: string | null } | null;
 const refStore = persisted<Ref>("plazax-ref", null);
+const REF_COOKIE = "plazax_ref";
+const live = (r: Ref) => !!r && Date.now() - r.at < REF_WINDOW_DAYS * 86_400_000;
 
+/** Canal del enlace (src / utm_source): letras, números, - y _, en minúsculas. */
+export const cleanSource = (v: string | null | undefined) =>
+  (v ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 40) || null;
+
+/** Cookie propia de 30 días con la misma atribución (sobrevive si se borra el almacenamiento). */
+function writeCookie(r: Ref) {
+  try {
+    document.cookie = r
+      ? `${REF_COOKIE}=${encodeURIComponent(`${r.username}|${r.source ?? ""}|${r.at}`)}; Max-Age=${REF_WINDOW_DAYS * 86_400}; Path=/; SameSite=Lax`
+      : `${REF_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+  } catch {
+    /* sin cookies */
+  }
+}
+
+function readCookie(): Ref {
+  try {
+    const m = document.cookie.match(new RegExp(`(?:^|; )${REF_COOKIE}=([^;]*)`));
+    if (!m) return null;
+    const [username, source, at] = decodeURIComponent(m[1]!).split("|");
+    return username ? { username, source: source || null, at: Number(at) || Date.now() } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Atribución del afiliado: 30 días, último clic gana. */
 export const referral = {
-  set(username: string) {
-    refStore.set({ username: username.toLowerCase(), at: Date.now() });
+  set(username: string, source?: string | null) {
+    const r = { username: username.toLowerCase(), at: Date.now(), source: cleanSource(source) };
+    refStore.set(r);
+    writeCookie(r);
   },
   /** Usuario del afiliado si el clic fue en los últimos 30 días. */
   active(): string | null {
-    const r = refStore.get();
-    return r && Date.now() - r.at < REF_WINDOW_DAYS * 86_400_000 ? r.username : null;
+    const r = refStore.get() ?? readCookie();
+    return live(r) ? r!.username : null;
+  },
+  /** Canal del último clic vigente. */
+  source(): string | null {
+    const r = refStore.get() ?? readCookie();
+    return live(r) ? (r!.source ?? null) : null;
   },
   clear() {
     refStore.set(null);
+    writeCookie(null);
+  },
+  /** Si se borró el almacenamiento pero queda la cookie, la atribución se recupera. */
+  hydrate() {
+    if (refStore.get()) return;
+    const c = readCookie();
+    if (live(c)) refStore.set(c);
   },
 };
 
 export function useReferral() {
   const r = useSyncExternalStore(refStore.subscribe, refStore.get, () => refStore.initial);
-  return r && Date.now() - r.at < REF_WINDOW_DAYS * 86_400_000 ? r.username : null;
+  return live(r) ? r!.username : null;
 }
 
 // ---------------------------------------------------------------------------

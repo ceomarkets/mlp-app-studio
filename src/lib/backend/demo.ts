@@ -54,6 +54,13 @@ function db(): DemoState {
 }
 
 /** Completa datos guardados con versiones anteriores sin borrar nada. */
+/** Canal de un enlace (src / utm_source): letras, números, - y _, en minúsculas. */
+const cleanSource = (v: string | null | undefined) =>
+  (v ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 40) || null;
+
 function upgrade(s: DemoState) {
   for (const st of s.stores) {
     st.shipsNational ??= true;
@@ -416,6 +423,139 @@ export const demoBackend: Backend = {
       .sort((a, b) =>
         (b.verificationRequestedAt ?? "").localeCompare(a.verificationRequestedAt ?? ""),
       );
+  },
+
+  async adminOverview() {
+    requireAdmin();
+    const s = db();
+    const since = Date.now() - 30 * 86400000;
+    const paid = s.orders.filter(
+      (o) => o.status === "paid" && o.paidAt && Date.parse(o.paidAt) >= since,
+    );
+    const ids = new Set(paid.map((o) => o.id));
+    const items = s.items.filter((i) => ids.has(i.orderId) && !i.refundedAt);
+    const reqs = s.withdrawals.filter((w) => w.status === "requested");
+    return {
+      gmv30: paid.reduce((t, o) => t + o.total, 0),
+      orders30: paid.length,
+      platform30: items.reduce((t, i) => t + i.platformAmount, 0),
+      affiliate30: items.reduce((t, i) => t + i.affiliateAmount, 0),
+      pendingWithdrawals: reqs.length,
+      pendingWithdrawalsAmount: reqs.reduce((t, w) => t + w.amount, 0),
+      toShip: s.items.filter(
+        (i) => i.paidAt && (i.fulfillment === "pending" || i.fulfillment === "preparing"),
+      ).length,
+      openDisputes: (s.disputes ?? []).filter((d) => d.status === "open").length,
+      storesToVerify: s.stores.filter((x) => !x.verified && x.verificationRequestedAt).length,
+      stores: s.stores.filter((x) => x.active).length,
+      products: s.products.filter((p) => p.active).length,
+      users: s.users.length,
+      affiliates: s.users.filter((u) => u.username).length,
+    };
+  },
+
+  async adminOrders() {
+    requireAdmin();
+    const s = db();
+    return s.orders
+      .map((o) => ({
+        id: o.id,
+        reference: o.reference,
+        status: o.status,
+        total: o.total,
+        createdAt: o.createdAt,
+        paidAt: o.paidAt,
+        buyerEmail: s.users.find((u) => u.id === o.buyerId)?.email ?? "",
+        items: s.items
+          .filter((i) => i.orderId === o.id)
+          .map((i) => ({
+            name: i.productName,
+            qty: i.qty,
+            store: s.stores.find((x) => x.id === i.storeId)?.name ?? "",
+            fulfillment: i.fulfillment,
+            subtotal: i.subtotal,
+            seller: i.sellerAmount,
+            affiliate: i.affiliateAmount,
+            platform: i.platformAmount,
+            refunded: !!i.refundedAt,
+          })),
+      }))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  async adminWithdrawals() {
+    requireAdmin();
+    const s = db();
+    return s.withdrawals
+      .map((w) => {
+        const u = s.users.find((x) => x.id === w.userId);
+        return { ...w, email: u?.email ?? "", fullName: u?.fullName ?? "" };
+      })
+      .sort(
+        (a, b) =>
+          Number(b.status === "requested") - Number(a.status === "requested") ||
+          b.createdAt.localeCompare(a.createdAt),
+      );
+  },
+
+  async adminSetWithdrawal(id, status) {
+    await wait();
+    requireAdmin();
+    const w = db().withdrawals.find((x) => x.id === id);
+    if (!w || w.status !== "requested") throw new Error("Ese retiro ya fue procesado");
+    w.status = status;
+    save();
+  },
+
+  async adminProducts() {
+    requireAdmin();
+    const s = db();
+    return s.products
+      .map((p) => {
+        const st = s.stores.find((x) => x.id === p.storeId);
+        return {
+          id: p.id,
+          name: p.name,
+          emoji: p.emoji,
+          image: p.images[0] ?? null,
+          price: p.price,
+          stock: p.stock,
+          active: p.active,
+          soldCount: p.soldCount,
+          commission: p.commission,
+          category: p.category,
+          storeName: st?.name ?? "",
+          storeSlug: st?.slug ?? "",
+          createdAt: p.createdAt,
+        };
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  async adminSetProductActive(id, active) {
+    await wait();
+    requireAdmin();
+    const p = db().products.find((x) => x.id === id);
+    if (!p) throw new Error("Producto no encontrado");
+    p.active = active;
+    save();
+  },
+
+  async adminUsers() {
+    requireAdmin();
+    const s = db();
+    const admins = s.admins ?? DEMO_ADMINS;
+    return s.users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      fullName: u.fullName,
+      username: u.username,
+      accountType: u.accountType ?? "comprador",
+      banned: !!s.banned?.includes(u.id),
+      hasStore: s.stores.some((x) => x.ownerId === u.id),
+      isAdmin: admins.includes(u.id),
+      createdAt: now(),
+    }));
   },
 
   async setStoreVerified(storeId, verified) {
@@ -869,7 +1009,7 @@ export const demoBackend: Backend = {
     return db().evidenceFiles?.[ref] ?? null;
   },
 
-  async createOrder(lines, ref, shipping, couponCode) {
+  async createOrder(lines, ref, shipping, couponCode, refSource) {
     await wait(300);
     const u = me();
     if (!u) throw new Error("Debes iniciar sesión para comprar");
@@ -953,6 +1093,7 @@ export const demoBackend: Backend = {
         platformAmount: split.platform - disc,
         discountAmount: disc,
         affiliateId: referred ? aff!.id : null,
+        refSource: referred ? cleanSource(refSource) : null,
         paidAt: null,
         fulfillment: "pending",
         tracking: null,
@@ -1241,7 +1382,7 @@ export const demoBackend: Backend = {
     return status;
   },
 
-  async trackClick(username, productId) {
+  async trackClick(username, productId, source) {
     const s = db();
     const aff = s.users.find((x) => x.username === username.toLowerCase());
     if (!aff || aff.id === me()?.id) return;
@@ -1250,6 +1391,7 @@ export const demoBackend: Backend = {
       affiliateId: aff.id,
       productId: s.products.some((p) => p.id === productId) ? productId : null,
       createdAt: now(),
+      source: cleanSource(source),
     });
     save();
   },

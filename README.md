@@ -79,7 +79,7 @@ Con tu cuenta en la tabla `admins`, el menú de usuario muestra:
 - **/admin/promos**: ventas flash (cuenta regresiva hasta su fecha real de fin) y cupones (los asume Plaza X sin pasar su comisión).
 - **/admin/sorteo**: sorteo "Desafío = Premio". Solo se publica con el número de autorización de Coljuegos y las bases.
 
-Migraciones nuevas (Lovable las aplica desde `drizzle/migrations`): `0004_store_profile`, `0005_disputes`, `0006_affiliations`, `0007_flash_coupons`, `0008_raffle`, `0009_wear_categories` (Calzado y Accesorios), `0010_try_on` (retirada en `0011`) y `0011_roles_direct_sale` (registro general de compra y venta, afiliados y empresas; tiendas de persona o empresa; venta directa; retiro del vestidor).
+Migraciones nuevas (Lovable las aplica desde `drizzle/migrations`): `0004_store_profile`, `0005_disputes`, `0006_affiliations`, `0007_flash_coupons`, `0008_raffle`, `0009_wear_categories` (Calzado y Accesorios), `0010_try_on` (retirada en `0011`) `0011_roles_direct_sale` (roles, tiendas de persona o empresa, venta directa, retiro del vestidor) y `0012_affiliate_tracking_admin` (canal `src`/`utm_source` en clics y ventas de afiliados, y funciones del panel de administración `/admin`).
 
 ## Estructura
 

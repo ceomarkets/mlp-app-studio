@@ -1,3 +1,5 @@
+import { AuthForm } from "@/components/AuthDialog";
+import { AffiliateLinks } from "@/components/panels/AffiliateLinks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -83,18 +85,22 @@ function Pitch() {
   ];
   return (
     <Shell>
-      <section className="text-center">
-        <h1 className="mx-auto max-w-3xl text-4xl font-extrabold md:text-6xl">
-          Gana dinero <span className="text-primary">recomendando</span> lo que te gusta.
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-          Sin comprar inventario, sin hacer envíos. Tú compartes, las tiendas venden y tú cobras.
-        </p>
-        <Button asChild size="lg" className="mt-6">
-          <Link to="/entrar" search={{ registro: 2, to: "/afiliados" }}>
-            Quiero ser afiliado
-          </Link>
-        </Button>
+      <section className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
+        <div>
+          <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+            Panel Afiliados
+          </p>
+          <h1 className="mt-2 max-w-3xl text-4xl font-extrabold md:text-6xl">
+            Gana dinero <span className="text-primary">recomendando</span> lo que te gusta.
+          </h1>
+          <p className="mt-4 max-w-xl text-lg text-muted-foreground">
+            Sin inventario ni envíos. Tú compartes tu enlace, las tiendas venden y tú cobras tu
+            comisión. Cada clic se rastrea {REF_WINDOW_DAYS} días.
+          </p>
+        </div>
+        <div id="acceso" className="rounded-3xl border border-slate-800 bg-slate-900 p-6 md:p-8">
+          <AuthForm role="afiliado" initialMode="signup" />
+        </div>
       </section>
       <div className="mt-12 grid gap-4 md:grid-cols-3">
         {steps.map(([icon, title, text]) => (
@@ -220,6 +226,10 @@ function Dashboard({ username }: { username: string }) {
             <i className="fa-solid fa-chart-pie" aria-hidden />
             Resumen
           </TabsTrigger>
+          <TabsTrigger value="enlaces" className="gap-1.5">
+            <i className="fa-solid fa-link" aria-hidden />
+            Mis enlaces
+          </TabsTrigger>
           <TabsTrigger value="empresas" className="gap-1.5">
             <i className="fa-solid fa-building" aria-hidden />
             Empresas
@@ -243,6 +253,9 @@ function Dashboard({ username }: { username: string }) {
         </TabsList>
         <TabsContent value="resumen" className="mt-6">
           <Overview clicks={clicks.data ?? []} items={items.data ?? []} />
+        </TabsContent>
+        <TabsContent value="enlaces" className="mt-6">
+          <AffiliateLinks username={username} clicks={clicks.data ?? []} items={items.data ?? []} />
         </TabsContent>
         <TabsContent value="empresas" className="mt-6">
           <Companies username={username} />
