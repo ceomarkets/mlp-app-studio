@@ -306,7 +306,8 @@ export function buildLeaderboard(
     );
 
   // Comisiones: mayor % para el afiliado primero; a igual %, más pesos por venta.
-  const earn = [...live]
+  const earn = live
+    .filter((p) => p.commission > 0)
     .map((p) => ({ p, amount: splitSale(p.price, p.commission).affiliate }))
     .sort((a, b) => b.p.commission - a.p.commission || b.amount - a.amount)
     .slice(0, size)

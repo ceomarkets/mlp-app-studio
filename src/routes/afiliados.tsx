@@ -411,7 +411,8 @@ function Showcase({ username }: { username: string }) {
   });
   // Los productos de la tienda propia no generan comisión: no se muestran.
   const myStore = useQuery({ queryKey: keys.myStore, queryFn: () => backend.myStore() });
-  const shown = list.data?.filter((p) => p.storeId !== myStore.data?.id);
+  // Tampoco los de venta directa (la tienda no paga comisión por ellos).
+  const shown = list.data?.filter((p) => p.storeId !== myStore.data?.id && p.commission > 0);
 
   return (
     <div>

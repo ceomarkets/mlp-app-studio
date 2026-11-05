@@ -43,6 +43,7 @@ function prod(id: string, over: Partial<Product> = {}): Product {
       shipsNational: true,
       verified: false,
       requireApproval: false,
+      kind: "empresa",
     },
     ...over,
   };
@@ -114,6 +115,7 @@ describe("leaderboard", () => {
     shipsNational: false,
     verified: true,
     requireApproval: false,
+    kind: "empresa" as const,
   };
   const products = [
     prod("n", { createdAt: ago(1) }),

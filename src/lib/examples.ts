@@ -166,6 +166,7 @@ export const EXAMPLE_ALL: Product[] = RAW.map((r) => {
       shipsNational: !r.isNearby,
       verified: true,
       requireApproval: false,
+      kind: "empresa",
     },
   };
 });

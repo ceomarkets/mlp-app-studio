@@ -35,6 +35,7 @@ describe("backend demo: flujo completo", () => {
       whatsapp: null,
       shipsNational: true,
       requireApproval: false,
+      kind: "empresa",
     });
     const p = await b.saveProduct({
       name: "Mochila",
@@ -61,6 +62,7 @@ describe("backend demo: flujo completo", () => {
         whatsapp: null,
         shipsNational: true,
         requireApproval: false,
+        kind: "empresa",
       }),
     ).rejects.toThrow(/en uso/);
 
@@ -111,6 +113,7 @@ describe("backend demo: flujo completo", () => {
       whatsapp: null,
       shipsNational: true,
       requireApproval: false,
+      kind: "empresa",
     });
     const p = await b.saveProduct({
       name: "Reloj",
@@ -180,6 +183,7 @@ describe("backend demo: flujo completo", () => {
       whatsapp: null,
       shipsNational: true,
       requireApproval: true,
+      kind: "empresa",
     });
     const p = await b.saveProduct({
       name: "Bolso",

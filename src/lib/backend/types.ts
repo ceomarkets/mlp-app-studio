@@ -67,7 +67,13 @@ export type RaffleWinner = {
   entries?: number;
 };
 
+/**
+ * Registro general en tres tipos:
+ * comprador = "Compra y venta" (persona: compra y, si quiere, vende sin ser empresa) ·
+ * afiliado = recomienda y gana comisión · empresa = vende como negocio.
+ */
 export type AccountType = "comprador" | "afiliado" | "empresa";
+export type StoreKind = "persona" | "empresa";
 
 export type AffiliateStatus = "pending" | "approved" | "rejected";
 
@@ -126,12 +132,14 @@ export type Store = {
   /** Los afiliados necesitan aprobación para cobrar comisión. */
   requireApproval: boolean;
   verificationRequestedAt: string | null;
+  /** De una persona (vendedor independiente) o de una empresa. */
+  kind: StoreKind;
 };
 
 export type StoreInput = Pick<
   Store,
   "slug" | "name" | "tagline" | "city" | "emoji" | "whatsapp" | "shipsNational" | "requireApproval"
->;
+> & { kind?: StoreKind };
 
 export type Product = {
   id: string;
@@ -157,15 +165,11 @@ export type Product = {
   promoImage: string | null;
   /** Video promocional (https: Reels, TikTok, YouTube) para afiliados. */
   promoVideo: string | null;
-  /** Vestidor virtual: tipo de prenda y color que eligió la tienda (si no, se deducen). */
-  tryOn?: TryOn | null | undefined;
   store: Pick<
     Store,
-    "slug" | "name" | "city" | "emoji" | "shipsNational" | "verified" | "requireApproval"
+    "slug" | "name" | "city" | "emoji" | "shipsNational" | "verified" | "requireApproval" | "kind"
   >;
 };
-
-export type TryOn = { kind: string | null; color: string | null };
 
 export type ProductInput = Pick<
   Product,
@@ -182,7 +186,6 @@ export type ProductInput = Pick<
   | "promoCopy"
   | "promoImage"
   | "promoVideo"
-  | "tryOn"
 > & { id?: string };
 
 export type Shipping = {
@@ -360,6 +363,7 @@ export interface Backend {
     username?: string;
     phone?: string | null;
     payoutMethod?: PayoutMethod | null;
+    accountType?: AccountType;
   }): Promise<Profile>;
   usernameAvailable(username: string): Promise<boolean>;
 

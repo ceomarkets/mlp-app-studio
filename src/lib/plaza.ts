@@ -99,8 +99,12 @@ export type PayoutMethod = (typeof PAYOUT_METHODS)[number]["id"];
 
 export type Split = { seller: number; affiliate: number; platform: number };
 
+/** Comisión válida para afiliados; 0 es venta directa (sin afiliados). */
 export const clampCommission = (rate: number) =>
-  Math.min(AFFILIATE_MAX, Math.max(AFFILIATE_MIN, rate));
+  rate <= 0 ? 0 : Math.min(AFFILIATE_MAX, Math.max(AFFILIATE_MIN, rate));
+
+/** El producto paga comisión a quien lo recomienda (no es venta directa). */
+export const opensToAffiliates = (p: { commission: number }) => p.commission > 0;
 
 /** Reparto de una venta (sobre el subtotal). Sin afiliado, el vendedor recibe la parte del afiliado. */
 export function splitSale(amount: number, affiliateRate: number, referred = true): Split {

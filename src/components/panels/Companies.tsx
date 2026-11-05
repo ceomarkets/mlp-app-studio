@@ -65,17 +65,21 @@ export function Companies({ username }: { username: string }) {
       list.push(p);
       byStore.set(p.storeId, list);
     }
-    return (stores.data ?? [])
-      .filter((s) => s.id !== myStore.data?.id)
-      .map((s) => {
-        const list = byStore.get(s.id) ?? [];
-        const best = Math.max(0, ...list.map((p) => clampCommission(p.commission)));
-        const req = mine.data?.find((a) => a.storeId === s.id);
-        const status: AffiliateStatus | "open" | "none" =
-          req?.status ?? (s.requireApproval ? "none" : "open");
-        return { s, best, count: list.length, status, req };
-      })
-      .sort((a, b) => rank(a.status) - rank(b.status) || b.best - a.best);
+    return (
+      (stores.data ?? [])
+        .filter((s) => s.id !== myStore.data?.id)
+        .map((s) => {
+          const list = (byStore.get(s.id) ?? []).filter((p) => p.commission > 0);
+          const best = Math.max(0, ...list.map((p) => clampCommission(p.commission)));
+          const req = mine.data?.find((a) => a.storeId === s.id);
+          const status: AffiliateStatus | "open" | "none" =
+            req?.status ?? (s.requireApproval ? "none" : "open");
+          return { s, best, count: list.length, status, req };
+        })
+        // Tiendas sin programa de afiliados (solo venta directa) no se muestran.
+        .filter((r) => r.count > 0 || r.req)
+        .sort((a, b) => rank(a.status) - rank(b.status) || b.best - a.best)
+    );
   }, [stores.data, products.data, mine.data, myStore.data]);
 
   if (stores.isPending) return <div className="h-40 animate-pulse rounded-2xl bg-slate-700" />;
@@ -298,7 +302,14 @@ export function AffiliateRequests({ store }: { store: Store }) {
 }
 
 /** Barra de verificación de la tienda (la otorga la administración). */
-export function VerificationBar({ store }: { store: Store }) {
+export function VerificationBar({
+  store,
+  affiliates = true,
+}: {
+  store: Store;
+  /** La tienda tiene productos abiertos a afiliados (si no, es solo venta directa). */
+  affiliates?: boolean;
+}) {
   const qc = useQueryClient();
   const m = useMutation({
     mutationFn: () => backend.requestVerification(),
@@ -338,7 +349,11 @@ export function VerificationBar({ store }: { store: Store }) {
       )}
       <span className="ms-auto text-slate-400">
         {store.shipsNational ? "🚚 Envíos nacionales" : "📍 Cobertura local"} ·{" "}
-        {store.requireApproval ? "Afiliados con aprobación" : "Abierta a afiliados"}
+        {!affiliates
+          ? "Venta directa (sin afiliados)"
+          : store.requireApproval
+            ? "Afiliados con aprobación"
+            : "Abierta a afiliados"}
       </span>
     </div>
   );

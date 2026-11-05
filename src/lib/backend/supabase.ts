@@ -53,6 +53,7 @@ const toStore = (r: Row): Store => ({
   verified: r.verified ?? false,
   requireApproval: r.require_approval ?? false,
   verificationRequestedAt: r.verification_requested_at ?? null,
+  kind: r.kind === "persona" ? "persona" : "empresa",
 });
 
 const toProduct = (r: Row): Product => ({
@@ -65,7 +66,6 @@ const toProduct = (r: Row): Product => ({
   promoCopy: r.promo_copy ?? "",
   promoImage: r.promo_image ?? null,
   promoVideo: r.promo_video ?? null,
-  tryOn: r.try_on ?? null,
   category: r.category as Category,
   commission: Number(r.commission),
   stock: r.stock,
@@ -84,6 +84,7 @@ const toProduct = (r: Row): Product => ({
     shipsNational: r.stores.ships_national ?? true,
     verified: r.stores.verified ?? false,
     requireApproval: r.stores.require_approval ?? false,
+    kind: r.stores.kind === "persona" ? "persona" : "empresa",
   },
 });
 
@@ -305,6 +306,7 @@ export const supabaseBackend: Backend = {
     if (input.username !== undefined) patch.username = input.username.toLowerCase();
     if (input.phone !== undefined) patch.phone = input.phone || null;
     if (input.payoutMethod !== undefined) patch.payout_method = input.payoutMethod;
+    if (input.accountType !== undefined) patch.account_type = input.accountType;
     ok(await untyped.from("profiles").update(patch).eq("id", u.id));
     return loadProfile(u);
   },
@@ -623,7 +625,7 @@ export const supabaseBackend: Backend = {
 
   async saveStore(input) {
     const u = await requireUser();
-    const { shipsNational, requireApproval, ...rest } = input;
+    const { shipsNational, requireApproval, kind, ...rest } = input;
     const row: Row = {
       ...rest,
       owner_id: u.id,
@@ -631,12 +633,18 @@ export const supabaseBackend: Backend = {
       ships_national: shipsNational,
       require_approval: requireApproval,
     };
+    if (kind) row.kind = kind;
     const upsert = (data: Row) =>
       untyped.from("stores").upsert(data, { onConflict: "owner_id" }).select().single();
     let res = await upsert(row);
     // Base de datos sin la migración de perfil de tienda: se guarda sin el campo nuevo.
     if (/ships_national|require_approval/.test(res.error?.message ?? "")) {
-      const { ships_national: _a, require_approval: _b, ...legacy } = row;
+      const { ships_national: _a, require_approval: _b, kind: _k, ...legacy } = row;
+      res = await upsert(legacy);
+    }
+    // Base de datos sin la migración de tipos de cuenta: se guarda sin el tipo de tienda.
+    if (/\bkind\b/.test(res.error?.message ?? "")) {
+      const { kind: _k, ...legacy } = row;
       res = await upsert(legacy);
     }
     return toStore(ok(res));
@@ -658,7 +666,7 @@ export const supabaseBackend: Backend = {
   async saveProduct({ id, ...p }) {
     const store = await this.myStore();
     if (!store) throw new Error("Primero crea tu tienda");
-    const { compareAtPrice, promoCopy, promoImage, promoVideo, tryOn, ...rest } = p;
+    const { compareAtPrice, promoCopy, promoImage, promoVideo, ...rest } = p;
     const row: Row = {
       ...rest,
       compare_at_price: compareAtPrice,
@@ -668,8 +676,6 @@ export const supabaseBackend: Backend = {
     };
     if (promoVideo) row.promo_video = promoVideo;
     else if (id) row.promo_video = null;
-    if (tryOn?.kind || tryOn?.color) row.try_on = tryOn;
-    else if (id) row.try_on = null;
     const send = (data: Row) =>
       id
         ? untyped.from("products").update(data).eq("id", id).select(PRODUCT_COLS).single()
@@ -678,11 +684,6 @@ export const supabaseBackend: Backend = {
     // Base de datos sin la migración de afiliaciones: se guarda sin el video.
     if (res.error?.message.includes("promo_video") && !promoVideo) {
       const { promo_video: _v, ...legacy } = row;
-      res = await send(legacy);
-    }
-    // Base de datos sin la migración del vestidor: se guarda sin el ajuste de prenda.
-    if (res.error?.message.includes("try_on")) {
-      const { try_on: _t, ...legacy } = row;
       res = await send(legacy);
     }
     return toProduct(ok(res));

@@ -1,5 +1,4 @@
-import { colorFromName, KIND_LABEL, kindOf, type Kind } from "@/lib/vestidor";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FolderPlus, ImagePlus, Loader2, X } from "@/components/icons";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -33,7 +32,7 @@ import {
   splitSale,
   type Category,
 } from "@/lib/plaza";
-import { keys } from "@/lib/session";
+import { keys, useUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const EMOJIS = [
@@ -58,13 +57,18 @@ const EMOJIS = [
 /** Barra y desglose de cuánto recibe cada parte. */
 export function SplitPreview({ price, rate }: { price: number; rate: number }) {
   const s = splitSale(price, rate);
+  const direct = rate <= 0;
   const parts = [
     { k: "Tú recibes", v: s.seller, c: "bg-ink text-ink-foreground" },
-    {
-      k: `Afiliado (${Math.round(rate * 100)}%)`,
-      v: s.affiliate,
-      c: "bg-sun text-accent-foreground",
-    },
+    ...(direct
+      ? []
+      : [
+          {
+            k: `Afiliado (${Math.round(rate * 100)}%)`,
+            v: s.affiliate,
+            c: "bg-sun text-accent-foreground",
+          },
+        ]),
     { k: "Plaza X (9%)", v: s.platform, c: "bg-primary text-primary-foreground" },
   ];
   return (
@@ -78,7 +82,7 @@ export function SplitPreview({ price, rate }: { price: number; rate: number }) {
           />
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-2 text-xs">
+      <div className={cn("grid gap-2 text-xs", direct ? "grid-cols-2" : "grid-cols-3")}>
         {parts.map((p) => (
           <div key={p.k} className={cn("rounded-lg px-2 py-1.5", p.c)}>
             <div className="opacity-80">{p.k}</div>
@@ -87,7 +91,9 @@ export function SplitPreview({ price, rate }: { price: number; rate: number }) {
         ))}
       </div>
       <p className="text-[11px] text-muted-foreground">
-        Si la venta no viene de un afiliado, la parte del afiliado también es tuya.
+        {direct
+          ? "Venta directa: sin afiliados, todo menos la tarifa de Plaza X es para ti."
+          : "Si la venta no viene de un afiliado, la parte del afiliado también es tuya."}
       </p>
     </div>
   );
@@ -101,6 +107,7 @@ export function StoreForm({
   onSaved?: (s: Store) => void;
 }) {
   const qc = useQueryClient();
+  const { user } = useUser();
   const [f, setF] = useState<StoreInput>(() => {
     let company = "";
     try {
@@ -117,6 +124,7 @@ export function StoreForm({
       whatsapp: store?.whatsapp ?? "",
       shipsNational: store?.shipsNational ?? true,
       requireApproval: store?.requireApproval ?? false,
+      kind: store?.kind ?? (user?.accountType === "empresa" ? "empresa" : "persona"),
     };
   });
   const [slugTouched, setSlugTouched] = useState(!!store);
@@ -149,8 +157,42 @@ export function StoreForm({
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      <fieldset className="space-y-1.5">
+        <legend className="text-sm font-medium">¿Quién vende?</legend>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(
+            [
+              ["persona", "fa-user-tag", "Yo, como persona", "Vendes lo tuyo, sin ser empresa"],
+              ["empresa", "fa-building", "Una empresa", "Negocio con nombre comercial"],
+            ] as const
+          ).map(([v, icon, t, d]) => (
+            <label
+              key={v}
+              className={cn(
+                "flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 text-sm transition",
+                f.kind === v ? "border-amber-400 bg-amber-500/10" : "bg-card",
+              )}
+            >
+              <input
+                type="radio"
+                name="store-kind"
+                className="sr-only"
+                checked={f.kind === v}
+                onChange={() => setF({ ...f, kind: v })}
+              />
+              <i className={cn("fa-solid mt-0.5 text-amber-400", icon)} aria-hidden />
+              <span>
+                <b className="block">{t}</b>
+                <span className="text-xs text-muted-foreground">{d}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="space-y-1.5">
-        <Label htmlFor="sn">Nombre de la tienda</Label>
+        <Label htmlFor="sn">
+          {f.kind === "persona" ? "Nombre de tu tienda" : "Nombre comercial"}
+        </Label>
         <Input
           id="sn"
           required
@@ -296,7 +338,6 @@ const empty: ProductInput = {
   promoCopy: "",
   promoImage: null,
   promoVideo: null,
-  tryOn: null,
 };
 
 export function ProductDialog({
@@ -313,6 +354,9 @@ export function ProductDialog({
   const [uploading, setUploading] = useState(false);
   const discount = discountPct({ price: f.price, compareAtPrice: f.compareAtPrice });
   const fileRef = useRef<HTMLInputElement>(null);
+  const myStore = useQuery({ queryKey: keys.myStore, queryFn: () => backend.myStore() });
+  // Quien vende como persona empieza en venta directa; una empresa, abierta a afiliados.
+  const defaultRate = myStore.data?.kind === "persona" ? 0 : empty.commission;
 
   useEffect(() => {
     if (!open) return;
@@ -327,7 +371,6 @@ export function ProductDialog({
             promoCopy: product.promoCopy,
             promoImage: product.promoImage,
             promoVideo: product.promoVideo,
-            tryOn: product.tryOn ?? null,
             category: product.category,
             commission: product.commission,
             stock: product.stock,
@@ -335,9 +378,9 @@ export function ProductDialog({
             emoji: product.emoji,
             active: product.active,
           }
-        : empty,
+        : { ...empty, commission: defaultRate },
     );
-  }, [open, product]);
+  }, [open, product, defaultRate]);
 
   const save = useMutation({
     mutationFn: () =>
@@ -375,7 +418,9 @@ export function ProductDialog({
         <DialogHeader>
           <DialogTitle>{product ? "Editar producto" : "Nuevo producto"}</DialogTitle>
           <DialogDescription>
-            Los afiliados verán tu comisión y podrán promocionarlo de inmediato.
+            {f.commission > 0
+              ? "Los afiliados verán tu comisión y podrán promocionarlo de inmediato."
+              : "Se publica de inmediato en la plaza. Tú decides si lo abres a afiliados."}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -538,61 +583,82 @@ export function ProductDialog({
             </div>
           </div>
 
-          <TryOnFields f={f} setF={setF} />
-
           <div className="space-y-3 rounded-2xl bg-muted p-4">
-            <Label htmlFor="pk" className="flex justify-between">
-              <span>Comisión para afiliados</span>
-              <b>{Math.round(f.commission * 100)}%</b>
-            </Label>
-            <input
-              id="pk"
-              type="range"
-              min={AFFILIATE_MIN * 100}
-              max={AFFILIATE_MAX * 100}
-              value={Math.round(f.commission * 100)}
-              onChange={(e) => setF({ ...f, commission: Number(e.target.value) / 100 })}
-              className="w-full accent-primary"
-            />
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm">
+                <b className="flex items-center gap-1.5">
+                  <i className="fa-solid fa-users text-emerald-400" aria-hidden /> Abrir a afiliados
+                </b>
+                <span className="text-xs text-muted-foreground">
+                  {f.commission > 0
+                    ? "Otras personas lo recomiendan y ganan una comisión por cada venta."
+                    : "Venta directa: lo vendes tú, sin comisión para afiliados."}
+                </span>
+              </span>
+              <Switch
+                checked={f.commission > 0}
+                onCheckedChange={(v) => setF({ ...f, commission: v ? 0.1 : 0 })}
+              />
+            </label>
+            {f.commission > 0 && (
+              <>
+                <Label htmlFor="pk" className="flex justify-between">
+                  <span>Comisión para afiliados</span>
+                  <b>{Math.round(f.commission * 100)}%</b>
+                </Label>
+                <input
+                  id="pk"
+                  type="range"
+                  min={AFFILIATE_MIN * 100}
+                  max={AFFILIATE_MAX * 100}
+                  value={Math.round(f.commission * 100)}
+                  onChange={(e) => setF({ ...f, commission: Number(e.target.value) / 100 })}
+                  className="w-full accent-primary"
+                />
+              </>
+            )}
             <SplitPreview price={f.price || 0} rate={f.commission} />
           </div>
 
-          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 p-3">
-            <span className="flex items-center gap-1 text-xs font-bold text-purple-400">
-              <FolderPlus className="size-3.5" /> Añadir Recursos para Afiliados
-            </span>
-            <Textarea
-              aria-label="Copy o texto promocional"
-              rows={2}
-              maxLength={600}
-              placeholder="Copy o texto promocional de muestra"
-              value={f.promoCopy}
-              onChange={(e) => setF({ ...f, promoCopy: e.target.value })}
-              className="border-slate-800 bg-slate-900 text-xs"
-            />
-            <Input
-              aria-label="URL de imagen publicitaria"
-              type="url"
-              pattern="https://.*"
-              placeholder="URL de Imagen Publicitaria / Banner (https://…)"
-              value={f.promoImage ?? ""}
-              onChange={(e) => setF({ ...f, promoImage: e.target.value || null })}
-              className="border-slate-800 bg-slate-900 text-xs"
-            />
-            <Input
-              aria-label="URL de video promocional"
-              type="url"
-              pattern="https://.*"
-              maxLength={500}
-              placeholder="Video promocional: Reels, TikTok o YouTube (https://…)"
-              value={f.promoVideo ?? ""}
-              onChange={(e) => setF({ ...f, promoVideo: e.target.value || null })}
-              className="border-slate-800 bg-slate-900 text-xs"
-            />
-            <p className="text-[10px] text-slate-400">
-              Tus afiliados los verán en “Herramientas Afiliado”, junto con las fotos del producto.
-            </p>
-          </div>
+          {f.commission > 0 && (
+            <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 p-3">
+              <span className="flex items-center gap-1 text-xs font-bold text-purple-400">
+                <FolderPlus className="size-3.5" /> Añadir Recursos para Afiliados
+              </span>
+              <Textarea
+                aria-label="Copy o texto promocional"
+                rows={2}
+                maxLength={600}
+                placeholder="Copy o texto promocional de muestra"
+                value={f.promoCopy}
+                onChange={(e) => setF({ ...f, promoCopy: e.target.value })}
+                className="border-slate-800 bg-slate-900 text-xs"
+              />
+              <Input
+                aria-label="URL de imagen publicitaria"
+                type="url"
+                pattern="https://.*"
+                placeholder="URL de Imagen Publicitaria / Banner (https://…)"
+                value={f.promoImage ?? ""}
+                onChange={(e) => setF({ ...f, promoImage: e.target.value || null })}
+                className="border-slate-800 bg-slate-900 text-xs"
+              />
+              <Input
+                aria-label="URL de video promocional"
+                type="url"
+                pattern="https://.*"
+                maxLength={500}
+                placeholder="Video promocional: Reels, TikTok o YouTube (https://…)"
+                value={f.promoVideo ?? ""}
+                onChange={(e) => setF({ ...f, promoVideo: e.target.value || null })}
+                className="border-slate-800 bg-slate-900 text-xs"
+              />
+              <p className="text-[10px] text-slate-400">
+                Tus afiliados los verán en “Herramientas Afiliado”, junto con las fotos del
+                producto.
+              </p>
+            </div>
+          )}
 
           <label className="flex items-center justify-between rounded-xl border p-3">
             <span className="text-sm">
@@ -612,74 +678,5 @@ export function ProductDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** Ajuste de la prenda en el Vestidor Virtual (solo ropa, calzado y accesorios de vestir). */
-function TryOnFields({ f, setF }: { f: ProductInput; setF: (f: ProductInput) => void }) {
-  const auto = kindOf({ name: f.name, category: f.category });
-  const kind = (f.tryOn?.kind as Kind | null | undefined) ?? null;
-  const wearCat = ["Ropa", "Calzado", "Accesorios"].includes(f.category);
-  if (!wearCat && !auto && !kind) return null;
-  const set = (patch: Partial<NonNullable<ProductInput["tryOn"]>>) => {
-    const next = { kind: f.tryOn?.kind ?? null, color: f.tryOn?.color ?? null, ...patch };
-    setF({ ...f, tryOn: next.kind || next.color ? next : null });
-  };
-  const color = f.tryOn?.color ?? colorFromName(f) ?? "#5b6476";
-  return (
-    <div className="space-y-2 rounded-xl border border-amber-500/30 bg-slate-950 p-3">
-      <span className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
-        <i className="fa-solid fa-person-dress" /> Vestidor Virtual
-      </span>
-      <div className="grid grid-cols-[1fr_auto] items-end gap-2">
-        <div className="space-y-1">
-          <Label htmlFor="tk" className="text-[11px]">
-            Tipo de prenda
-          </Label>
-          <select
-            id="tk"
-            value={kind ?? ""}
-            onChange={(e) => set({ kind: e.target.value || null })}
-            className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-          >
-            <option value="">
-              Automático{auto ? ` (${KIND_LABEL[auto]})` : " (no se puede probar)"}
-            </option>
-            {(Object.keys(KIND_LABEL) as Kind[]).map((k) => (
-              <option key={k} value={k}>
-                {KIND_LABEL[k]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="tc" className="text-[11px]">
-            Color
-          </Label>
-          <div className="flex items-center gap-1">
-            <input
-              id="tc"
-              type="color"
-              value={color}
-              onChange={(e) => set({ color: e.target.value })}
-              className="h-9 w-12 cursor-pointer rounded-md border bg-background p-1"
-            />
-            {f.tryOn?.color && (
-              <button
-                type="button"
-                onClick={() => set({ color: null })}
-                className="text-[10px] font-bold text-slate-400 hover:text-amber-400"
-              >
-                Auto
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-      <p className="text-[10px] text-slate-400">
-        Así se verá la prenda ajustada al cuerpo del modelo. Si no eliges color, se toma del nombre
-        o de la foto.
-      </p>
-    </div>
   );
 }

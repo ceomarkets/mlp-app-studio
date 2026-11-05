@@ -26,6 +26,7 @@ import { compact, cop } from "@/lib/plaza";
 import { keys, useUser } from "@/lib/session";
 import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
+import { useSpaces } from "@/lib/use-spaces";
 
 const navBtn =
   "flex min-h-[44px] items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800/80 hover:text-amber-400 data-[status=active]:border-amber-500/30 data-[status=active]:bg-amber-500/10 data-[status=active]:font-bold data-[status=active]:text-amber-400 data-[status=active]:shadow-sm";
@@ -41,6 +42,7 @@ export function Shell({
   bare?: boolean;
 }) {
   const [menu, setMenu] = useState(false);
+  const navLinks = useNavLinks();
   return (
     <div className="flex min-h-full flex-col bg-slate-950 pb-[calc(4rem+env(safe-area-inset-bottom))] font-sans md:pb-0 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
       {IS_DEMO && <DemoBanner />}
@@ -57,18 +59,11 @@ export function Shell({
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
-            <Link to="/" activeOptions={{ exact: true }} className={navBtn}>
-              <i className="fa-solid fa-crown text-amber-400" /> Mercado
-            </Link>
-            <Link to="/afiliados" className={navBtn}>
-              <i className="fa-solid fa-users text-emerald-400" /> Panel Afiliados
-            </Link>
-            <Link to="/vendedores" className={navBtn}>
-              <i className="fa-solid fa-building text-amber-400" /> Panel Empresas
-            </Link>
-            <Link to="/vestidor" className={navBtn}>
-              <i className="fa-solid fa-person-dress text-amber-300" /> Vestidor
-            </Link>
+            {navLinks.map(([to, icon, label]) => (
+              <Link key={to} to={to} activeOptions={{ exact: to === "/" }} className={navBtn}>
+                <i className={cn("fa-solid", icon)} /> {label}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -98,14 +93,7 @@ export function Shell({
         {/* Menú desplegable en el celular */}
         {menu && (
           <div className="flex flex-col gap-2 border-b border-amber-500/20 bg-slate-900 px-4 py-3 md:hidden">
-            {(
-              [
-                ["/", "fa-crown text-amber-400", "Mercado"],
-                ["/afiliados", "fa-users text-emerald-400", "Panel Afiliados"],
-                ["/vendedores", "fa-building text-amber-400", "Panel Empresas"],
-                ["/vestidor", "fa-person-dress text-amber-300", "Vestidor Virtual"],
-              ] as const
-            ).map(([to, icon, label]) => (
+            {navLinks.map(([to, icon, label]) => (
               <Link
                 key={to}
                 to={to}
@@ -142,11 +130,52 @@ export function Shell({
   );
 }
 
+type NavLink = readonly ["/" | "/vendedores" | "/afiliados" | "/cuenta", string, string];
+
+/**
+ * Menú según el registro de cada persona:
+ * 1. Compra y venta → Mis compras y Vender (o Mi tienda cuando ya la abrió).
+ * 2. Afiliados → Panel Afiliados.  3. Empresas → Panel Empresa.
+ * Sin sesión se muestran las puertas de entrada: vender y ganar como afiliado.
+ */
+function useNavLinks(): NavLink[] {
+  const { user, sells, canSell, promotes, sellerLabel, hasStore } = useSpaces();
+  const links: NavLink[] = [["/", "fa-crown text-amber-400", "Mercado"]];
+  if (!user) {
+    links.push(["/vendedores", "fa-store text-amber-400", "Vender"]);
+    links.push(["/afiliados", "fa-users text-emerald-400", "Gana como afiliado"]);
+    return links;
+  }
+  if (user.accountType !== "empresa")
+    links.push(["/cuenta", "fa-box text-amber-400", "Mis compras"]);
+  if (sells || canSell)
+    links.push([
+      "/vendedores",
+      sellerLabel === "Mi tienda" ? "fa-store text-amber-400" : "fa-building text-amber-400",
+      hasStore || user.accountType === "empresa" ? sellerLabel : "Vender",
+    ]);
+  if (promotes) links.push(["/afiliados", "fa-users text-emerald-400", "Panel Afiliados"]);
+  return links;
+}
+
+/** Segunda pestaña del celular: el espacio principal de cada tipo de cuenta. */
+function useMainTab(): { to: "/vendedores" | "/afiliados"; icon: string; label: string } {
+  const { user, promotes, sellerLabel, hasStore } = useSpaces();
+  if (user?.accountType === "afiliado" || (promotes && !hasStore))
+    return { to: "/afiliados", icon: "fa-users", label: "Mi red" };
+  return {
+    to: "/vendedores",
+    icon: hasStore || user?.accountType === "empresa" ? "fa-shop" : "fa-tag",
+    label: hasStore || user?.accountType === "empresa" ? sellerLabel : "Vender",
+  };
+}
+
 /** Barra de pestañas del celular: lo más usado a un toque, con ícono y nombre. */
 function MobileTabBar() {
   const { user } = useUser();
   const cart = useCart().reduce((t, l) => t + l.qty, 0);
   const favs = useFavorites().length;
+  const main = useMainTab();
   const tab =
     "group relative flex min-h-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-slate-400 transition active:scale-95 data-[status=active]:text-amber-400";
   const bubble =
@@ -169,11 +198,11 @@ function MobileTabBar() {
           </span>
           Mercado
         </Link>
-        <Link to="/vestidor" className={tab}>
+        <Link to={main.to} className={tab}>
           <span className={bubble}>
-            <i className="fa-solid fa-person-dress" />
+            <i className={cn("fa-solid", main.icon)} />
           </span>
-          Vestidor
+          {main.label}
         </Link>
         <button onClick={openCart} className={tab} aria-label={`Carrito, ${cart} productos`}>
           <span
@@ -255,6 +284,7 @@ function DemoBanner() {
 
 function UserMenu() {
   const { user, loading } = useUser();
+  const sp = useSpaces();
   const navigate = useNavigate();
   const admin = useQuery({
     queryKey: keys.isAdmin,
@@ -302,13 +332,21 @@ function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Gana con Plaza X
+          Tus espacios
         </DropdownMenuLabel>
-        <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
-          <i className="fa-solid fa-building w-4 text-amber-400" /> Mi tienda
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
-          <i className="fa-solid fa-users w-4 text-emerald-400" /> Mi red
+        {(sp.sells || sp.canSell) && (
+          <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
+            <i className="fa-solid fa-store w-4 text-amber-400" />{" "}
+            {sp.hasStore || user.accountType === "empresa" ? sp.sellerLabel : "Vender algo"}
+          </DropdownMenuItem>
+        )}
+        {sp.promotes && (
+          <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
+            <i className="fa-solid fa-users w-4 text-emerald-400" /> Panel Afiliados
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "tipo" })}>
+          <i className="fa-solid fa-id-card w-4 text-amber-400" /> Tipo de cuenta
         </DropdownMenuItem>
         {admin.data && (
           <>

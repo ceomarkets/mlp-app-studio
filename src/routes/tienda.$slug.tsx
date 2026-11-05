@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { StoreKindBadge } from "@/components/StoreKindBadge";
 import { MessageCircle } from "@/components/icons";
 import { addToCart } from "@/components/CartSheet";
 import { Empty, ProductCard, ProductGridSkeleton, Shell } from "@/components/Shell";
@@ -45,7 +46,10 @@ function StorePage() {
           <p className="text-sm text-muted-foreground">
             plazax.co/tienda/{store.slug} · {store.city}
           </p>
-          <h1 className="text-4xl font-extrabold">{store.name}</h1>
+          <h1 className="flex flex-wrap items-center gap-2 text-4xl font-extrabold">
+            {store.name}
+            <StoreKindBadge kind={store.kind} />
+          </h1>
           {store.tagline && <p className="mt-1 text-secondary-foreground">{store.tagline}</p>}
           <p className="mt-2 text-sm text-muted-foreground">
             {items.data?.length ?? "…"} productos · {sold} vendidos

@@ -150,6 +150,7 @@ export function buildSeed(now = Date.now()): DemoState {
       fullName: "Laura Benavides",
       username: "laura",
       phone: "3001234567",
+      accountType: "empresa",
     },
     {
       id: "u-cafe",
@@ -158,6 +159,7 @@ export function buildSeed(now = Date.now()): DemoState {
       fullName: "Andrés Rosero",
       username: null,
       phone: null,
+      accountType: "empresa",
     },
     {
       id: "u-barniz",
@@ -166,6 +168,7 @@ export function buildSeed(now = Date.now()): DemoState {
       fullName: "Rosa Erazo",
       username: null,
       phone: null,
+      accountType: "comprador",
     },
     {
       id: "u-campo",
@@ -200,6 +203,7 @@ export function buildSeed(now = Date.now()): DemoState {
       shipsNational: true,
       requireApproval: false,
       verificationRequestedAt: null,
+      kind: "empresa",
     },
     {
       id: "s-cafe",
@@ -215,6 +219,7 @@ export function buildSeed(now = Date.now()): DemoState {
       shipsNational: true,
       requireApproval: false,
       verificationRequestedAt: null,
+      kind: "empresa",
     },
     {
       id: "s-barniz",
@@ -230,6 +235,7 @@ export function buildSeed(now = Date.now()): DemoState {
       shipsNational: true,
       requireApproval: true,
       verificationRequestedAt: null,
+      kind: "persona",
     },
     {
       id: "s-campo",
@@ -245,6 +251,7 @@ export function buildSeed(now = Date.now()): DemoState {
       shipsNational: false,
       requireApproval: false,
       verificationRequestedAt: daysAgo(2, now),
+      kind: "empresa",
     },
   ];
 

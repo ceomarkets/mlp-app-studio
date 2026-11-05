@@ -1,4 +1,6 @@
 import {
+  AFFILIATE_MAX,
+  AFFILIATE_MIN,
   bundleDiscount,
   CATEGORIES,
   computeWallet,
@@ -58,9 +60,10 @@ function upgrade(s: DemoState) {
     st.verified ??= st.id === "s-tejidos" || st.id === "s-cafe";
     st.requireApproval ??= st.id === "s-barniz";
     st.verificationRequestedAt ??= null;
+    st.kind ??= "empresa";
   }
   for (const p of s.products) p.promoVideo ??= null;
-  // Prendas del vestidor virtual añadidas después: se suman a los datos ya guardados.
+  // Productos de ropa, calzado y accesorios añadidos después: se suman a los datos ya guardados.
   const known = new Set(s.products.map((p) => p.id));
   for (const p of buildSeed().products)
     if (/^p(9|1[0-5])$/.test(p.id) && !known.has(p.id)) s.products.push(p);
@@ -245,6 +248,7 @@ function withStore(p: DemoState["products"][number]): Product {
       shipsNational: s.shipsNational,
       verified: s.verified,
       requireApproval: s.requireApproval,
+      kind: s.kind,
     },
   };
 }
@@ -324,6 +328,7 @@ export const demoBackend: Backend = {
     if (input.fullName !== undefined) u.fullName = input.fullName;
     if (input.phone !== undefined) u.phone = input.phone || null;
     if (input.payoutMethod !== undefined) u.payoutMethod = input.payoutMethod;
+    if (input.accountType !== undefined) u.accountType = input.accountType;
     save();
     emit();
     return toProfile(u);
@@ -614,6 +619,7 @@ export const demoBackend: Backend = {
         verified: false,
         verificationRequestedAt: null,
         ...input,
+        kind: input.kind ?? (u.accountType === "empresa" ? "empresa" : "persona"),
         whatsapp: input.whatsapp || null,
       };
       s.stores.push(store);
@@ -639,6 +645,11 @@ export const demoBackend: Backend = {
     if (!store) throw new Error("Primero crea tu tienda");
     if (!CATEGORIES.includes(input.category)) throw new Error("Categoría inválida");
     if (input.price < 1000) throw new Error("El precio mínimo es $1.000");
+    if (
+      input.commission !== 0 &&
+      (input.commission < AFFILIATE_MIN || input.commission > AFFILIATE_MAX)
+    )
+      throw new Error("La comisión va de 3% a 20%, o 0% para venta directa");
     // Igual que en la base de datos: un "precio antes" menor o igual al precio no es descuento.
     if (input.compareAtPrice !== null && input.compareAtPrice <= input.price)
       input.compareAtPrice = null;
@@ -920,7 +931,8 @@ export const demoBackend: Backend = {
         (s.affiliations ?? []).some(
           (a) => a.storeId === store.id && a.affiliateId === aff?.id && a.status === "approved",
         );
-      const referred = !!aff && aff.id !== store.ownerId && approved;
+      // Venta directa (comisión 0): no hay parte para afiliados.
+      const referred = !!aff && aff.id !== store.ownerId && approved && p.commission > 0;
       const sub = p.price * qty;
       const split = splitSale(sub, p.commission, referred);
       const pr = priced.get(productId)!;

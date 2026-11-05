@@ -47,6 +47,7 @@ export function AffiliateTools({
   const tools = useMemo(() => {
     const out: Tool[] = [];
     for (const p of products.data ?? []) {
+      if (p.commission <= 0) continue; // venta directa: sin herramientas para afiliados
       if (p.storeId === myStore.data?.id) continue; // sin comisión en la tienda propia
       if (storeSlug && p.store.slug !== storeSlug) continue;
       if (p.promoImage) out.push({ key: `i-${p.id}`, kind: "imagen", p, value: p.promoImage });

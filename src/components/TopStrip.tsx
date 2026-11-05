@@ -226,8 +226,8 @@ export function FlashDealsModal() {
         ) : (
           <p className="py-10 text-center text-sm text-slate-400">
             <i className="fa-solid fa-box-open mb-2 block text-3xl text-slate-600" />
-            Aún no hay productos en oferta. Las empresas pueden poner un “precio antes” en sus
-            productos desde el Panel Empresas.
+            Aún no hay productos en oferta. Quien vende (persona o empresa) puede poner un “precio
+            antes” en sus productos desde su tienda.
           </p>
         )}
       </div>

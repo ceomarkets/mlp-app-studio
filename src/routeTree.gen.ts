@@ -17,7 +17,6 @@ import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as VendedoresRouteImport } from './routes/vendedores'
-import { Route as VestidorRouteImport } from './routes/vestidor'
 import { Route as AdminAnunciosRouteImport } from './routes/admin.anuncios'
 import { Route as AdminDisputasRouteImport } from './routes/admin.disputas'
 import { Route as AdminPromosRouteImport } from './routes/admin.promos'
@@ -66,11 +65,6 @@ const LegalRoute = LegalRouteImport.update({
 const VendedoresRoute = VendedoresRouteImport.update({
   id: '/vendedores',
   path: '/vendedores',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VestidorRoute = VestidorRouteImport.update({
-  id: '/vestidor',
-  path: '/vestidor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAnunciosRoute = AdminAnunciosRouteImport.update({
@@ -128,7 +122,6 @@ export interface FileRoutesByFullPath {
   '/favoritos': typeof FavoritosRoute
   '/legal': typeof LegalRoute
   '/vendedores': typeof VendedoresRoute
-  '/vestidor': typeof VestidorRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/disputas': typeof AdminDisputasRoute
   '/admin/promos': typeof AdminPromosRoute
@@ -148,7 +141,6 @@ export interface FileRoutesByTo {
   '/favoritos': typeof FavoritosRoute
   '/legal': typeof LegalRoute
   '/vendedores': typeof VendedoresRoute
-  '/vestidor': typeof VestidorRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/disputas': typeof AdminDisputasRoute
   '/admin/promos': typeof AdminPromosRoute
@@ -169,7 +161,6 @@ export interface FileRoutesById {
   '/favoritos': typeof FavoritosRoute
   '/legal': typeof LegalRoute
   '/vendedores': typeof VendedoresRoute
-  '/vestidor': typeof VestidorRoute
   '/admin/anuncios': typeof AdminAnunciosRoute
   '/admin/disputas': typeof AdminDisputasRoute
   '/admin/promos': typeof AdminPromosRoute
@@ -191,7 +182,6 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/legal'
     | '/vendedores'
-    | '/vestidor'
     | '/admin/anuncios'
     | '/admin/disputas'
     | '/admin/promos'
@@ -211,7 +201,6 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/legal'
     | '/vendedores'
-    | '/vestidor'
     | '/admin/anuncios'
     | '/admin/disputas'
     | '/admin/promos'
@@ -231,7 +220,6 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/legal'
     | '/vendedores'
-    | '/vestidor'
     | '/admin/anuncios'
     | '/admin/disputas'
     | '/admin/promos'
@@ -252,7 +240,6 @@ export interface RootRouteChildren {
   FavoritosRoute: typeof FavoritosRoute
   LegalRoute: typeof LegalRoute
   VendedoresRoute: typeof VendedoresRoute
-  VestidorRoute: typeof VestidorRoute
   AdminAnunciosRoute: typeof AdminAnunciosRoute
   AdminDisputasRoute: typeof AdminDisputasRoute
   AdminPromosRoute: typeof AdminPromosRoute
@@ -320,13 +307,6 @@ declare module '@tanstack/react-router' {
       path: '/vendedores'
       fullPath: '/vendedores'
       preLoaderRoute: typeof VendedoresRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/vestidor': {
-      id: '/vestidor'
-      path: '/vestidor'
-      fullPath: '/vestidor'
-      preLoaderRoute: typeof VestidorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/anuncios': {
@@ -404,7 +384,6 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritosRoute: FavoritosRoute,
   LegalRoute: LegalRoute,
   VendedoresRoute: VendedoresRoute,
-  VestidorRoute: VestidorRoute,
   AdminAnunciosRoute: AdminAnunciosRoute,
   AdminDisputasRoute: AdminDisputasRoute,
   AdminPromosRoute: AdminPromosRoute,

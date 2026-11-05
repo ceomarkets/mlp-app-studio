@@ -22,9 +22,8 @@ import {
 import { useViewed, viewed as viewedStore } from "@/lib/client-state";
 import { StockBadge } from "@/components/StockBadge";
 import { copShort, EXAMPLE_FEED, EXAMPLE_META, EXAMPLE_PRODUCTS, isExample } from "@/lib/examples";
-import { isWearable } from "@/lib/vestidor";
 import { discountPct, isNew, temperatures } from "@/lib/feed";
-import { AFFILIATE_MIN, clampCommission, cop } from "@/lib/plaza";
+import { clampCommission, cop } from "@/lib/plaza";
 import { keys } from "@/lib/session";
 import { plazaShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
@@ -178,12 +177,6 @@ function Plaza() {
               </div>
 
               <div className="relative flex w-full gap-2 md:w-auto">
-                <Link
-                  to="/vestidor"
-                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-slate-800/80 px-3.5 py-2 font-bold text-amber-300 shadow-sm transition hover:border-amber-400 md:flex-none"
-                >
-                  <i className="fa-solid fa-person-dress" /> Vestidor Virtual
-                </Link>
                 <button
                   onClick={() => setFiltersOpen(!filtersOpen)}
                   aria-expanded={filtersOpen}
@@ -279,14 +272,14 @@ function Plaza() {
 
           {examples && (
             <p className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-              Productos de ejemplo: así se verá el catálogo cuando las empresas publiquen sus
-              artículos desde el Panel Empresas.
+              Productos de ejemplo: así se verá el catálogo cuando los vendedores (personas o
+              empresas) publiquen sus artículos.
             </p>
           )}
           {browse.offer === "direct" && (
             <p className="mb-4 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-400">
-              En Plaza X todos los productos pagan comisión a quien los recomienda (desde{" "}
-              {Math.round(AFFILIATE_MIN * 100)}%), por eso no hay ventas directas sin comisión.
+              Venta directa: productos que el vendedor ofrece sin programa de afiliados (no pagan
+              comisión a quien los recomienda).
             </p>
           )}
 
@@ -437,16 +430,6 @@ function GridCard({ p, onOpen }: { p: Product; temp?: number; onOpen: () => void
             <span className="absolute top-2 right-2 rounded-md bg-slate-950/80 px-2 py-0.5 text-[10px] font-bold text-slate-300">
               Ejemplo
             </span>
-          )}
-          {isWearable(p) && (
-            <Link
-              to="/vestidor"
-              search={{ probar: p.id }}
-              onClick={(e) => e.stopPropagation()}
-              className="absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border border-amber-500/40 bg-slate-950/85 px-2 py-1 text-[10px] font-bold text-amber-300 backdrop-blur-md hover:border-amber-400"
-            >
-              <i className="fa-solid fa-person-dress" /> Probar
-            </Link>
           )}
         </div>
         <div className="mb-2 flex items-center justify-between">

@@ -4,14 +4,15 @@ import { Loader2 } from "@/components/icons";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { backend, IS_DEMO } from "@/lib/backend";
+import { backend, IS_DEMO, type AccountType } from "@/lib/backend";
+import { ROLES, roleOf } from "@/lib/roles";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
 import { PAYOUT_METHODS, type PayoutMethod } from "@/lib/plaza";
 import { keys } from "@/lib/session";
 import { authUI } from "@/lib/ui-state";
 import { cn } from "@/lib/utils";
 
-type Role = "comprador" | "afiliado" | "empresa";
+type Role = AccountType;
 
 /** Nombre comercial elegido al registrarse como empresa (prellena el formulario de tienda). */
 export const COMPANY_NAME_KEY = "plazax-company-name";
@@ -74,9 +75,15 @@ export function AuthForm({
         await backend.signIn({ email: f.email, password: f.password });
       }
       await qc.invalidateQueries({ queryKey: keys.me });
-      toast.success("¡Sesión iniciada con éxito!");
+      // Al entrar se va al panel de su tipo de cuenta (el elegido al registrarse).
+      const me = await backend.getUser();
+      const home = roleOf(mode === "signup" ? role : me?.accountType).home;
+      toast.success(
+        mode === "signup"
+          ? `¡Bienvenido! Cuenta de ${roleOf(role).label.toLowerCase()} lista`
+          : "¡Sesión iniciada con éxito!",
+      );
       onDone?.();
-      const home = role === "empresa" ? "/vendedores" : role === "afiliado" ? "/afiliados" : null;
       if (redirectTo ?? home) navigate({ to: redirectTo ?? home! });
     } catch (err) {
       toast.error((err as Error).message);
@@ -85,42 +92,49 @@ export function AuthForm({
     }
   }
 
-  const ROLES: { id: Role; label: string; icon: string }[] = [
-    { id: "comprador", label: "Comprador", icon: "fa-bag-shopping" },
-    { id: "afiliado", label: "Afiliado", icon: "fa-users" },
-    { id: "empresa", label: "Empresa", icon: "fa-building" },
-  ];
-
   return (
     <div>
       <h3 className="mb-1 text-xl font-bold text-white">
         {mode === "signup" ? "Crea tu cuenta" : "Bienvenido a Plaza X"}
       </h3>
-      <p className="mb-5 text-xs text-slate-400">¿Cómo quieres usar la plataforma?</p>
+      <p className="mb-5 text-xs text-slate-400">
+        {mode === "signup"
+          ? "¿Cómo quieres usar Plaza X? Puedes cambiarlo cuando quieras desde Mi cuenta."
+          : "Entra y te llevamos a tu espacio."}
+      </p>
 
-      <div
-        role="radiogroup"
-        aria-label="Tipo de cuenta"
-        className="mb-6 grid grid-cols-3 gap-1 rounded-xl bg-slate-800 p-1 text-xs font-bold"
-      >
-        {ROLES.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            role="radio"
-            aria-checked={role === r.id}
-            onClick={() => setRole(r.id)}
-            className={cn(
-              "flex items-center justify-center gap-1.5 rounded-lg py-2 transition",
-              role === r.id
-                ? "bg-slate-900 text-amber-400 shadow-sm"
-                : "text-slate-300 hover:text-amber-400",
-            )}
-          >
-            <i className={cn("fa-solid", r.icon)} /> {r.label}
-          </button>
-        ))}
-      </div>
+      {mode === "signup" && (
+        <div role="radiogroup" aria-label="Tipo de cuenta" className="mb-6 grid gap-2 text-xs">
+          {ROLES.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              role="radio"
+              aria-checked={role === r.id}
+              onClick={() => setRole(r.id)}
+              className={cn(
+                "flex min-h-0 items-start gap-2.5 rounded-xl border p-3 text-left transition",
+                role === r.id
+                  ? "border-amber-400 bg-amber-500/10 text-white"
+                  : "border-slate-800 bg-slate-950 text-slate-300 hover:border-amber-500/50",
+              )}
+            >
+              <span
+                className={cn(
+                  "grid size-8 shrink-0 place-items-center rounded-lg text-sm",
+                  role === r.id ? "bg-amber-500 text-slate-950" : "bg-slate-800 text-amber-400",
+                )}
+              >
+                <i className={cn("fa-solid", r.icon)} />
+              </span>
+              <span>
+                <b className="block text-[13px]">{r.label}</b>
+                <span className="text-[11px] text-slate-400">{r.short}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <form onSubmit={submit} className="space-y-4">
         {mode === "signup" && role === "afiliado" && (

@@ -41,6 +41,7 @@ import {
   pct,
 } from "@/lib/plaza";
 import { keys, useUser } from "@/lib/session";
+import { StoreKindBadge } from "@/components/StoreKindBadge";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/vendedores")({
@@ -77,7 +78,8 @@ function Sellers() {
           <p className="text-sm font-semibold text-primary">Paso 1 de 2</p>
           <h1 className="mt-1 text-3xl font-extrabold">Abre tu tienda</h1>
           <p className="mb-6 mt-1 text-muted-foreground">
-            Gratis y sin pagos por adelantado. Luego subes tus productos.
+            Gratis y sin pagos por adelantado. Puedes vender como persona (no necesitas ser empresa)
+            y decidir si trabajas con afiliados. Luego subes tus productos.
           </p>
           <StoreForm />
         </div>
@@ -94,13 +96,13 @@ function Pitch() {
       <section className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
         <div>
           <h1 className="text-4xl font-extrabold md:text-6xl">
-            Vende con tu marca.
+            Vende lo tuyo.
             <br />
-            <span className="text-primary">Te venden otros.</span>
+            <span className="text-primary">Como persona o empresa.</span>
           </h1>
           <p className="mt-4 max-w-lg text-lg text-muted-foreground">
-            Publica tus productos y cientos de afiliados los comparten en WhatsApp e Instagram. Solo
-            pagas cuando vendes.
+            No necesitas ser empresa ni afiliado: publica y vende directo. Si quieres, abre tus
+            productos a afiliados y que otros los compartan por ti. Solo pagas cuando vendes.
           </p>
           <ul className="mt-6 space-y-3 text-sm">
             <li className="flex items-center gap-3">
@@ -113,7 +115,7 @@ function Pitch() {
               <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4 [&_.pxi]:size-4">
                 <Percent />
               </span>
-              Tú decides la comisión del afiliado (3% a 20%)
+              Venta directa, o comisión para afiliados del 3% al 20%: tú decides
             </li>
             <li className="flex items-center gap-3">
               <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4 [&_.pxi]:size-4">
@@ -179,6 +181,9 @@ function Dashboard() {
     queryFn: () => backend.storeAffiliateRequests(),
   });
   const pendingReq = requests.data?.filter((r) => r.status === "pending").length ?? 0;
+  // La pestaña de afiliados aparece solo si la tienda trabaja con ellos.
+  const usesAffiliates =
+    (products.data ?? []).some((p) => p.commission > 0) || (requests.data?.length ?? 0) > 0;
 
   return (
     <Shell wide>
@@ -188,7 +193,10 @@ function Dashboard() {
             {store.emoji}
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold md:text-4xl">{store.name}</h1>
+            <h1 className="flex flex-wrap items-center gap-2 text-3xl font-extrabold md:text-4xl">
+              {store.name}
+              <StoreKindBadge kind={store.kind} />
+            </h1>
             <Link
               to="/tienda/$slug"
               params={{ slug: store.slug }}
@@ -201,7 +209,7 @@ function Dashboard() {
       </div>
 
       <div className="mt-6">
-        <VerificationBar store={store} />
+        <VerificationBar store={store} affiliates={usesAffiliates} />
       </div>
 
       <Tabs defaultValue="resumen" className="mt-6">
@@ -223,15 +231,17 @@ function Dashboard() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="afiliados" className="gap-1.5">
-            <i className="fa-solid fa-users text-amber-400/90" aria-hidden />
-            Afiliados{" "}
-            {pendingReq > 0 && (
-              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] text-slate-950">
-                {pendingReq}
-              </span>
-            )}
-          </TabsTrigger>
+          {usesAffiliates && (
+            <TabsTrigger value="afiliados" className="gap-1.5">
+              <i className="fa-solid fa-users text-amber-400/90" aria-hidden />
+              Afiliados{" "}
+              {pendingReq > 0 && (
+                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] text-slate-950">
+                  {pendingReq}
+                </span>
+              )}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="disputas" className="gap-1.5">
             <i className="fa-solid fa-scale-balanced text-amber-400/90" aria-hidden />
             Disputas{" "}
