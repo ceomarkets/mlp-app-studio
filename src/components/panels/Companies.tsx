@@ -89,7 +89,7 @@ export function Companies({ username }: { username: string }) {
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-            <i className="fa-solid fa-handshake text-emerald-400" /> Empresas y solicitudes
+            <i className="fa-solid fa-handshake" /> Empresas y solicitudes
           </h3>
           <p className="text-xs text-slate-400">
             Las tiendas abiertas te pagan desde el primer clic. Las demás aprueban a sus afiliados.

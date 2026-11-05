@@ -124,7 +124,7 @@ export function AnnouncementStrip() {
         onClick={it.go}
         className="animate-fade-in-out flex min-h-0 items-center justify-center gap-2 px-4 text-center"
       >
-        {it.icon && <i className={cn("fa-solid text-amber-400", it.icon)} />}
+        {it.icon && <i className={cn("fa-solid", it.icon)} />}
         <span className="line-clamp-1">{it.text}</span>
         {it.cta && <span className="shrink-0 font-bold text-amber-400 underline">{it.cta}</span>}
       </button>
@@ -166,7 +166,7 @@ export function FlashDealsModal() {
           onClick={flashUI.close}
           aria-label="Cerrar"
           data-tip="Cerrar"
-          className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-slate-800 text-lg text-slate-400 transition hover:text-amber-400"
+          className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-slate-800 text-lg text-slate-400 transition hover:text-white"
         >
           <i className="fa-solid fa-xmark" />
         </button>

@@ -27,7 +27,7 @@ function Legal() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="block rounded-lg px-3 py-1.5 text-slate-300 transition hover:bg-slate-800 hover:text-amber-400"
+                className="block rounded-lg px-3 py-1.5 text-slate-300 transition hover:bg-slate-800 hover:text-white"
               >
                 {i + 1}. {s.title}
               </a>
@@ -50,7 +50,7 @@ function Legal() {
           </header>
 
           <p className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[13px] font-medium text-amber-300">
-            <i className="fa-solid fa-circle-info me-1 text-amber-400" /> {LEGAL_NOTICE}
+            <i className="fa-solid fa-circle-info me-1" /> {LEGAL_NOTICE}
           </p>
 
           <div className="space-y-6 text-sm leading-relaxed text-slate-300">

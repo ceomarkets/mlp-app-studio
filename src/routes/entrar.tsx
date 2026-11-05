@@ -1,17 +1,11 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Link2, Loader2, ShoppingBag, Store } from "@/components/icons";
-import { useEffect, useState, type FormEvent } from "react";
-import { toast } from "sonner";
+import { useEffect } from "react";
+import { AuthForm } from "@/components/AuthDialog";
 import { Shell } from "@/components/Shell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { backend, IS_DEMO } from "@/lib/backend";
-import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/backend/seed";
-import { keys, useUser } from "@/lib/session";
+import { roleOf, ROLES } from "@/lib/roles";
+import { useUser } from "@/lib/session";
 
-type Search = { to?: string | undefined };
+type Search = { to?: string | undefined; registro?: 1 | 2 | 3 | undefined };
 
 export const Route = createFileRoute("/entrar")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -20,200 +14,65 @@ export const Route = createFileRoute("/entrar")({
       typeof s["to"] === "string" && s["to"].startsWith("/") && !s["to"].startsWith("//")
         ? s["to"]
         : undefined,
+    // ?registro=1|2|3 abre el registro con ese tipo de cuenta.
+    registro: [1, 2, 3].includes(Number(s["registro"]))
+      ? (Number(s["registro"]) as 1 | 2 | 3)
+      : undefined,
   }),
   head: () => ({ meta: [{ title: "Entrar · Plaza X" }, { name: "robots", content: "noindex" }] }),
   component: Login,
 });
 
-type Mode = "login" | "signup" | "reset";
-
 function Login() {
-  const { to } = Route.useSearch();
+  const { to, registro } = Route.useSearch();
   const navigate = useNavigate();
-  const qc = useQueryClient();
   const { user } = useUser();
-  const [mode, setMode] = useState<Mode>("login");
-  const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const role = ROLES.find((r) => r.n === registro);
 
   useEffect(() => {
-    if (user) navigate({ to: to ?? "/" });
+    // Ya con sesión: a donde iba, o al espacio de su tipo de cuenta.
+    if (user) navigate({ to: to ?? roleOf(user.accountType).home ?? "/" });
   }, [user, to, navigate]);
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    try {
-      if (mode === "reset") {
-        await backend.resetPassword(form.email);
-        toast.success("Te enviamos un enlace para restablecer tu contraseña");
-        setMode("login");
-        return;
-      }
-      if (mode === "signup") {
-        if (form.name.trim().length < 2) throw new Error("Escribe tu nombre");
-        const { needsConfirmation } = await backend.signUp({
-          email: form.email,
-          password: form.password,
-          fullName: form.name.trim(),
-        });
-        if (needsConfirmation) {
-          toast.success("¡Cuenta creada! Revisa tu correo para confirmarla.");
-          setMode("login");
-          return;
-        }
-      } else {
-        await backend.signIn({ email: form.email, password: form.password });
-      }
-      await qc.invalidateQueries({ queryKey: keys.me });
-      toast.success(mode === "signup" ? "¡Bienvenido a Plaza X!" : "Sesión iniciada");
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const titles: Record<Mode, [string, string]> = {
-    login: ["Hola de nuevo", "Entra para comprar, vender o cobrar tus comisiones."],
-    signup: [
-      "Crea tu cuenta",
-      "Una sola cuenta para comprar, abrir tu tienda y ganar como afiliado.",
-    ],
-    reset: ["Recupera tu acceso", "Te enviaremos un enlace a tu correo."],
-  };
 
   return (
     <Shell>
-      <div className="mx-auto grid max-w-4xl overflow-hidden rounded-3xl border bg-card shadow-card md:grid-cols-2">
-        <div className="hidden flex-col justify-between bg-ink p-10 text-ink-foreground md:flex">
-          <div className="font-display text-3xl font-extrabold leading-tight">
-            Tu tienda,
-            <br />
-            tu red,
-            <br />
-            <span className="text-sun">tus ganancias.</span>
-          </div>
-          <ul className="space-y-3 text-sm opacity-90">
-            <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4 [&_.pxi]:size-4">
-                <ShoppingBag />
-              </span>
-              Compra a tiendas locales con pago seguro
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4 [&_.pxi]:size-4">
-                <Store />
-              </span>
-              Abre tu tienda sin pagos por adelantado
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4 [&_.pxi]:size-4">
-                <Link2 />
-              </span>
-              Comparte enlaces y gana hasta 20% por venta
-            </li>
-          </ul>
-        </div>
-        <form onSubmit={submit} className="space-y-4 p-6 md:p-10">
+      <div className="mx-auto grid max-w-4xl overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 md:grid-cols-2">
+        <div className="hidden flex-col justify-between border-r border-slate-800 bg-slate-950 p-10 md:flex">
           <div>
-            <h1 className="text-3xl font-extrabold">{titles[mode][0]}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{titles[mode][1]}</p>
+            <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Registro general
+            </p>
+            <h2 className="mt-2 text-3xl leading-tight font-extrabold text-white">
+              Una cuenta,
+              <br />
+              <span className="gold-gradient-text">tres formas de usarla.</span>
+            </h2>
           </div>
-          {mode === "signup" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nombre completo</Label>
-              <Input
-                id="name"
-                autoComplete="name"
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Correo</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-          </div>
-          {mode !== "reset" && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Contraseña</Label>
-                {mode === "login" && (
-                  <button
-                    type="button"
-                    className="text-xs text-primary hover:underline"
-                    onClick={() => setMode("reset")}
-                  >
-                    ¿La olvidaste?
-                  </button>
-                )}
-              </div>
-              <Input
-                id="password"
-                type="password"
-                minLength={6}
-                autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                required
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-            </div>
-          )}
-          <Button type="submit" size="lg" className="w-full" disabled={busy}>
-            {busy && <Loader2 className="animate-spin" />}
-            {mode === "login" ? "Entrar" : mode === "signup" ? "Crear cuenta" : "Enviar enlace"}
-          </Button>
-          {IS_DEMO && mode === "login" && (
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => setForm({ ...form, email: DEMO_EMAIL, password: DEMO_PASSWORD })}
-            >
-              Usar la cuenta demo (vendedora y afiliada)
-            </Button>
-          )}
-          <p className="text-center text-sm text-muted-foreground">
-            {mode === "login" ? (
-              <>
-                ¿No tienes cuenta?{" "}
-                <button
-                  type="button"
-                  className="font-semibold text-primary hover:underline"
-                  onClick={() => setMode("signup")}
-                >
-                  Regístrate gratis
-                </button>
-              </>
-            ) : (
-              <>
-                ¿Ya tienes cuenta?{" "}
-                <button
-                  type="button"
-                  className="font-semibold text-primary hover:underline"
-                  onClick={() => setMode("login")}
-                >
-                  Entra
-                </button>
-              </>
-            )}
-          </p>
-          <p className="text-center text-xs text-muted-foreground">
-            Al continuar aceptas los términos de Plaza X.{" "}
-            <Link to="/" className="underline">
-              Volver a la plaza
-            </Link>
-          </p>
-        </form>
+          <ol className="space-y-4 text-sm">
+            {ROLES.map((r) => (
+              <li key={r.id} className="flex items-start gap-3">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full border border-slate-700 text-xs font-black text-slate-300">
+                  {r.n}
+                </span>
+                <span>
+                  <b className="block text-white">{r.label}</b>
+                  <span className="text-slate-400">{r.short}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <Link to="/legal" className="text-xs text-slate-500 hover:text-slate-300">
+            Al continuar aceptas los Términos y Condiciones de Plaza X.
+          </Link>
+        </div>
+        <div className="p-6 md:p-10">
+          <AuthForm
+            key={registro ?? 0}
+            redirectTo={to}
+            initialMode={role ? "signup" : "login"}
+            initialRole={role?.id ?? "comprador"}
+          />
+        </div>
       </div>
     </Shell>
   );

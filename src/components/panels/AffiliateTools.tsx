@@ -87,7 +87,7 @@ export function AffiliateTools({
               "shrink-0 pb-2",
               kind === t.id
                 ? "border-b-2 border-purple-500 text-purple-400"
-                : "text-slate-400 hover:text-amber-400",
+                : "text-slate-400 hover:text-white",
             )}
           >
             <i className={cn("fa-solid me-1", t.icon)} /> {t.label}
@@ -117,7 +117,7 @@ export function AffiliateTools({
               )}
               <div className="min-w-0">
                 <h4 className="truncate text-xs font-bold text-white">
-                  <i className={cn("fa-solid me-1 text-purple-400", KIND_ICON[t.kind])} />
+                  <i className={cn("fa-solid me-1", KIND_ICON[t.kind])} />
                   {t.p.name} · {t.p.store.name}
                 </h4>
                 <p className="line-clamp-2 text-[11px] text-slate-400">
@@ -178,7 +178,7 @@ export function LevelCard({ level }: { level: ReturnType<typeof affiliateLevel> 
     <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-medium text-slate-400 uppercase">Nivel de Afiliado</span>
-        <i className="fa-solid fa-award text-lg text-amber-400" />
+        <i className="fa-solid fa-award text-lg" />
       </div>
       <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-black text-amber-400">
         <i className="fa-solid fa-crown text-xs" /> {level.name.toUpperCase()} ({level.sales}{" "}

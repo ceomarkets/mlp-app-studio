@@ -185,7 +185,7 @@ function Plaza() {
                   Filtros{" "}
                   <i
                     className={cn(
-                      "fa-solid fa-chevron-down text-[10px] text-amber-400 transition",
+                      "fa-solid fa-chevron-down text-[10px] transition",
                       filtersOpen && "rotate-180",
                     )}
                   />
@@ -335,7 +335,7 @@ function Plaza() {
 const chip =
   "flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border px-3.5 py-2 transition";
 const chipIdle =
-  "border-slate-700/80 bg-slate-800/80 font-medium text-slate-300 hover:bg-slate-800 hover:text-amber-400";
+  "border-slate-700/80 bg-slate-800/80 font-medium text-slate-300 hover:bg-slate-800 hover:text-white";
 
 function Select({
   label,
@@ -378,7 +378,7 @@ function SearchBar({ value, onChange }: { value: string; onChange: (v: string) =
     >
       <div className="flex flex-col items-stretch gap-2 rounded-2xl border border-amber-500/30 bg-slate-950 p-1.5 shadow-lg transition focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400/50 sm:flex-row sm:items-center sm:gap-0 sm:p-1">
         <div className="flex w-full items-center px-2">
-          <i className="fa-solid fa-magnifying-glass text-xs text-amber-400/70" />
+          <i className="fa-solid fa-magnifying-glass text-xs" />
           <input
             type="text"
             value={value}
@@ -440,7 +440,7 @@ function GridCard({ p, onOpen }: { p: Product; temp?: number; onOpen: () => void
               </span>
             )}
             <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
-              <i className="fa-solid fa-store text-[10px] text-amber-400" /> {p.store.name}
+              <i className="fa-solid fa-store text-[10px]" /> {p.store.name}
             </span>
           </div>
           {rate > 0 && (

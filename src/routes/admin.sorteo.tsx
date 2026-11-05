@@ -81,8 +81,7 @@ function Raffles() {
           className="h-fit space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-5"
         >
           <h2 className="font-bold text-white">
-            <i className="fa-solid fa-gift text-amber-500" />{" "}
-            {f.id ? "Editar sorteo" : "Nuevo sorteo"}
+            <i className="fa-solid fa-gift" /> {f.id ? "Editar sorteo" : "Nuevo sorteo"}
           </h2>
           <input
             required

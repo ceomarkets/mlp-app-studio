@@ -91,7 +91,7 @@ function Pitch() {
           Sin comprar inventario, sin hacer envíos. Tú compartes, las tiendas venden y tú cobras.
         </p>
         <Button asChild size="lg" className="mt-6">
-          <Link to="/entrar" search={{ to: "/afiliados" }}>
+          <Link to="/entrar" search={{ registro: 2, to: "/afiliados" }}>
             Quiero ser afiliado
           </Link>
         </Button>
@@ -217,27 +217,27 @@ function Dashboard({ username }: { username: string }) {
       <Tabs defaultValue="resumen" className="mt-8">
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="resumen" className="gap-1.5">
-            <i className="fa-solid fa-chart-pie text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-chart-pie" aria-hidden />
             Resumen
           </TabsTrigger>
           <TabsTrigger value="empresas" className="gap-1.5">
-            <i className="fa-solid fa-building text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-building" aria-hidden />
             Empresas
           </TabsTrigger>
           <TabsTrigger value="vitrina" className="gap-1.5">
-            <i className="fa-solid fa-gem text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-gem" aria-hidden />
             Vitrina
           </TabsTrigger>
           <TabsTrigger value="herramientas" className="gap-1.5">
-            <i className="fa-solid fa-toolbox text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-toolbox" aria-hidden />
             Herramientas
           </TabsTrigger>
           <TabsTrigger value="ventas" className="gap-1.5">
-            <i className="fa-solid fa-receipt text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-receipt" aria-hidden />
             Mis ventas
           </TabsTrigger>
           <TabsTrigger value="billetera" className="gap-1.5">
-            <i className="fa-solid fa-wallet text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-wallet" aria-hidden />
             Billetera
           </TabsTrigger>
         </TabsList>

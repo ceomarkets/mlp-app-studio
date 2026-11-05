@@ -89,14 +89,14 @@ export function QuickView({
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
               {p.ratingCount > 0 && (
                 <span className="inline-flex items-center gap-1">
-                  <i className="fa-solid fa-star text-amber-500" />
+                  <i className="fa-solid fa-star text-amber-400" />
                   <b>{p.rating.toFixed(1)}</b>
                   <span className="text-muted-foreground">({p.ratingCount})</span>
                 </span>
               )}
               {p.soldCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <i className="fa-solid fa-fire text-amber-500" /> {p.soldCount} ya lo compraron
+                  <i className="fa-solid fa-fire" /> {p.soldCount} ya lo compraron
                 </span>
               )}
             </div>
@@ -176,7 +176,7 @@ export function QuickView({
               </Button>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
-                  <i className="fa-solid fa-shield-halved text-amber-400" /> Pago seguro con Wompi
+                  <i className="fa-solid fa-shield-halved" /> Pago seguro con Wompi
                 </span>
                 <Link
                   to="/producto/$id"

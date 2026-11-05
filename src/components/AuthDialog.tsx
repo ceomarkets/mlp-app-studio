@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "@/components/icons";
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { backend, IS_DEMO, type AccountType } from "@/lib/backend";
@@ -16,7 +16,7 @@ type Role = AccountType;
 
 /** Nombre comercial elegido al registrarse como empresa (prellena el formulario de tienda). */
 export const COMPANY_NAME_KEY = "plazax-company-name";
-type Mode = "login" | "signup" | "reset";
+export type Mode = "login" | "signup" | "reset";
 
 const input =
   "w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-amber-400 focus:outline-none";
@@ -28,14 +28,18 @@ const input =
 export function AuthForm({
   redirectTo,
   onDone,
+  initialMode = "login",
+  initialRole = "comprador",
 }: {
   redirectTo?: string | undefined;
   onDone?: () => void;
+  initialMode?: Mode;
+  initialRole?: Role;
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [role, setRole] = useState<Role>("comprador");
-  const [mode, setMode] = useState<Mode>("login");
+  const [role, setRole] = useState<Role>(initialRole);
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({ email: "", password: "", name: "", company: "" });
   const [payout, setPayout] = useState<PayoutMethod>("nequi");
@@ -99,7 +103,7 @@ export function AuthForm({
       </h3>
       <p className="mb-5 text-xs text-slate-400">
         {mode === "signup"
-          ? "¿Cómo quieres usar Plaza X? Puedes cambiarlo cuando quieras desde Mi cuenta."
+          ? "Registro general: elige cómo usarás Plaza X. Puedes cambiarlo desde Mi cuenta."
           : "Entra y te llevamos a tu espacio."}
       </p>
 
@@ -113,24 +117,27 @@ export function AuthForm({
               aria-checked={role === r.id}
               onClick={() => setRole(r.id)}
               className={cn(
-                "flex min-h-0 items-start gap-2.5 rounded-xl border p-3 text-left transition",
+                "flex min-h-0 items-center gap-3 rounded-xl border p-3 text-left transition",
                 role === r.id
-                  ? "border-amber-400 bg-amber-500/10 text-white"
-                  : "border-slate-800 bg-slate-950 text-slate-300 hover:border-amber-500/50",
+                  ? "border-amber-400/70 bg-slate-900 text-white"
+                  : "border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-600",
               )}
             >
               <span
                 className={cn(
-                  "grid size-8 shrink-0 place-items-center rounded-lg text-sm",
-                  role === r.id ? "bg-amber-500 text-slate-950" : "bg-slate-800 text-amber-400",
+                  "grid size-7 shrink-0 place-items-center rounded-full border text-[12px] font-black",
+                  role === r.id
+                    ? "border-amber-400 text-amber-400"
+                    : "border-slate-700 text-slate-500",
                 )}
               >
-                <i className={cn("fa-solid", r.icon)} />
+                {r.n}
               </span>
-              <span>
+              <span className="flex-1">
                 <b className="block text-[13px]">{r.label}</b>
                 <span className="text-[11px] text-slate-400">{r.short}</span>
               </span>
+              <i className={cn("fa-solid text-slate-500", r.icon)} aria-hidden />
             </button>
           ))}
         </div>
@@ -256,16 +263,39 @@ export function AuthForm({
   );
 }
 
-export const openAuth = authUI.open;
+/* Con qué se abre la ventana: ingresar, o registrarse ya con el tipo de cuenta elegido. */
+let intent: { mode: Mode; role: Role; n: number } = { mode: "login", role: "comprador", n: 0 };
+const intentSubs = new Set<() => void>();
+const useIntent = () =>
+  useSyncExternalStore(
+    (fn) => {
+      intentSubs.add(fn);
+      return () => intentSubs.delete(fn);
+    },
+    () => intent,
+    () => intent,
+  );
+
+/** Abre la ventana para ingresar (o, con un tipo de cuenta, para registrarse con él). */
+export function openAuth(opts?: { mode?: Mode; role?: Role }) {
+  intent = {
+    mode: opts?.mode ?? (opts?.role ? "signup" : "login"),
+    role: opts?.role ?? "comprador",
+    n: intent.n + 1,
+  };
+  intentSubs.forEach((f) => f());
+  authUI.open();
+}
 
 export function AuthDialog() {
   const open = authUI.use();
+  const it = useIntent();
   return (
     <Dialog open={open} onOpenChange={authUI.set}>
       <DialogContent className="max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 text-white shadow-2xl [&>button]:text-slate-500">
         <DialogTitle className="sr-only">Unirse a Plaza X</DialogTitle>
         <DialogDescription className="sr-only">Inicia sesión o crea tu cuenta</DialogDescription>
-        <AuthForm onDone={authUI.close} />
+        <AuthForm key={it.n} onDone={authUI.close} initialMode={it.mode} initialRole={it.role} />
       </DialogContent>
     </Dialog>
   );

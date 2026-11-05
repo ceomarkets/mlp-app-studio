@@ -187,7 +187,7 @@ export function DisputeDialog({
 
             {kind === "plazax_pay" ? (
               <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-200">
-                <i className="fa-solid fa-circle-check me-1 text-amber-400" />
+                <i className="fa-solid fa-circle-check me-1" />
                 <b>Protección activa:</b> tu dinero está en custodia. Congelamos el pago al vendedor
                 (y al afiliado) mientras revisamos tus evidencias. Si se confirma, te reembolsamos
                 el total.
@@ -195,7 +195,7 @@ export function DisputeDialog({
             ) : (
               <>
                 <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-300">
-                  <i className="fa-solid fa-triangle-exclamation me-1 text-amber-400" />
+                  <i className="fa-solid fa-triangle-exclamation me-1" />
                   <b>Sin custodia:</b> Plaza X no puede devolver pagos hechos por fuera.
                   Bloquearemos la cuenta denunciada y conservaremos los registros para entregarlos a
                   la Fiscalía si hay una denuncia penal formal.
@@ -351,7 +351,7 @@ export function TrackingInfo({ item }: { item: Pick<OrderItem, "carrier" | "trac
   const url = trackingUrl(item.carrier, item.tracking);
   return (
     <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-400">
-      <i className="fa-solid fa-truck-fast text-amber-400" />
+      <i className="fa-solid fa-truck-fast" />
       {item.carrier && <b className="text-slate-200">{item.carrier}</b>}
       {item.tracking && <span className="font-mono">Guía {item.tracking}</span>}
       {url && (

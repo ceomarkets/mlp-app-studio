@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 /** Pie de página negro y dorado con el marco legal colombiano. */
 export function SiteFooter() {
-  const link = "transition hover:text-amber-400";
+  const link = "transition hover:text-white";
   return (
     <footer className="mt-auto border-t border-amber-500/20 bg-slate-950 px-4 pt-10 pb-6 text-xs text-slate-400">
       <div className="mx-auto mb-8 grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-3">

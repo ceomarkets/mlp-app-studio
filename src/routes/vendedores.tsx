@@ -124,11 +124,18 @@ function Pitch() {
               Panel con ventas, pedidos, stock y retiros a tu cuenta
             </li>
           </ul>
-          <Button asChild size="lg" className="mt-6">
-            <Link to="/entrar" search={{ to: "/vendedores" }}>
-              Abrir mi tienda gratis
-            </Link>
-          </Button>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild size="lg">
+              <Link to="/entrar" search={{ registro: 3, to: "/vendedores" }}>
+                Registrar mi empresa
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/entrar" search={{ registro: 1, to: "/vendedores" }}>
+                Vender como persona
+              </Link>
+            </Button>
+          </div>
         </div>
         <div className="space-y-5 rounded-3xl border bg-card p-6 shadow-card md:p-8">
           <h2 className="text-xl font-bold">¿Cuánto recibes por venta?</h2>
@@ -215,15 +222,15 @@ function Dashboard() {
       <Tabs defaultValue="resumen" className="mt-6">
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="resumen" className="gap-1.5">
-            <i className="fa-solid fa-chart-pie text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-chart-pie" aria-hidden />
             Resumen
           </TabsTrigger>
           <TabsTrigger value="productos" className="gap-1.5">
-            <i className="fa-solid fa-boxes-stacked text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-boxes-stacked" aria-hidden />
             Productos ({products.data?.length ?? 0})
           </TabsTrigger>
           <TabsTrigger value="pedidos" className="gap-1.5">
-            <i className="fa-solid fa-truck-fast text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-truck-fast" aria-hidden />
             Pedidos{" "}
             {toShip > 0 && (
               <span className="ml-1.5 rounded-full bg-primary px-1.5 text-[11px] text-primary-foreground">
@@ -233,7 +240,7 @@ function Dashboard() {
           </TabsTrigger>
           {usesAffiliates && (
             <TabsTrigger value="afiliados" className="gap-1.5">
-              <i className="fa-solid fa-users text-amber-400/90" aria-hidden />
+              <i className="fa-solid fa-users" aria-hidden />
               Afiliados{" "}
               {pendingReq > 0 && (
                 <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] text-slate-950">
@@ -243,7 +250,7 @@ function Dashboard() {
             </TabsTrigger>
           )}
           <TabsTrigger value="disputas" className="gap-1.5">
-            <i className="fa-solid fa-scale-balanced text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-scale-balanced" aria-hidden />
             Disputas{" "}
             {openDisputes > 0 && (
               <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] text-white">
@@ -252,11 +259,11 @@ function Dashboard() {
             )}
           </TabsTrigger>
           <TabsTrigger value="billetera" className="gap-1.5">
-            <i className="fa-solid fa-wallet text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-wallet" aria-hidden />
             Billetera
           </TabsTrigger>
           <TabsTrigger value="tienda" className="gap-1.5">
-            <i className="fa-solid fa-store text-amber-400/90" aria-hidden />
+            <i className="fa-solid fa-store" aria-hidden />
             Tienda
           </TabsTrigger>
         </TabsList>

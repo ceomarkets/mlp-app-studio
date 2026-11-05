@@ -27,9 +27,10 @@ import { keys, useUser } from "@/lib/session";
 import { productShare } from "@/lib/share";
 import { cn } from "@/lib/utils";
 import { useSpaces } from "@/lib/use-spaces";
+import { ROLES } from "@/lib/roles";
 
 const navBtn =
-  "flex min-h-[44px] items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800/80 hover:text-amber-400 data-[status=active]:border-amber-500/30 data-[status=active]:bg-amber-500/10 data-[status=active]:font-bold data-[status=active]:text-amber-400 data-[status=active]:shadow-sm";
+  "flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-400 transition hover:text-white data-[status=active]:bg-slate-800 data-[status=active]:text-amber-400";
 
 export function Shell({
   children,
@@ -71,9 +72,9 @@ export function Shell({
               onClick={openCart}
               aria-label="Abrir carrito"
               data-tip="Tu carrito"
-              className="relative hidden min-h-[44px] md:flex items-center gap-2 rounded-xl border border-amber-500/30 bg-slate-800/90 px-3 py-1.5 text-xs font-bold text-amber-400 shadow-sm transition hover:border-amber-400"
+              className="relative hidden min-h-[44px] md:flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-bold text-slate-200 transition hover:border-slate-500 hover:text-white"
             >
-              <i className="fa-solid fa-cart-shopping text-amber-400" />{" "}
+              <i className="fa-solid fa-cart-shopping" />{" "}
               <span className="hidden sm:inline">Carrito</span>
               <CartCount />
             </button>
@@ -99,7 +100,7 @@ export function Shell({
                 to={to}
                 activeOptions={{ exact: to === "/" }}
                 onClick={() => setMenu(false)}
-                className="flex min-h-[44px] w-full items-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-left text-xs font-semibold text-slate-300 hover:bg-slate-800 data-[status=active]:border-amber-500/30 data-[status=active]:bg-amber-500/10 data-[status=active]:font-bold data-[status=active]:text-amber-400"
+                className="flex min-h-[44px] w-full items-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-left text-xs font-semibold text-slate-300 hover:bg-slate-800 data-[status=active]:bg-slate-800 data-[status=active]:font-bold data-[status=active]:text-amber-400"
               >
                 <i className={cn("fa-solid", icon)} /> {label}
               </Link>
@@ -136,11 +137,11 @@ type NavLink = readonly ["/" | "/vendedores" | "/afiliados" | "/cuenta", string,
 function useNavLinks(): NavLink[] {
   const { user } = useSpaces();
   const links: NavLink[] = [
-    ["/", "fa-crown text-amber-400", "Mercado"],
-    ["/afiliados", "fa-users text-emerald-400", "Panel Afiliados"],
-    ["/vendedores", "fa-building text-amber-400", "Panel Empresas"],
+    ["/", "fa-crown", "Mercado"],
+    ["/afiliados", "fa-users", "Panel Afiliados"],
+    ["/vendedores", "fa-building", "Panel Empresas"],
   ];
-  if (user) links.push(["/cuenta", "fa-box text-amber-400", "Mis compras"]);
+  if (user) links.push(["/cuenta", "fa-box", "Mis compras"]);
   return links;
 }
 
@@ -165,7 +166,7 @@ function MobileTabBar() {
   const tab =
     "group relative flex min-h-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-slate-400 transition active:scale-95 data-[status=active]:text-amber-400";
   const bubble =
-    "grid h-7 w-12 place-items-center rounded-full text-[17px] transition group-hover:text-amber-300 group-data-[status=active]:bg-amber-500/15";
+    "grid h-7 w-12 place-items-center rounded-full text-[17px] transition group-hover:text-white group-data-[status=active]:bg-slate-800";
   const badge = (n: number) =>
     n > 0 && (
       <span className="absolute -top-1 left-1/2 ml-2 grid min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[9px] leading-4 font-black text-slate-950">
@@ -191,12 +192,7 @@ function MobileTabBar() {
           {main.label}
         </Link>
         <button onClick={openCart} className={tab} aria-label={`Carrito, ${cart} productos`}>
-          <span
-            className={cn(
-              bubble,
-              "relative bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950",
-            )}
-          >
+          <span className={cn(bubble, "relative")}>
             <i className="fa-solid fa-cart-shopping" />
             {badge(cart)}
           </span>
@@ -217,7 +213,7 @@ function MobileTabBar() {
             Mi cuenta
           </Link>
         ) : (
-          <button onClick={openAuth} className={tab}>
+          <button onClick={() => openAuth()} className={tab}>
             <span className={bubble}>
               <i className="fa-solid fa-right-to-bracket" />
             </span>
@@ -268,6 +264,43 @@ function DemoBanner() {
   );
 }
 
+/** Registro general: 1 Compra y venta · 2 Afiliados · 3 Empresas. */
+function RegisterMenu() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          aria-label="Registrarse"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 transition hover:bg-amber-400"
+        >
+          <i className="fa-solid fa-user-plus" />{" "}
+          <span className="hidden sm:inline">Registrarse</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Registro general
+        </DropdownMenuLabel>
+        {ROLES.map((r) => (
+          <DropdownMenuItem
+            key={r.id}
+            onSelect={() => openAuth({ role: r.id })}
+            className="items-start gap-3 py-2.5"
+          >
+            <span className="grid size-6 shrink-0 place-items-center rounded-full border border-slate-600 text-[11px] font-black text-slate-300">
+              {r.n}
+            </span>
+            <span>
+              <b className="block text-sm">{r.label}</b>
+              <span className="text-xs text-muted-foreground">{r.short}</span>
+            </span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function UserMenu() {
   const { user, loading } = useUser();
   const sp = useSpaces();
@@ -280,15 +313,17 @@ function UserMenu() {
   if (loading) return <div className="size-9" />;
   if (!user)
     return (
-      <button
-        onClick={openAuth}
-        aria-label="Ingresar"
-        data-tip="Ingresar o crear cuenta"
-        className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 shadow-md transition hover:from-amber-400 hover:to-amber-500"
-      >
-        <i className="fa-solid fa-user text-slate-950" />{" "}
-        <span className="hidden sm:inline">Ingresar</span>
-      </button>
+      <>
+        <button
+          onClick={() => openAuth()}
+          aria-label="Ingresar"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-700 px-3.5 py-1.5 text-xs font-bold text-slate-200 transition hover:border-slate-500 hover:text-white"
+        >
+          <i className="fa-solid fa-right-to-bracket" />{" "}
+          <span className="hidden sm:inline">Ingresar</span>
+        </button>
+        <RegisterMenu />
+      </>
     );
   return (
     <DropdownMenu>
@@ -311,7 +346,7 @@ function UserMenu() {
           <i className="fa-solid fa-heart w-4 text-slate-400" /> Favoritos
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "reportes" })}>
-          <i className="fa-solid fa-shield-cat w-4 text-rose-500" /> Disputas y reportes
+          <i className="fa-solid fa-shield-cat w-4" /> Disputas y reportes
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "perfil" })}>
           <i className="fa-solid fa-user w-4 text-slate-400" /> Perfil
@@ -321,14 +356,14 @@ function UserMenu() {
           Tus espacios
         </DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => navigate({ to: "/afiliados" })}>
-          <i className="fa-solid fa-users w-4 text-emerald-400" /> Panel Afiliados
+          <i className="fa-solid fa-users w-4" /> Panel Afiliados
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/vendedores" })}>
-          <i className="fa-solid fa-building w-4 text-amber-400" />{" "}
+          <i className="fa-solid fa-building w-4" />{" "}
           {sp.hasStore ? sp.sellerLabel : "Panel Empresas"}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate({ to: "/cuenta", hash: "tipo" })}>
-          <i className="fa-solid fa-id-card w-4 text-amber-400" /> Tipo de cuenta
+          <i className="fa-solid fa-id-card w-4" /> Tipo de cuenta
         </DropdownMenuItem>
         {admin.data && (
           <>
@@ -346,7 +381,7 @@ function UserMenu() {
               <i className="fa-solid fa-bolt w-4 text-slate-400" /> Ventas flash y cupones
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/sorteo" })}>
-              <i className="fa-solid fa-gift w-4 text-amber-500" /> Sorteo
+              <i className="fa-solid fa-gift w-4" /> Sorteo
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/admin/tiendas" })}>
               <i className="fa-solid fa-store w-4 text-slate-400" /> Tiendas
@@ -631,7 +666,7 @@ export function Stat({
             aria-hidden
             className={cn(
               "grid size-7 shrink-0 place-items-center rounded-lg text-xs",
-              tone === "card" ? "bg-amber-500/10 text-amber-400" : "bg-black/10",
+              tone === "card" ? "bg-slate-800 text-slate-400" : "bg-black/10",
             )}
           >
             <i className={cn("fa-solid", fa)} />

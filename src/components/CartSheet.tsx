@@ -156,8 +156,8 @@ export function CartSheet() {
             }}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-800 py-2 text-xs font-bold text-slate-200 transition hover:bg-slate-700"
           >
-            <i className="fa-solid fa-shield-cat text-rose-500" /> ¿Tuviste un problema o recibiste
-            algo diferente? Abrir Disputa
+            <i className="fa-solid fa-shield-cat" /> ¿Tuviste un problema o recibiste algo
+            diferente? Abrir Disputa
           </button>
         </div>
 
@@ -223,7 +223,7 @@ function OrderTracking() {
         </p>
       ) : item.fulfillment === "delivered" ? (
         <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-[11px] text-emerald-300">
-          <i className="fa-solid fa-circle-check text-emerald-400" />
+          <i className="fa-solid fa-circle-check" />
           <span>
             ¡Recepción confirmada! {item.productName}: el pago se libera a la empresa y al afiliado
             tras el periodo de garantía.
@@ -304,7 +304,7 @@ export function CartLineRow({ row: { product: p, qty } }: { row: CartRow }) {
           onClick={() => cart.setQty(p.id, qty - 1)}
           aria-label="Quitar uno"
           data-tip="Quitar uno"
-          className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-amber-400"
+          className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-white"
         >
           -
         </button>
@@ -314,7 +314,7 @@ export function CartLineRow({ row: { product: p, qty } }: { row: CartRow }) {
           disabled={qty >= p.stock}
           aria-label="Agregar uno"
           data-tip="Agregar uno"
-          className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-amber-400 disabled:opacity-30"
+          className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-white disabled:opacity-30"
         >
           +
         </button>

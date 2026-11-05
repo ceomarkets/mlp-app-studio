@@ -279,8 +279,7 @@ function Coupons() {
         className="h-fit space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-5"
       >
         <h2 className="font-bold text-white">
-          <i className="fa-solid fa-ticket text-amber-500" />{" "}
-          {c.id ? "Editar cupón" : "Nuevo cupón"}
+          <i className="fa-solid fa-ticket" /> {c.id ? "Editar cupón" : "Nuevo cupón"}
         </h2>
         <input
           required

@@ -142,7 +142,7 @@ function MyReports() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-bold">Disputas y reportes</h2>
         <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-          <i className="fa-solid fa-triangle-exclamation text-amber-400" /> Reportar trato externo
+          <i className="fa-solid fa-triangle-exclamation" /> Reportar trato externo
         </Button>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
@@ -215,7 +215,7 @@ function AccountType({ user }: { user: Profile }) {
                 <b className="block text-[13px] text-white">{r.label}</b>
                 <span className="text-slate-400">{r.short}</span>
               </span>
-              {on && <i className="fa-solid fa-circle-check text-amber-400" aria-hidden />}
+              {on && <i className="fa-solid fa-circle-check" aria-hidden />}
             </button>
           );
         })}

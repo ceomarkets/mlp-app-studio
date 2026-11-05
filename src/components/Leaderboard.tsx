@@ -25,9 +25,9 @@ import { cn } from "@/lib/utils";
 /** Filtros del diseño Plaza X. */
 const FILTERS: { id: BoardFilter; label: string; icon: string }[] = [
   { id: "all", label: "Todos", icon: "fa-border-all" },
-  { id: "today", label: "Lo Nuevo de Hoy", icon: "fa-fire text-orange-500" },
-  { id: "viewed", label: "Recientes", icon: "fa-clock-rotate-left text-amber-400" },
-  { id: "earn", label: "Altas Comisiones", icon: "fa-hand-holding-dollar text-emerald-400" },
+  { id: "today", label: "Lo Nuevo de Hoy", icon: "fa-fire" },
+  { id: "viewed", label: "Recientes", icon: "fa-clock-rotate-left" },
+  { id: "earn", label: "Altas Comisiones", icon: "fa-hand-holding-dollar" },
 ];
 
 const BADGE: Record<string, string> = {
@@ -185,7 +185,7 @@ export function Leaderboard({
                 "flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 font-medium transition",
                 filter === f.id
                   ? "bg-gradient-to-r from-amber-500 to-amber-600 font-black text-slate-950"
-                  : "border border-slate-700/80 bg-slate-800/80 text-slate-300 hover:text-amber-400",
+                  : "border border-slate-700/80 bg-slate-800/80 text-slate-300 hover:text-white",
               )}
             >
               <i className={cn("fa-solid", f.icon.split(" ")[0])} /> {f.label}
@@ -281,7 +281,7 @@ function BoardCard({
               </span>
             )}
             <span className="flex items-center gap-1 truncate text-[11px] font-semibold text-slate-300">
-              <i className="fa-solid fa-store text-[9px] text-amber-400" />{" "}
+              <i className="fa-solid fa-store text-[9px]" />{" "}
               {p ? p.store.name : it.kind === "store" ? it.store.name : ""}
             </span>
           </div>

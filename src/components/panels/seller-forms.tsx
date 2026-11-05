@@ -180,7 +180,7 @@ export function StoreForm({
                 checked={f.kind === v}
                 onChange={() => setF({ ...f, kind: v })}
               />
-              <i className={cn("fa-solid mt-0.5 text-amber-400", icon)} aria-hidden />
+              <i className={cn("fa-solid mt-0.5", icon)} aria-hidden />
               <span>
                 <b className="block">{t}</b>
                 <span className="text-xs text-muted-foreground">{d}</span>
@@ -587,7 +587,7 @@ export function ProductDialog({
             <label className="flex items-center justify-between gap-3">
               <span className="text-sm">
                 <b className="flex items-center gap-1.5">
-                  <i className="fa-solid fa-users text-emerald-400" aria-hidden /> Abrir a afiliados
+                  <i className="fa-solid fa-users" aria-hidden /> Abrir a afiliados
                 </b>
                 <span className="text-xs text-muted-foreground">
                   {f.commission > 0
