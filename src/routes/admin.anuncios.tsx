@@ -1,6 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarClock, Eye, Loader2, Lock, Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  CalendarClock,
+  Eye,
+  Loader2,
+  Lock,
+  Megaphone,
+  Pencil,
+  Plus,
+  Trash2,
+} from "@/components/icons";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { AnnouncementCard } from "@/components/AnnouncementCard";
@@ -192,14 +201,22 @@ function Manager() {
                     checked={a.active}
                     onCheckedChange={() => toggle.mutate(a)}
                     aria-label={a.active ? "Pausar anuncio" : "Activar anuncio"}
+                    data-tip={a.active ? "Pausar anuncio" : "Activar anuncio"}
                   />
-                  <Button size="icon" variant="ghost" onClick={() => edit(a)} aria-label="Editar">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => edit(a)}
+                    aria-label="Editar"
+                    data-tip="Editar"
+                  >
                     <Pencil />
                   </Button>
                   <Button
                     size="icon"
                     variant="ghost"
                     aria-label="Eliminar"
+                    data-tip="Eliminar"
                     onClick={() =>
                       confirm(`¿Eliminar "${a.title}"? Esta acción no se puede deshacer.`) &&
                       del.mutate(a.id)
@@ -350,6 +367,7 @@ function Editor({
                     type="button"
                     onClick={() => setF({ ...f, emoji: em })}
                     aria-label={`Ícono ${em}`}
+                    data-tip={`Ícono ${em}`}
                     className={cn(
                       "grid size-8 place-items-center rounded-lg border text-lg",
                       f.emoji === em && "border-primary bg-primary/10",

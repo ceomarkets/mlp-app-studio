@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, XCircle } from "@/components/icons";
 import { toast } from "sonner";
 import { OrderCard } from "@/components/OrderView";
 import { Shell } from "@/components/Shell";

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { BadgeCheck, ChevronDown, Loader2 } from "lucide-react";
+import { BadgeCheck, ChevronDown, Loader2 } from "@/components/icons";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AffiliateTools } from "@/components/panels/AffiliateTools";
@@ -134,6 +134,7 @@ export function Companies({ username }: { username: string }) {
                     <button
                       onClick={() => setOpen(expanded ? null : s.id)}
                       aria-label={expanded ? "Ocultar herramientas" : "Ver herramientas"}
+                      data-tip={expanded ? "Ocultar herramientas" : "Ver herramientas"}
                       className="grid size-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-800"
                     >
                       <ChevronDown className={cn("size-4 transition", expanded && "rotate-180")} />

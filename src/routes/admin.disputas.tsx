@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdminGate } from "@/components/admin/AdminGate";

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Loader2, Lock, ShoppingBag } from "lucide-react";
+import { Loader2, Lock, ShoppingBag } from "@/components/icons";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { CartLineRow, useCartDetails } from "@/components/CartSheet";

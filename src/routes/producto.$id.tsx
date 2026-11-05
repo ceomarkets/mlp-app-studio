@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Sparkles,
   Truck,
-} from "lucide-react";
+} from "@/components/icons";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { addToCart } from "@/components/CartSheet";
@@ -140,6 +140,7 @@ function ProductPage() {
               <button
                 onClick={shareProduct}
                 aria-label="Compartir"
+                data-tip="Compartir"
                 className="grid size-11 place-items-center rounded-full bg-background/90 shadow-card backdrop-blur transition hover:scale-105"
               >
                 <Share2 className="size-4.5" />
@@ -201,6 +202,7 @@ function ProductPage() {
                 className="grid size-11 place-items-center"
                 onClick={() => setQty(Math.max(1, qty - 1))}
                 aria-label="Menos"
+                data-tip="Menos"
               >
                 <Minus className="size-4" />
               </button>
@@ -210,6 +212,7 @@ function ProductPage() {
                 disabled={qty >= p.stock}
                 onClick={() => setQty(qty + 1)}
                 aria-label="Más"
+                data-tip="Más"
               >
                 <Plus className="size-4" />
               </button>
@@ -226,10 +229,10 @@ function ProductPage() {
               disabled={p.stock < 1}
               onClick={() => addToCart(p, qty)}
             >
-              Agregar al carrito
+              <i className="fa-solid fa-cart-plus" aria-hidden /> Agregar al carrito
             </Button>
             <Button size="lg" disabled={p.stock < 1} onClick={buyNow}>
-              Comprar ahora
+              <i className="fa-solid fa-bolt" aria-hidden /> Comprar ahora
             </Button>
           </div>
           {ref && !isMine && (

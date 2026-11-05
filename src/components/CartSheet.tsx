@@ -138,6 +138,7 @@ export function CartSheet() {
                 <button
                   onClick={() => cart.setQty(p.id, 0)}
                   aria-label={`Quitar ${p.name}`}
+                  data-tip={`Quitar ${p.name}`}
                   className="px-2 text-xs text-slate-400 hover:text-red-400"
                 >
                   <i className="fa-solid fa-trash-can" />
@@ -302,6 +303,7 @@ export function CartLineRow({ row: { product: p, qty } }: { row: CartRow }) {
         <button
           onClick={() => cart.setQty(p.id, qty - 1)}
           aria-label="Quitar uno"
+          data-tip="Quitar uno"
           className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-amber-400"
         >
           -
@@ -311,6 +313,7 @@ export function CartLineRow({ row: { product: p, qty } }: { row: CartRow }) {
           onClick={() => cart.setQty(p.id, qty + 1)}
           disabled={qty >= p.stock}
           aria-label="Agregar uno"
+          data-tip="Agregar uno"
           className="flex size-5 items-center justify-center text-xs text-slate-400 hover:text-amber-400 disabled:opacity-30"
         >
           +

@@ -11,7 +11,7 @@ import {
   Plus,
   Trash2,
   Truck,
-} from "lucide-react";
+} from "@/components/icons";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DisputeBadge, disputeKeys, SellerDisputes, TrackingInfo } from "@/components/Disputes";
@@ -104,19 +104,19 @@ function Pitch() {
           </p>
           <ul className="mt-6 space-y-3 text-sm">
             <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4 [&_.pxi]:size-4">
                 <CreditCard />
               </span>
               Pagos con tarjeta, PSE y Nequi vía Wompi
             </li>
             <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4 [&_.pxi]:size-4">
                 <Percent />
               </span>
               Tú decides la comisión del afiliado (3% a 20%)
             </li>
             <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary [&_svg]:size-4 [&_.pxi]:size-4">
                 <LineChart />
               </span>
               Panel con ventas, pedidos, stock y retiros a tu cuenta
@@ -206,9 +206,16 @@ function Dashboard() {
 
       <Tabs defaultValue="resumen" className="mt-6">
         <TabsList className="h-auto flex-wrap">
-          <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="productos">Productos ({products.data?.length ?? 0})</TabsTrigger>
-          <TabsTrigger value="pedidos">
+          <TabsTrigger value="resumen" className="gap-1.5">
+            <i className="fa-solid fa-chart-pie text-amber-400/90" aria-hidden />
+            Resumen
+          </TabsTrigger>
+          <TabsTrigger value="productos" className="gap-1.5">
+            <i className="fa-solid fa-boxes-stacked text-amber-400/90" aria-hidden />
+            Productos ({products.data?.length ?? 0})
+          </TabsTrigger>
+          <TabsTrigger value="pedidos" className="gap-1.5">
+            <i className="fa-solid fa-truck-fast text-amber-400/90" aria-hidden />
             Pedidos{" "}
             {toShip > 0 && (
               <span className="ml-1.5 rounded-full bg-primary px-1.5 text-[11px] text-primary-foreground">
@@ -216,7 +223,8 @@ function Dashboard() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="afiliados">
+          <TabsTrigger value="afiliados" className="gap-1.5">
+            <i className="fa-solid fa-users text-amber-400/90" aria-hidden />
             Afiliados{" "}
             {pendingReq > 0 && (
               <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] text-slate-950">
@@ -224,7 +232,8 @@ function Dashboard() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="disputas">
+          <TabsTrigger value="disputas" className="gap-1.5">
+            <i className="fa-solid fa-scale-balanced text-amber-400/90" aria-hidden />
             Disputas{" "}
             {openDisputes > 0 && (
               <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[11px] text-white">
@@ -232,8 +241,14 @@ function Dashboard() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="billetera">Billetera</TabsTrigger>
-          <TabsTrigger value="tienda">Tienda</TabsTrigger>
+          <TabsTrigger value="billetera" className="gap-1.5">
+            <i className="fa-solid fa-wallet text-amber-400/90" aria-hidden />
+            Billetera
+          </TabsTrigger>
+          <TabsTrigger value="tienda" className="gap-1.5">
+            <i className="fa-solid fa-store text-amber-400/90" aria-hidden />
+            Tienda
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="mt-6">
           <Overview products={products.data ?? []} orders={orders.data ?? []} />
@@ -450,13 +465,20 @@ function Products({ list }: { list: Product[] | undefined }) {
                     </button>
                   </td>
                   <td className="pr-3 text-right">
-                    <Button size="icon" variant="ghost" onClick={() => edit(p)} aria-label="Editar">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => edit(p)}
+                      aria-label="Editar"
+                      data-tip="Editar"
+                    >
                       <Pencil />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
                       aria-label="Eliminar"
+                      data-tip="Eliminar"
                       onClick={() =>
                         confirm(`¿Eliminar "${p.name}"? Esta acción no se puede deshacer.`) &&
                         del.mutate(p.id)

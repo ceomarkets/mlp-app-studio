@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Check } from "lucide-react";
+import { Check } from "@/components/icons";
 import { BuyerItemActions, disputeKeys, TrackingInfo } from "@/components/Disputes";
 import { backend, type Order, type OrderItem } from "@/lib/backend";
 import { cop, FULFILLMENT_LABEL } from "@/lib/plaza";

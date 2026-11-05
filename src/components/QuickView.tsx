@@ -127,6 +127,7 @@ export function QuickView({
                     className="grid size-10 place-items-center"
                     onClick={() => setQty(Math.max(1, qty - 1))}
                     aria-label="Menos"
+                    data-tip="Menos"
                   >
                     <i className="fa-solid fa-minus" />
                   </button>
@@ -136,6 +137,7 @@ export function QuickView({
                     disabled={qty >= p.stock}
                     onClick={() => setQty(qty + 1)}
                     aria-label="Más"
+                    data-tip="Más"
                   >
                     <i className="fa-solid fa-plus" />
                   </button>

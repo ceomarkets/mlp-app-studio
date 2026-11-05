@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle } from "@/components/icons";
 import { addToCart } from "@/components/CartSheet";
 import { Empty, ProductCard, ProductGridSkeleton, Shell } from "@/components/Shell";
 import { Button } from "@/components/ui/button";

@@ -1172,3 +1172,23 @@ export const LAYER: Record<Kind, number> = {
   cap: 10,
   hat: 10,
 };
+
+/** Caja que encierra las piezas de la prenda (para dibujarla sola como ícono). */
+export function garmentBox(g: Garment, pad = 6): { x: number; y: number; w: number; h: number } {
+  const ds = g.shapes.length ? g.shapes.map((s) => s.d) : g.seams.filter((d) => !/[a-z]/.test(d));
+  const nums = ds.flatMap((d) => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number));
+  const xs = nums.filter((_, i) => i % 2 === 0);
+  const ys = nums.filter((_, i) => i % 2 === 1);
+  for (const d of g.dots) {
+    xs.push(d.x - d.r, d.x + d.r);
+    ys.push(d.y - d.r, d.y + d.r);
+  }
+  if (!xs.length) return { x: 0, y: 0, w: W, h: H };
+  const x0 = Math.min(...xs) - pad,
+    y0 = Math.min(...ys) - pad;
+  const w = Math.max(...xs) + pad - x0,
+    h = Math.max(...ys) + pad - y0;
+  // Cuadrado, centrado: todos los íconos tienen el mismo aire alrededor.
+  const s = Math.max(w, h);
+  return { x: x0 - (s - w) / 2, y: y0 - (s - h) / 2, w: s, h: s };
+}

@@ -110,7 +110,7 @@ export function LiveActivityToast() {
       role="status"
       aria-live="polite"
       className={cn(
-        "fixed bottom-6 left-6 z-40 flex max-w-xs items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-xl backdrop-blur-md transition-all duration-500",
+        "fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-3 z-40 md:bottom-6 md:left-6 flex max-w-xs items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-xl backdrop-blur-md transition-all duration-500",
         item ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-20 opacity-0",
       )}
     >

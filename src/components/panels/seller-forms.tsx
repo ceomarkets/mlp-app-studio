@@ -1,6 +1,6 @@
 import { colorFromName, KIND_LABEL, kindOf, type Kind } from "@/lib/vestidor";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FolderPlus, ImagePlus, Loader2, X } from "lucide-react";
+import { FolderPlus, ImagePlus, Loader2, X } from "@/components/icons";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { discountPct } from "@/lib/feed";
@@ -402,6 +402,7 @@ export function ProductDialog({
                   <button
                     type="button"
                     aria-label="Quitar foto"
+                    data-tip="Quitar foto"
                     className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-background/90"
                     onClick={() => setF({ ...f, images: f.images.filter((_, k) => k !== i) })}
                   >

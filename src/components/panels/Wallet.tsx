@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Wallet as WalletIcon } from "lucide-react";
+import { Loader2, Wallet as WalletIcon } from "@/components/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Stat } from "@/components/Shell";

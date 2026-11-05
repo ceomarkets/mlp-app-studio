@@ -165,6 +165,7 @@ export function FlashDealsModal() {
         <button
           onClick={flashUI.close}
           aria-label="Cerrar"
+          data-tip="Cerrar"
           className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-slate-800 text-lg text-slate-400 transition hover:text-amber-400"
         >
           <i className="fa-solid fa-xmark" />

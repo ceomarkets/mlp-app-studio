@@ -9,11 +9,11 @@ import {
   Sofa,
   Wheat,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Ícono premium por categoría (lucide, trazo uniforme). */
+/** Ícono por categoría (mismo estilo que el resto de la página). */
 export const CATEGORY_ICON: Record<string, LucideIcon> = {
   Todo: LayoutGrid,
   Ropa: Shirt,
@@ -54,7 +54,7 @@ export function Rail({
         <div className="flex items-center gap-3">
           <span
             className={cn(
-              "grid size-10 shrink-0 place-items-center rounded-2xl shadow-card [&_svg]:size-5",
+              "grid size-10 shrink-0 place-items-center rounded-2xl shadow-card [&_svg]:size-5 [&_.pxi]:size-5",
               tone === "hot" ? "bg-primary text-primary-foreground" : "bg-card text-primary",
             )}
           >

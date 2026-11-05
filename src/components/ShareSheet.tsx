@@ -1,4 +1,4 @@
-import { Check, Copy, Share2 } from "lucide-react";
+import { Check, Copy, Share2 } from "@/components/icons";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
@@ -160,6 +160,7 @@ export function ShareButton({
       <button
         type="button"
         aria-label={children ? undefined : "Compartir"}
+        data-tip={children ? undefined : "Compartir"}
         className={className}
         onClick={(e) => {
           e.preventDefault();

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Flame, Heart, ShoppingBag, Sparkles, Star } from "lucide-react";
+import { Flame, Heart, ShoppingBag, Sparkles, Star } from "@/components/icons";
 import { useState, type ReactNode } from "react";
 import { AuthDialog, openAuth } from "@/components/AuthDialog";
 import { BridgeLogo } from "@/components/BridgeLogo";
@@ -42,7 +42,7 @@ export function Shell({
 }) {
   const [menu, setMenu] = useState(false);
   return (
-    <div className="flex min-h-full flex-col bg-slate-950 font-sans text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
+    <div className="flex min-h-full flex-col bg-slate-950 pb-[calc(4rem+env(safe-area-inset-bottom))] font-sans md:pb-0 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
       {IS_DEMO && <DemoBanner />}
       <AnnouncementStrip />
 
@@ -66,12 +66,17 @@ export function Shell({
             <Link to="/vendedores" className={navBtn}>
               <i className="fa-solid fa-building text-amber-400" /> Panel Empresas
             </Link>
+            <Link to="/vestidor" className={navBtn}>
+              <i className="fa-solid fa-person-dress text-amber-300" /> Vestidor
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
             <button
               onClick={openCart}
-              className="relative flex min-h-[44px] items-center gap-2 rounded-xl border border-amber-500/30 bg-slate-800/90 px-3 py-1.5 text-xs font-bold text-amber-400 shadow-sm transition hover:border-amber-400"
+              aria-label="Abrir carrito"
+              data-tip="Tu carrito"
+              className="relative hidden min-h-[44px] md:flex items-center gap-2 rounded-xl border border-amber-500/30 bg-slate-800/90 px-3 py-1.5 text-xs font-bold text-amber-400 shadow-sm transition hover:border-amber-400"
             >
               <i className="fa-solid fa-cart-shopping text-amber-400" />{" "}
               <span className="hidden sm:inline">Carrito</span>
@@ -81,7 +86,8 @@ export function Shell({
             <button
               onClick={() => setMenu(!menu)}
               aria-expanded={menu}
-              aria-label="Menú"
+              aria-label={menu ? "Cerrar menú" : "Abrir menú"}
+              data-tip={menu ? "Cerrar menú" : "Abrir menú"}
               className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-700 bg-slate-800 p-2.5 text-slate-200 md:hidden"
             >
               <i className={cn("fa-solid text-base", menu ? "fa-xmark" : "fa-bars")} />
@@ -125,6 +131,7 @@ export function Shell({
       </main>
 
       <SiteFooter />
+      <MobileTabBar />
 
       {/* Ventanas globales */}
       <CartSheet />
@@ -132,6 +139,78 @@ export function Shell({
       <FlashDealsModal />
       <LiveActivityToast />
     </div>
+  );
+}
+
+/** Barra de pestañas del celular: lo más usado a un toque, con ícono y nombre. */
+function MobileTabBar() {
+  const { user } = useUser();
+  const cart = useCart().reduce((t, l) => t + l.qty, 0);
+  const favs = useFavorites().length;
+  const tab =
+    "group relative flex min-h-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-slate-400 transition active:scale-95 data-[status=active]:text-amber-400";
+  const bubble =
+    "grid h-7 w-12 place-items-center rounded-full text-[17px] transition group-hover:text-amber-300 group-data-[status=active]:bg-amber-500/15";
+  const badge = (n: number) =>
+    n > 0 && (
+      <span className="absolute -top-1 left-1/2 ml-2 grid min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[9px] leading-4 font-black text-slate-950">
+        {n > 99 ? "99+" : n}
+      </span>
+    );
+  return (
+    <nav
+      aria-label="Navegación principal"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-500/20 bg-slate-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+    >
+      <div className="mx-auto flex h-16 max-w-md items-stretch">
+        <Link to="/" activeOptions={{ exact: true }} className={tab}>
+          <span className={bubble}>
+            <i className="fa-solid fa-store" />
+          </span>
+          Mercado
+        </Link>
+        <Link to="/vestidor" className={tab}>
+          <span className={bubble}>
+            <i className="fa-solid fa-person-dress" />
+          </span>
+          Vestidor
+        </Link>
+        <button onClick={openCart} className={tab} aria-label={`Carrito, ${cart} productos`}>
+          <span
+            className={cn(
+              bubble,
+              "relative bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950",
+            )}
+          >
+            <i className="fa-solid fa-cart-shopping" />
+            {badge(cart)}
+          </span>
+          Carrito
+        </button>
+        <Link to="/favoritos" className={tab}>
+          <span className={cn(bubble, "relative")}>
+            <i className="fa-solid fa-heart" />
+            {badge(favs)}
+          </span>
+          Favoritos
+        </Link>
+        {user ? (
+          <Link to="/cuenta" className={tab}>
+            <span className={bubble}>
+              <i className="fa-solid fa-circle-user" />
+            </span>
+            Mi cuenta
+          </Link>
+        ) : (
+          <button onClick={openAuth} className={tab}>
+            <span className={bubble}>
+              <i className="fa-solid fa-right-to-bracket" />
+            </span>
+            Ingresar
+          </button>
+        )}
+      </div>
+    </nav>
   );
 }
 
@@ -187,6 +266,8 @@ function UserMenu() {
     return (
       <button
         onClick={openAuth}
+        aria-label="Ingresar"
+        data-tip="Ingresar o crear cuenta"
         className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 shadow-md transition hover:from-amber-400 hover:to-amber-500"
       >
         <i className="fa-solid fa-user text-slate-950" />{" "}
@@ -309,6 +390,7 @@ export function FavoriteButton({ id, className }: { id: string; className?: stri
       type="button"
       aria-pressed={on}
       aria-label={on ? "Quitar de favoritos" : "Guardar en favoritos"}
+      data-tip={on ? "Quitar de favoritos" : "Guardar en favoritos"}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -473,7 +555,7 @@ export function Empty({
 }) {
   return (
     <div className="flex flex-col items-center rounded-3xl border border-dashed bg-card/50 px-6 py-14 text-center">
-      <div className="mb-3 grid size-12 place-items-center rounded-full bg-muted text-muted-foreground [&_svg]:size-6">
+      <div className="mb-3 grid size-12 place-items-center rounded-full bg-muted text-muted-foreground [&_svg]:size-6 [&_.pxi]:size-6">
         {icon}
       </div>
       <h3 className="text-lg font-bold">{title}</h3>
@@ -482,17 +564,34 @@ export function Empty({
   );
 }
 
+/** Ícono de cada métrica según su nombre (ventas, clics, comisiones…). */
+const STAT_ICONS: [RegExp, string][] = [
+  [/clic/i, "fa-arrow-pointer"],
+  [/conversi/i, "fa-bullseye"],
+  [/comisi|ganad|ganancia|ingreso/i, "fa-coins"],
+  [/retenid|congelad/i, "fa-lock"],
+  [/unidad|stock|producto/i, "fa-boxes-stacked"],
+  [/pedido|env[ií]o/i, "fa-truck-fast"],
+  [/saldo|retir|billetera|pagad/i, "fa-wallet"],
+  [/afiliad/i, "fa-users"],
+  [/venta|vendid/i, "fa-cart-shopping"],
+];
+
 export function Stat({
   label,
   value,
   hint,
   tone = "card",
+  icon,
 }: {
   label: string;
   value: ReactNode;
   hint?: ReactNode;
   tone?: "card" | "ink" | "primary";
+  /** Ícono Font Awesome (fa-…); si no se da, se elige por el nombre. */
+  icon?: string;
 }) {
+  const fa = icon ?? STAT_ICONS.find(([re]) => re.test(label))?.[1];
   const tones = {
     card: "border bg-card",
     ink: "bg-ink text-ink-foreground",
@@ -502,11 +601,22 @@ export function Stat({
     <div className={cn("rounded-2xl p-4 shadow-card md:p-5", tones[tone])}>
       <div
         className={cn(
-          "text-xs md:text-sm",
+          "flex items-start justify-between gap-2 text-xs md:text-sm",
           tone === "card" ? "text-muted-foreground" : "opacity-80",
         )}
       >
         {label}
+        {fa && (
+          <span
+            aria-hidden
+            className={cn(
+              "grid size-7 shrink-0 place-items-center rounded-lg text-xs",
+              tone === "card" ? "bg-amber-500/10 text-amber-400" : "bg-black/10",
+            )}
+          >
+            <i className={cn("fa-solid", fa)} />
+          </span>
+        )}
       </div>
       <div className="mt-1 font-display text-xl font-bold md:text-2xl">{value}</div>
       {hint && (

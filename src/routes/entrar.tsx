@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Link2, Loader2, ShoppingBag, Store } from "lucide-react";
+import { Link2, Loader2, ShoppingBag, Store } from "@/components/icons";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Shell } from "@/components/Shell";
@@ -96,19 +96,19 @@ function Login() {
           </div>
           <ul className="space-y-3 text-sm opacity-90">
             <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4 [&_.pxi]:size-4">
                 <ShoppingBag />
               </span>
               Compra a tiendas locales con pago seguro
             </li>
             <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4 [&_.pxi]:size-4">
                 <Store />
               </span>
               Abre tu tienda sin pagos por adelantado
             </li>
             <li className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-sun text-accent-foreground [&_svg]:size-4 [&_.pxi]:size-4">
                 <Link2 />
               </span>
               Comparte enlaces y gana hasta 20% por venta

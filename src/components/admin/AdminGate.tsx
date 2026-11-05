@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Lock } from "lucide-react";
+import { Lock } from "@/components/icons";
 import type { ReactNode } from "react";
 import { Empty, Shell } from "@/components/Shell";
 import { backend } from "@/lib/backend";

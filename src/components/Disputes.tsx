@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Paperclip, X } from "lucide-react";
+import { Loader2, Paperclip, X } from "@/components/icons";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { openAuth } from "@/components/AuthDialog";
@@ -280,6 +280,7 @@ export function DisputeDialog({
                     <button
                       type="button"
                       aria-label="Quitar"
+                      data-tip="Quitar"
                       onClick={() => setFiles((x) => x.filter((y) => y !== f))}
                     >
                       <X className="size-3" />

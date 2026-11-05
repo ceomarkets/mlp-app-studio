@@ -1,4 +1,4 @@
-import { Copy, QrCode, Share2 } from "lucide-react";
+import { Copy, QrCode, Share2 } from "@/components/icons";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -80,7 +80,13 @@ export function ShareLink({
         <Button size="sm" className="flex-1" onClick={copy}>
           <Copy /> Copiar
         </Button>
-        <Button size="sm" variant="outline" asChild aria-label="Compartir por WhatsApp">
+        <Button
+          size="sm"
+          variant="outline"
+          asChild
+          aria-label="Compartir por WhatsApp"
+          data-tip="Compartir por WhatsApp"
+        >
           <a
             href={`https://wa.me/?text=${encodeURIComponent(message)}`}
             target="_blank"
@@ -89,10 +95,22 @@ export function ShareLink({
             <WhatsApp />
           </a>
         </Button>
-        <Button size="sm" variant="outline" onClick={share} aria-label="Compartir">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={share}
+          aria-label="Compartir"
+          data-tip="Compartir"
+        >
           <Share2 />
         </Button>
-        <Button size="sm" variant="outline" onClick={showQr} aria-label="Código QR">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={showQr}
+          aria-label="Código QR"
+          data-tip="Código QR"
+        >
           <QrCode />
         </Button>
       </div>

@@ -9,7 +9,7 @@ import {
   Search,
   Send,
   Wallet,
-} from "lucide-react";
+} from "@/components/icons";
 import type React from "react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -99,7 +99,7 @@ function Pitch() {
       <div className="mt-12 grid gap-4 md:grid-cols-3">
         {steps.map(([icon, title, text]) => (
           <div key={title} className="rounded-3xl border bg-card p-6 shadow-card">
-            <span className="grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-card [&_svg]:size-6">
+            <span className="grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-card [&_svg]:size-6 [&_.pxi]:size-6">
               {icon}
             </span>
             <h3 className="mt-3 text-xl font-bold">{title}</h3>
@@ -216,12 +216,30 @@ function Dashboard({ username }: { username: string }) {
       </div>
       <Tabs defaultValue="resumen" className="mt-8">
         <TabsList className="h-auto flex-wrap">
-          <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="empresas">Empresas</TabsTrigger>
-          <TabsTrigger value="vitrina">Vitrina</TabsTrigger>
-          <TabsTrigger value="herramientas">Herramientas</TabsTrigger>
-          <TabsTrigger value="ventas">Mis ventas</TabsTrigger>
-          <TabsTrigger value="billetera">Billetera</TabsTrigger>
+          <TabsTrigger value="resumen" className="gap-1.5">
+            <i className="fa-solid fa-chart-pie text-amber-400/90" aria-hidden />
+            Resumen
+          </TabsTrigger>
+          <TabsTrigger value="empresas" className="gap-1.5">
+            <i className="fa-solid fa-building text-amber-400/90" aria-hidden />
+            Empresas
+          </TabsTrigger>
+          <TabsTrigger value="vitrina" className="gap-1.5">
+            <i className="fa-solid fa-gem text-amber-400/90" aria-hidden />
+            Vitrina
+          </TabsTrigger>
+          <TabsTrigger value="herramientas" className="gap-1.5">
+            <i className="fa-solid fa-toolbox text-amber-400/90" aria-hidden />
+            Herramientas
+          </TabsTrigger>
+          <TabsTrigger value="ventas" className="gap-1.5">
+            <i className="fa-solid fa-receipt text-amber-400/90" aria-hidden />
+            Mis ventas
+          </TabsTrigger>
+          <TabsTrigger value="billetera" className="gap-1.5">
+            <i className="fa-solid fa-wallet text-amber-400/90" aria-hidden />
+            Billetera
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="mt-6">
           <Overview clicks={clicks.data ?? []} items={items.data ?? []} />

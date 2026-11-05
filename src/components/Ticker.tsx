@@ -8,7 +8,7 @@ import {
   Sparkles,
   Timer,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 import { useOpenAnnouncement } from "@/components/AnnouncementCard";
 import { useMemo } from "react";
 import { backend } from "@/lib/backend";

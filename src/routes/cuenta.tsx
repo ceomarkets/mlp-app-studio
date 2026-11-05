@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Package } from "lucide-react";
+import { Loader2, Package } from "@/components/icons";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DisputeCard, DisputeDialog, disputeKeys } from "@/components/Disputes";

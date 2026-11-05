@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart } from "lucide-react";
+import { Heart } from "@/components/icons";
 import { addToCart } from "@/components/CartSheet";
 import { Empty, ProductCard, ProductGridSkeleton, Shell } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
